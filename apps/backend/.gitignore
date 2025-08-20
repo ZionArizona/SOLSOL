@@ -1,0 +1,64 @@
+HELP.md
+
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### Spring Boot ###
+/bin/
+/target/
+logs/
+*.log
+*.out
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Test outputs ###
+test-output/
+jacoco.exec
+
+### Environment files ###
+.env
+application-*.yml
+application-*.properties
+
+### Node (혹시 프론트 빌드 산출물 들어올 경우) ###
+node_modules/
+npm-debug.log
+yarn-error.log
