@@ -1,0 +1,31 @@
+package com.solsol.heycalendar.domain;
+
+import java.time.LocalDateTime;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class User {
+	private Long userNm;
+	private String accountNm;
+	private String userId;
+	private String userKey;
+	private String userName;
+	private Status status;
+	private int grade;
+	private double gpa;
+	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
+	private Role role;
+
+	private Long deptNm;
+	private Long collegeNm;
+	private Long univNm;
+
+}
