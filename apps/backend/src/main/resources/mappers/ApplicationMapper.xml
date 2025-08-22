@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.ApplicationMapper">
+
+    <!-- Result Map for Application -->
+    <resultMap id="ApplicationResultMap" type="com.solsol.heycalendar.entity.Application">
+        <id property="userNm" column="user_nm" />
+        <id property="scholarshipNm" column="scholarship_nm" />
+        <result property="state" column="state" typeHandler="org.apache.ibatis.type.EnumTypeHandler" />
+        <result property="appliedAt" column="applied_at" />
+        <result property="reason" column="reason" />
+        <result property="updatedAt" column="updated_at" />
+        <result property="reviewedBy" column="reviewed_by" />
+    </resultMap>
+
+    <!-- Find all applications -->
+    <select id="findAllApplications" resultMap="ApplicationResultMap">
+        SELECT user_nm, scholarship_nm, state, applied_at, reason, updated_at, reviewed_by
+        FROM application
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Find applications by user -->
+    <select id="findApplicationsByUser" resultMap="ApplicationResultMap">
+        SELECT user_nm, scholarship_nm, state, applied_at, reason, updated_at, reviewed_by
+        FROM application
+        WHERE user_nm = #{userNm}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Find applications by scholarship -->
+    <select id="findApplicationsByScholarship" resultMap="ApplicationResultMap">
+        SELECT user_nm, scholarship_nm, state, applied_at, reason, updated_at, reviewed_by
+        FROM application
+        WHERE scholarship_nm = #{scholarshipNm}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Find application by user and scholarship -->
+    <select id="findApplicationByUserAndScholarship" resultMap="ApplicationResultMap">
+        SELECT user_nm, scholarship_nm, state, applied_at, reason, updated_at, reviewed_by
+        FROM application
+        WHERE user_nm = #{userNm} AND scholarship_nm = #{scholarshipNm}
+    </select>
+
+    <!-- Insert a new application -->
+    <insert id="insertApplication" parameterType="com.solsol.heycalendar.entity.Application">
+        INSERT INTO application (user_nm, scholarship_nm, state, applied_at, reason, updated_at, reviewed_by)
+        VALUES (#{userNm}, #{scholarshipNm}, #{state}, #{appliedAt}, #{reason}, #{updatedAt}, #{reviewedBy})
+    </insert>
+
+    <!-- Update an existing application -->
+    <update id="updateApplication" parameterType="com.solsol.heycalendar.entity.Application">
+        UPDATE application
+        SET state = #{state},
+            reason = #{reason},
+            updated_at = #{updatedAt},
+            reviewed_by = #{reviewedBy}
+        WHERE user_nm = #{userNm} AND scholarship_nm = #{scholarshipNm}
+    </update>
+
+    <!-- Delete an application -->
+    <delete id="deleteApplication">
+        DELETE FROM application
+        WHERE user_nm = #{userNm} AND scholarship_nm = #{scholarshipNm}
+    </delete>
+
+    <!-- Count applications by state -->
+    <select id="countApplicationsByState" resultType="int">
+        SELECT COUNT(*)
+        FROM application
+        WHERE state = #{state}
+    </select>
+
+    <!-- Find applications by state -->
+    <select id="findApplicationsByState" resultMap="ApplicationResultMap">
+        SELECT user_nm, scholarship_nm, state, applied_at, reason, updated_at, reviewed_by
+        FROM application
+        WHERE state = #{state}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Find applications by user and state -->
+    <select id="findApplicationsByUserAndState" resultMap="ApplicationResultMap">
+        SELECT user_nm, scholarship_nm, state, applied_at, reason, updated_at, reviewed_by
+        FROM application
+        WHERE user_nm = #{userNm} AND state = #{state}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Find applications by scholarship and state -->
+    <select id="findApplicationsByScholarshipAndState" resultMap="ApplicationResultMap">
+        SELECT user_nm, scholarship_nm, state, applied_at, reason, updated_at, reviewed_by
+        FROM application
+        WHERE scholarship_nm = #{scholarshipNm} AND state = #{state}
+        ORDER BY applied_at DESC
+    </select>
+
+    <!-- Count total applications -->
+    <select id="countTotalApplications" resultType="int">
+        SELECT COUNT(*)
+        FROM application
+    </select>
+
+    <!-- Count applications by user -->
+    <select id="countApplicationsByUser" resultType="int">
+        SELECT COUNT(*)
+        FROM application
+        WHERE user_nm = #{userNm}
+    </select>
+
+    <!-- Count applications by scholarship -->
+    <select id="countApplicationsByScholarship" resultType="int">
+        SELECT COUNT(*)
+        FROM application
+        WHERE scholarship_nm = #{scholarshipNm}
+    </select>
+
+</mapper>
