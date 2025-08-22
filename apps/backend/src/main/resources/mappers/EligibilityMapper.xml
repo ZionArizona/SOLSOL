@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.EligibilityMapper">
+
+	<!-- Eligibility 결과 매핑 -->
+	<resultMap id="eligibilityResultMap" type="com.solsol.heycalendar.domain.Eligibility">
+		<id property="eligibilityNm" column="eligibility_nm"/>
+		<result property="scholarshipNm" column="scholarship_nm"/>
+		<result property="field" column="field" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+		<result property="operator" column="operator" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+		<result property="value" column="value"/>
+		<result property="content" column="content"/>
+	</resultMap>
+
+	<!-- 특정 장학금의 자격요건 목록 조회 -->
+	<select id="findByScholarshipNm" parameterType="long" resultMap="eligibilityResultMap">
+		SELECT eligibility_nm, scholarship_nm, field, operator, value, content
+		FROM eligibility
+		WHERE scholarship_nm = #{scholarshipNm}
+		ORDER BY eligibility_nm
+	</select>
+
+	<!-- ID로 자격요건 조회 -->
+	<select id="findById" parameterType="long" resultMap="eligibilityResultMap">
+		SELECT eligibility_nm, scholarship_nm, field, operator, value, content
+		FROM eligibility
+		WHERE eligibility_nm = #{eligibilityNm}
+	</select>
+
+	<!-- 자격요건 생성 -->
+	<insert id="insert" parameterType="com.solsol.heycalendar.domain.Eligibility" 
+	        useGeneratedKeys="true" keyProperty="eligibilityNm" keyColumn="eligibility_nm">
+		INSERT INTO eligibility (scholarship_nm, field, operator, value, content)
+		VALUES (#{scholarshipNm}, #{field}, #{operator}, #{value}, #{content})
+	</insert>
+
+	<!-- 자격요건 수정 -->
+	<update id="update" parameterType="com.solsol.heycalendar.domain.Eligibility">
+		UPDATE eligibility 
+		SET field = #{field},
+		    operator = #{operator},
+		    value = #{value},
+		    content = #{content}
+		WHERE eligibility_nm = #{eligibilityNm}
+	</update>
+
+	<!-- 자격요건 삭제 -->
+	<delete id="delete" parameterType="long">
+		DELETE FROM eligibility 
+		WHERE eligibility_nm = #{eligibilityNm}
+	</delete>
+
+	<!-- 특정 장학금의 모든 자격요건 삭제 -->
+	<delete id="deleteByScholarshipNm" parameterType="long">
+		DELETE FROM eligibility 
+		WHERE scholarship_nm = #{scholarshipNm}
+	</delete>
+
+</mapper>
