@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.CollegeMapper">
+
+    <!-- Result Map for College -->
+    <resultMap id="collegeResultMap" type="com.solsol.heycalendar.domain.College">
+        <id property="collegeNm" column="college_nm"/>
+        <result property="univNm" column="univ_nm"/>
+        <result property="name" column="name"/>
+    </resultMap>
+
+    <!-- Result Map for College with Departments -->
+    <resultMap id="collegeWithDepartmentsResultMap" type="com.solsol.heycalendar.domain.College">
+        <id property="collegeNm" column="college_nm"/>
+        <result property="univNm" column="univ_nm"/>
+        <result property="name" column="college_name"/>
+        <collection property="departments" ofType="com.solsol.heycalendar.domain.Department">
+            <id property="deptNm" column="dept_nm"/>
+            <result property="collegeNm" column="college_nm"/>
+            <result property="univNm" column="univ_nm"/>
+            <result property="name" column="dept_name"/>
+        </collection>
+    </resultMap>
+
+    <!-- Find colleges by university ID -->
+    <select id="findByUniversityId" parameterType="string" resultMap="collegeResultMap">
+        SELECT college_nm, univ_nm, name
+        FROM College
+        WHERE univ_nm = #{univNm}
+        ORDER BY name
+    </select>
+
+    <!-- Find college by ID -->
+    <select id="findById" resultMap="collegeResultMap">
+        SELECT college_nm, univ_nm, name
+        FROM College
+        WHERE college_nm = #{collegeNm} AND univ_nm = #{univNm}
+    </select>
+
+    <!-- Find college with departments -->
+    <select id="findByIdWithDepartments" resultMap="collegeWithDepartmentsResultMap">
+        SELECT 
+            c.college_nm,
+            c.univ_nm,
+            c.name as college_name,
+            d.dept_nm,
+            d.name as dept_name
+        FROM College c
+        LEFT JOIN Department d ON c.college_nm = d.college_nm AND c.univ_nm = d.univ_nm
+        WHERE c.college_nm = #{collegeNm} AND c.univ_nm = #{univNm}
+        ORDER BY d.name
+    </select>
+
+    <!-- Insert college -->
+    <insert id="insert" parameterType="com.solsol.heycalendar.domain.College">
+        INSERT INTO College (college_nm, univ_nm, name)
+        VALUES (#{collegeNm}, #{univNm}, #{name})
+    </insert>
+
+    <!-- Update college -->
+    <update id="update" parameterType="com.solsol.heycalendar.domain.College">
+        UPDATE College
+        SET name = #{name}
+        WHERE college_nm = #{collegeNm} AND univ_nm = #{univNm}
+    </update>
+
+    <!-- Delete college by ID -->
+    <delete id="deleteById">
+        DELETE FROM College
+        WHERE college_nm = #{collegeNm} AND univ_nm = #{univNm}
+    </delete>
+
+    <!-- Delete colleges by university ID -->
+    <delete id="deleteByUniversityId" parameterType="string">
+        DELETE FROM College
+        WHERE univ_nm = #{univNm}
+    </delete>
+
+    <!-- Check if college exists -->
+    <select id="existsById" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM College
+        WHERE college_nm = #{collegeNm} AND univ_nm = #{univNm}
+    </select>
+
+</mapper>
