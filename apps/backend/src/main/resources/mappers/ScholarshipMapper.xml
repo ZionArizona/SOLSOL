@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.ScholarshipMapper">
+
+	<!-- Scholarship 결과 매핑 -->
+	<resultMap id="scholarshipResultMap" type="com.solsol.heycalendar.domain.Scholarship">
+		<id property="scholarshipNm" column="scholarship_nm"/>
+		<result property="title" column="title"/>
+		<result property="description" column="description"/>
+		<result property="startDate" column="start_date"/>
+		<result property="endDate" column="end_date"/>
+		<result property="createdBy" column="created_by"/>
+		<result property="createdAt" column="created_at"/>
+		<result property="reviewDuration" column="review_duration"/>
+		<result property="amount" column="amount"/>
+	</resultMap>
+
+	<!-- 모든 장학금 조회 -->
+	<select id="findAll" resultMap="scholarshipResultMap">
+		SELECT scholarship_nm, title, description, start_date, end_date, 
+		       created_by, created_at, review_duration, amount
+		FROM scholarship
+		ORDER BY created_at DESC
+	</select>
+
+	<!-- ID로 장학금 조회 -->
+	<select id="findById" parameterType="long" resultMap="scholarshipResultMap">
+		SELECT scholarship_nm, title, description, start_date, end_date, 
+		       created_by, created_at, review_duration, amount
+		FROM scholarship
+		WHERE scholarship_nm = #{scholarshipNm}
+	</select>
+
+	<!-- 장학금 생성 -->
+	<insert id="insert" parameterType="com.solsol.heycalendar.domain.Scholarship" 
+	        useGeneratedKeys="true" keyProperty="scholarshipNm" keyColumn="scholarship_nm">
+		INSERT INTO scholarship (title, description, start_date, end_date, created_by, created_at, review_duration, amount)
+		VALUES (#{title}, #{description}, #{startDate}, #{endDate}, #{createdBy}, #{createdAt}, #{reviewDuration}, #{amount})
+	</insert>
+
+	<!-- 장학금 수정 -->
+	<update id="update" parameterType="com.solsol.heycalendar.domain.Scholarship">
+		UPDATE scholarship 
+		SET title = #{title},
+		    description = #{description},
+		    start_date = #{startDate},
+		    end_date = #{endDate},
+		    review_duration = #{reviewDuration},
+		    amount = #{amount}
+		WHERE scholarship_nm = #{scholarshipNm}
+	</update>
+
+	<!-- 장학금 삭제 -->
+	<delete id="delete" parameterType="long">
+		DELETE FROM scholarship 
+		WHERE scholarship_nm = #{scholarshipNm}
+	</delete>
+
+</mapper>
