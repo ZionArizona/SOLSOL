@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.MileageMapper">
+
+    <!-- Result map for Mileage entity -->
+    <resultMap id="MileageResultMap" type="com.solsol.heycalendar.domain.Mileage">
+        <id property="key" column="key"/>
+        <result property="userNm" column="user_nm"/>
+        <result property="amount" column="amount"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="description" column="description"/>
+    </resultMap>
+
+    <!-- Insert new mileage record -->
+    <insert id="insert" parameterType="com.solsol.heycalendar.domain.Mileage" 
+            useGeneratedKeys="true" keyProperty="key">
+        INSERT INTO mileage (
+            user_nm,
+            amount,
+            created_at,
+            description
+        ) VALUES (
+            #{userNm},
+            #{amount},
+            #{createdAt},
+            #{description}
+        )
+    </insert>
+
+    <!-- Find mileage records by user name -->
+    <select id="findByUserNm" resultMap="MileageResultMap">
+        SELECT 
+            `key`,
+            user_nm,
+            amount,
+            created_at,
+            description
+        FROM mileage
+        WHERE user_nm = #{userNm}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- Find mileage record by primary key -->
+    <select id="findById" resultMap="MileageResultMap">
+        SELECT 
+            `key`,
+            user_nm,
+            amount,
+            created_at,
+            description
+        FROM mileage
+        WHERE `key` = #{key}
+    </select>
+
+    <!-- Find all mileage records -->
+    <select id="findAll" resultMap="MileageResultMap">
+        SELECT 
+            `key`,
+            user_nm,
+            amount,
+            created_at,
+            description
+        FROM mileage
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- Calculate total mileage for a user -->
+    <select id="calculateTotalByUserNm" resultType="java.lang.Integer">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM mileage
+        WHERE user_nm = #{userNm}
+    </select>
+
+</mapper>
