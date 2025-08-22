@@ -1,5 +1,7 @@
 package com.solsol.heycalendar.mapper;
 
+import java.util.Optional;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -10,5 +12,5 @@ public interface UserMapper {
 	User selectByUsername(@Param("username") String name);
 	User selectByUserNm(@Param("userNm") Long id);
 	User selectByUserId(@Param("userId") String userId);
-
+	Optional<User> findByUserId(@Param("userId") String userId);
 }
