@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.UniversityMapper">
+
+    <!-- Result Map for University -->
+    <resultMap id="universityResultMap" type="com.solsol.heycalendar.domain.University">
+        <id property="univNm" column="univ_nm"/>
+        <result property="univName" column="univ_name"/>
+        <result property="field2" column="field2"/>
+    </resultMap>
+
+    <!-- Result Map for University with Colleges -->
+    <resultMap id="universityWithCollegesResultMap" type="com.solsol.heycalendar.domain.University">
+        <id property="univNm" column="univ_nm"/>
+        <result property="univName" column="univ_name"/>
+        <result property="field2" column="field2"/>
+        <collection property="colleges" ofType="com.solsol.heycalendar.domain.College">
+            <id property="collegeNm" column="college_nm"/>
+            <result property="univNm" column="univ_nm"/>
+            <result property="name" column="college_name"/>
+            <collection property="departments" ofType="com.solsol.heycalendar.domain.Department">
+                <id property="deptNm" column="dept_nm"/>
+                <result property="collegeNm" column="college_nm"/>
+                <result property="univNm" column="univ_nm"/>
+                <result property="name" column="dept_name"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!-- Find all universities -->
+    <select id="findAll" resultMap="universityResultMap">
+        SELECT univ_nm, univ_name, field2
+        FROM University
+        ORDER BY univ_name
+    </select>
+
+    <!-- Find university by ID -->
+    <select id="findById" parameterType="string" resultMap="universityResultMap">
+        SELECT univ_nm, univ_name, field2
+        FROM University
+        WHERE univ_nm = #{univNm}
+    </select>
+
+    <!-- Find university with hierarchy -->
+    <select id="findByIdWithHierarchy" parameterType="string" resultMap="universityWithCollegesResultMap">
+        SELECT 
+            u.univ_nm,
+            u.univ_name,
+            u.field2,
+            c.college_nm,
+            c.name as college_name,
+            d.dept_nm,
+            d.name as dept_name
+        FROM University u
+        LEFT JOIN College c ON u.univ_nm = c.univ_nm
+        LEFT JOIN Department d ON c.college_nm = d.college_nm AND c.univ_nm = d.univ_nm
+        WHERE u.univ_nm = #{univNm}
+        ORDER BY c.name, d.name
+    </select>
+
+    <!-- Insert university -->
+    <insert id="insert" parameterType="com.solsol.heycalendar.domain.University">
+        INSERT INTO University (univ_nm, univ_name, field2)
+        VALUES (#{univNm}, #{univName}, #{field2})
+    </insert>
+
+    <!-- Update university -->
+    <update id="update" parameterType="com.solsol.heycalendar.domain.University">
+        UPDATE University
+        SET univ_name = #{univName},
+            field2 = #{field2}
+        WHERE univ_nm = #{univNm}
+    </update>
+
+    <!-- Delete university by ID -->
+    <delete id="deleteById" parameterType="string">
+        DELETE FROM University
+        WHERE univ_nm = #{univNm}
+    </delete>
+
+    <!-- Check if university exists -->
+    <select id="existsById" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM University
+        WHERE univ_nm = #{univNm}
+    </select>
+
+</mapper>
