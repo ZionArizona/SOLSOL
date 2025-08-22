@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.ApplicationDocumentMapper">
+
+    <!-- Result Map for ApplicationDocument -->
+    <resultMap id="ApplicationDocumentResultMap" type="com.solsol.heycalendar.entity.ApplicationDocument">
+        <id property="applicationDocumentNm" column="application_document_nm" />
+        <result property="userNm" column="user_nm" />
+        <result property="scholarshipNm" column="scholarship_nm" />
+        <result property="fileUrl" column="file_url" />
+        <result property="uploadedAt" column="uploaded_at" />
+        <result property="originalFileName" column="original_file_name" />
+        <result property="fileSize" column="file_size" />
+        <result property="contentType" column="content_type" />
+    </resultMap>
+
+    <!-- Find all documents -->
+    <select id="findAllDocuments" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        ORDER BY uploaded_at DESC
+    </select>
+
+    <!-- Find documents by user and scholarship -->
+    <select id="findDocumentsByUserAndScholarship" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        WHERE user_nm = #{userNm} AND scholarship_nm = #{scholarshipNm}
+        ORDER BY uploaded_at DESC
+    </select>
+
+    <!-- Find document by name and application -->
+    <select id="findDocumentByNameAndApplication" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        WHERE application_document_nm = #{documentNm} 
+              AND user_nm = #{userNm} 
+              AND scholarship_nm = #{scholarshipNm}
+    </select>
+
+    <!-- Find document by document name only -->
+    <select id="findDocumentByName" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        WHERE application_document_nm = #{documentNm}
+    </select>
+
+    <!-- Find documents by user -->
+    <select id="findDocumentsByUser" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        WHERE user_nm = #{userNm}
+        ORDER BY uploaded_at DESC
+    </select>
+
+    <!-- Find documents by scholarship -->
+    <select id="findDocumentsByScholarship" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        WHERE scholarship_nm = #{scholarshipNm}
+        ORDER BY uploaded_at DESC
+    </select>
+
+    <!-- Insert a new document -->
+    <insert id="insertDocument" parameterType="com.solsol.heycalendar.entity.ApplicationDocument">
+        INSERT INTO application_document (
+            application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+            original_file_name, file_size, content_type
+        )
+        VALUES (
+            #{applicationDocumentNm}, #{userNm}, #{scholarshipNm}, #{fileUrl}, #{uploadedAt}, 
+            #{originalFileName}, #{fileSize}, #{contentType}
+        )
+    </insert>
+
+    <!-- Update an existing document -->
+    <update id="updateDocument" parameterType="com.solsol.heycalendar.entity.ApplicationDocument">
+        UPDATE application_document
+        SET file_url = #{fileUrl},
+            original_file_name = #{originalFileName},
+            file_size = #{fileSize},
+            content_type = #{contentType}
+        WHERE application_document_nm = #{applicationDocumentNm}
+              AND user_nm = #{userNm}
+              AND scholarship_nm = #{scholarshipNm}
+    </update>
+
+    <!-- Delete a document by name and application -->
+    <delete id="deleteDocument">
+        DELETE FROM application_document
+        WHERE application_document_nm = #{documentNm}
+              AND user_nm = #{userNm}
+              AND scholarship_nm = #{scholarshipNm}
+    </delete>
+
+    <!-- Delete all documents for an application -->
+    <delete id="deleteDocumentsByApplication">
+        DELETE FROM application_document
+        WHERE user_nm = #{userNm} AND scholarship_nm = #{scholarshipNm}
+    </delete>
+
+    <!-- Count documents by user and scholarship -->
+    <select id="countDocumentsByUserAndScholarship" resultType="int">
+        SELECT COUNT(*)
+        FROM application_document
+        WHERE user_nm = #{userNm} AND scholarship_nm = #{scholarshipNm}
+    </select>
+
+    <!-- Count documents by user -->
+    <select id="countDocumentsByUser" resultType="int">
+        SELECT COUNT(*)
+        FROM application_document
+        WHERE user_nm = #{userNm}
+    </select>
+
+    <!-- Count documents by scholarship -->
+    <select id="countDocumentsByScholarship" resultType="int">
+        SELECT COUNT(*)
+        FROM application_document
+        WHERE scholarship_nm = #{scholarshipNm}
+    </select>
+
+    <!-- Count total documents -->
+    <select id="countTotalDocuments" resultType="int">
+        SELECT COUNT(*)
+        FROM application_document
+    </select>
+
+    <!-- Find documents by content type -->
+    <select id="findDocumentsByContentType" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        WHERE content_type = #{contentType}
+        ORDER BY uploaded_at DESC
+    </select>
+
+    <!-- Find documents larger than specified size -->
+    <select id="findDocumentsLargerThan" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        WHERE file_size > #{fileSize}
+        ORDER BY file_size DESC
+    </select>
+
+    <!-- Find documents uploaded within date range -->
+    <select id="findDocumentsByDateRange" resultMap="ApplicationDocumentResultMap">
+        SELECT application_document_nm, user_nm, scholarship_nm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type
+        FROM application_document
+        WHERE DATE(uploaded_at) BETWEEN #{startDate} AND #{endDate}
+        ORDER BY uploaded_at DESC
+    </select>
+
+</mapper>
