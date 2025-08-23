@@ -15,6 +15,7 @@ public class User {
 	private Long userNm;
 	private String accountNm;
 	private String userId;
+	private String password;
 	private String userKey;
 	private String userName;
 	private Status status;

@@ -32,7 +32,7 @@ public class CustomUserPrincipal implements UserDetails {
 	 * @return 생성된 CustomUserPrincipal 객체
 	 */
 	public static CustomUserPrincipal create(User user) {
-		return new CustomUserPrincipal(user.getUserNm(), user.getUserId(), user.getUserKey(),
+		return new CustomUserPrincipal(user.getUserNm(), user.getUserId(), user.getPassword(), user.getUserName(),
 			user.getRole() != null ? user.getRole().name() : "STUDENT");
 	}
 
