@@ -63,7 +63,7 @@ public class AuthService {
 		String jti = UUID.randomUUID().toString();
 		String refreshTokenString = jwtUtil.createRefreshToken(principal.getUserNm(), jti);
 
-		Claims refreshClaims = jwtUtil.parse(refreshTokenString).getBody();
+		Claims refreshClaims = jwtUtil.parse(refreshTokenString).getPayload();
 
 		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
 
@@ -116,7 +116,7 @@ public class AuthService {
 		String newJti = UUID.randomUUID().toString();
 		String newRefreshTokenString = jwtUtil.createRefreshToken(user.getUserNm(), newJti);
 
-		Claims newRefreshClaims = jwtUtil.parse(newRefreshTokenString).getBody();
+		Claims newRefreshClaims = jwtUtil.parse(newRefreshTokenString).getPayload();
 
 		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
 
@@ -152,7 +152,7 @@ public class AuthService {
 
 		try {
 			if (jwtUtil.validateToken(refreshTokenString) && jwtUtil.isRefresh(refreshTokenString)) {
-				String jti = jwtUtil.parse(refreshTokenString).getBody().getId();
+				String jti = jwtUtil.parse(refreshTokenString).getPayload().getId();
 				refreshTokenMapper.revokeByToken(jti);
 			}
 		} catch (Exception e) {
