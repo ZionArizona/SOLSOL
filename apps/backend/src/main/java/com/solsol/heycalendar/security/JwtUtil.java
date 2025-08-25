@@ -1,9 +1,9 @@
 package com.solsol.heycalendar.security;
 
-import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import javax.crypto.SecretKey;
 
 import org.springframework.stereotype.Component;
 
@@ -27,7 +27,7 @@ public class JwtUtil {
 	 * JWT 서명에 사용할 키를 생성
 	 * @return 서명 키
 	 */
-	private Key key() {
+	private SecretKey key() {
 		return Keys.hmacShaKeyFor(props.getJwt().getSecret().getBytes());
 	}
 
@@ -80,7 +80,7 @@ public class JwtUtil {
 	 * @return 파싱된 JWS Claims 객체
 	 */
 	public Jws<Claims> parse(String token) {
-		return Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token);
+		return Jwts.parser().verifyWith(key()).build().parseSignedClaims(token);
 	}
 
 	/**

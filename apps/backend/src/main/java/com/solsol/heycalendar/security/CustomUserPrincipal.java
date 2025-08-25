@@ -33,7 +33,7 @@ public class CustomUserPrincipal implements UserDetails {
 	 */
 	public static CustomUserPrincipal create(User user) {
 		return new CustomUserPrincipal(user.getUserNm(), user.getUserId(), user.getUserKey(),
-			user.getRole() != null ? user.getRole().name() : "STUDENT");
+			user.getUserName(), user.getRole() != null ? user.getRole().name() : "STUDENT");
 	}
 
 	@Override
