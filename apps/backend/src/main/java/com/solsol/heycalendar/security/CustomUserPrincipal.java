@@ -19,7 +19,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class CustomUserPrincipal implements UserDetails {
-	private Long userNm;
+	private String userNm;
 	private String userId;
 	private String password;
 	private String userName;

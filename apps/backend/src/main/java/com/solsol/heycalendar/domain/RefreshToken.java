@@ -14,7 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefreshToken {
-	private Long userNm;
+	private String userNm;
 	private String userId;
 	private String token;
 	private LocalDateTime issuedAt;

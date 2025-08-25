@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.solsol.heycalendar.common.ApiResponse;
 import com.solsol.heycalendar.dto.request.AuthRequest;
 import com.solsol.heycalendar.dto.request.LogoutRequest;
+import com.solsol.heycalendar.dto.request.PasswordResetConfirmRequest;
+import com.solsol.heycalendar.dto.request.PasswordResetRequest;
 import com.solsol.heycalendar.dto.request.RefreshReqeust;
 import com.solsol.heycalendar.dto.response.AuthResponse;
 import com.solsol.heycalendar.service.AuthService;
@@ -38,6 +40,18 @@ public class AuthController {
 	}
 
 	/**
+	 * 사용자의 로그아웃을 처리합니다. 서버에 저장된 리프레시 토큰을 무효화합니다.
+	 *
+	 * @param logoutRequest 로그아웃 요청 DTO (리프레시 토큰)
+	 * @return 작업 성공 여부를 포함하는 응답
+	 */
+	@PostMapping("/logout")
+	public ResponseEntity<ApiResponse<Void>> logout(@RequestBody LogoutRequest logoutRequest) {
+		authService.logout(logoutRequest);
+		return ResponseEntity.ok(new ApiResponse<>(true, "Logout successful.", "OK", null));
+	}
+
+	/**
 	 * 만료된 액세스 토큰을 새로운 토큰으로 재발급합니다.
 	 *
 	 * @param refreshRequest 재발급 요청 DTO (리프레시 토큰)
@@ -50,14 +64,26 @@ public class AuthController {
 	}
 
 	/**
-	 * 사용자의 로그아웃을 처리합니다. 서버에 저장된 리프레시 토큰을 무효화합니다.
+	 * 비밀번호 재설정 요청 엔드포인트입니다.
 	 *
-	 * @param logoutRequest 로그아웃 요청 DTO (리프레시 토큰)
-	 * @return 작업 성공 여부를 포함하는 응답
+	 * @param request 비밀번호 재설정 요청 DTO
+	 * @return ResponseEntity<ApiResponse<Void>>
 	 */
-	@PostMapping("/logout")
-	public ResponseEntity<ApiResponse<Void>> logout(@RequestBody LogoutRequest logoutRequest) {
-		authService.logout(logoutRequest);
-		return ResponseEntity.ok(new ApiResponse<>(true, "Logout successful.", "OK", null));
+	@PostMapping("/password/reset/request")
+	public ResponseEntity<ApiResponse<Void>> requestPasswordReset(@RequestBody PasswordResetRequest request) {
+		authService.requestPasswordReset(request);
+		return ResponseEntity.ok(ApiResponse.success("Password reset request successful", null));
+	}
+
+	/**
+	 * 비밀번호 재설정 확정 엔드포인트입니다.
+	 *
+	 * @param request 비밀번호 재설정 확정 요청 DTO
+	 * @return ResponseEntity<ApiResponse<Void>>
+	 */
+	@PostMapping("/password/reset/confirm")
+	public ResponseEntity<ApiResponse<Void>> confirmPasswordReset(@RequestBody PasswordResetConfirmRequest request) {
+		authService.confirmPasswordReset(request);
+		return ResponseEntity.ok(ApiResponse.success("Password reset successful", null));
 	}
 }
