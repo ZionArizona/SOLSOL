@@ -11,6 +11,7 @@ import com.solsol.heycalendar.entity.ApplicationDocument;
 import com.solsol.heycalendar.entity.ApplicationState;
 import com.solsol.heycalendar.mapper.ApplicationDocumentMapper;
 import com.solsol.heycalendar.mapper.ApplicationMapper;
+import com.solsol.heycalendar.dto.request.MileageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class ApplicationService {
 
     private final ApplicationMapper applicationMapper;
     private final ApplicationDocumentMapper applicationDocumentMapper;
+    private final MileageService mileageService;
 
     /**
      * Get all applications
@@ -151,8 +153,23 @@ public class ApplicationService {
         application.setReviewedBy(request.getReviewedBy());
 
         applicationMapper.updateApplication(application);
+        
+        // 장학금 승인 시 자동으로 마일리지 적립
+        try {
+            MileageRequest mileageRequest = MileageRequest.builder()
+                    .userNm(userNm)
+                    .amount(1000)  // 기본 1000 마일리지 적립 (추후 장학금 금액에 따라 조정 가능)
+                    .description("장학금 승인으로 인한 마일리지 적립: " + scholarshipNm)
+                    .build();
+            
+            mileageService.addMileage(mileageRequest);
+            log.info("Mileage awarded successfully for approved scholarship: {} to user: {}", scholarshipNm, userNm);
+        } catch (Exception e) {
+            log.error("Failed to award mileage for approved scholarship: {} to user: {}", scholarshipNm, userNm, e);
+            // 마일리지 적립 실패해도 장학금 승인은 유지 (선택적 기능)
+        }
+        
         log.info("Application approved successfully for user: {} and scholarship: {}", userNm, scholarshipNm);
-
         return convertToApplicationResponse(application);
     }
 
