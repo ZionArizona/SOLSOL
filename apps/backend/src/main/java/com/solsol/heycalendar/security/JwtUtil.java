@@ -1,6 +1,6 @@
 package com.solsol.heycalendar.security;
 
-import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
@@ -9,8 +9,17 @@ import org.springframework.stereotype.Component;
 
 import com.solsol.heycalendar.config.JwtProperties;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.WeakKeyException;
+import javax.crypto.SecretKey;
+
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,86 +31,56 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class JwtUtil {
 	private final JwtProperties props;
+	private SecretKey secretKey;
 
-	/**
-	 * JWT 서명에 사용할 키를 생성
-	 * @return 서명 키
-	 */
-	private Key key() {
-		return Keys.hmacShaKeyFor(props.getJwt().getSecret().getBytes());
+	/** JWT 서명에 사용할 키 생성 */
+	@PostConstruct
+	void init() {
+		byte[] bytes = props.getJwt().getSecret().getBytes(StandardCharsets.UTF_8);
+		this.secretKey = Keys.hmacShaKeyFor(bytes);
 	}
+	private SecretKey key() { return this.secretKey; }
 
-	/**
-	 * 액세스 토큰을 생성
-	 *
-	 * @param userNm 사용자 이름
-	 * @param userId 사용자 ID
-	 * @param role   사용자 역할
-	 * @return 생성된 액세스 토큰 문자열
-	 */
-	public String createAccessToken(Long userNm, String userId, String role) {
-		Instant now = Instant.now();
-		Instant exp = now.plusSeconds(props.getJwt().getAccessExpMin() * 60L);
+	// (1) Access Token 등 jti 없이 서명할 때 사용
+	public String sign(String subject, Map<String, Object> claims, Date issuedAt, Date expiration) {
 		return Jwts.builder()
-			.setIssuer(props.getJwt().getIssuer())
-			.setSubject(String.valueOf(userNm))
-			.addClaims(Map.of("userId", userId, "role", role, "typ", "access"))
-			.setIssuedAt(Date.from(now))
-			.setExpiration(Date.from(exp))
-			.signWith(key(), SignatureAlgorithm.HS256)
+			.issuer(props.getJwt().getIssuer())
+			.subject(subject)
+			.claims(claims)
+			.issuedAt(issuedAt)
+			.expiration(expiration)
+			.signWith(key(), Jwts.SIG.HS256)
 			.compact();
 	}
 
-	/**
-	 * 리프레시 토큰을 생성
-	 *
-	 * @param userNm 사용자 이름
-	 * @param jti    JWT 고유 식별자 (JTI)
-	 * @return 생성된 리프레시 토큰 문자열
-	 */
-	public String createRefreshToken(Long userNm, String jti) {
-		Instant now = Instant.now();
-		Instant exp = now.plusSeconds(props.getJwt().getRefreshExpDays() * 86400L);
+	// (2) Refresh Token 등 jti가 필요한 경우 사용
+	public String sign(String subject, String jti, Map<String, Object> claims, Date issuedAt, Date expiration) {
 		return Jwts.builder()
-			.setIssuer(props.getJwt().getIssuer())
-			.setSubject(String.valueOf(userNm))
-			.setId(jti)
-			.addClaims(Map.of("typ", "refresh"))
-			.setIssuedAt(Date.from(now))
-			.setExpiration(Date.from(exp))
-			.signWith(key(), SignatureAlgorithm.HS256)
+			.issuer(props.getJwt().getIssuer())
+			.subject(subject)
+			.id(jti) // jti 설정
+			.claims(claims)
+			.issuedAt(issuedAt)
+			.expiration(expiration)
+			.signWith(key(), Jwts.SIG.HS256)
 			.compact();
 	}
 
-	/**
-	 * 토큰을 파싱하여 JWS(JSON Web Signature) Claims 객체를 반환
-	 *
-	 * @param token 파싱할 토큰 문자열
-	 * @return 파싱된 JWS Claims 객체
-	 */
+	/** 서명된 JWS 파싱 */
 	public Jws<Claims> parse(String token) {
-		return Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token);
+		return Jwts.parser()
+			.verifyWith(key()) // ✅ SecretKey 필요
+			.build()
+			.parseSignedClaims(token);
 	}
 
-	/**
-	 * 토큰에서 사용자 ID를 추출
-	 *
-	 * @param token 토큰 문자열
-	 * @return 추출된 사용자 ID
-	 */
 	public String extractUserId(String token) {
-		return parse(token).getBody().get("userId", String.class);
+		return parse(token).getPayload().get("userId", String.class); // ✅ getPayload()
 	}
 
-	/**
-	 * 토큰의 만료 여부를 확인
-	 *
-	 * @param token 토큰 문자열
-	 * @return 만료되었으면 true, 아니면 false
-	 */
 	public boolean isTokenExpired(String token) {
 		try {
-			return parse(token).getBody().getExpiration().before(new Date());
+			return parse(token).getPayload().getExpiration().before(new Date()); // ✅
 		} catch (ExpiredJwtException e) {
 			return true;
 		} catch (Exception e) {
@@ -109,16 +88,12 @@ public class JwtUtil {
 		}
 	}
 
-	/**
-	 * 토큰의 유효성을 검증 (서명, 만료일 등)
-	 *
-	 * @param token 검증할 토큰 문자열
-	 * @return 유효하면 true, 아니면 false
-	 */
 	public boolean validateToken(String token) {
 		try {
 			parse(token);
 			return true;
+		} catch (WeakKeyException e) {
+			log.warn("Weak JWT Secret Key.", e);
 		} catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
 			log.info("Invalid JWT Token", e);
 		} catch (ExpiredJwtException e) {
@@ -131,34 +106,19 @@ public class JwtUtil {
 		return false;
 	}
 
-	/**
-	 * 토큰이 액세스 토큰인지 확인
-	 *
-	 * @param token 토큰 문자열
-	 * @return 액세스 토큰이면 true, 아니면 false
-	 */
 	public boolean isAccess(String token) {
-		return "access".equals(parse(token).getBody().get("typ", String.class));
+		return "access".equals(parse(token).getPayload().get("typ", String.class)); // ✅
 	}
 
-	/**
-	 * 토큰이 리프레시 토큰인지 확인
-	 *
-	 * @param token 토큰 문자열
-	 * @return 리프레시 토큰이면 true, 아니면 false
-	 */
 	public boolean isRefresh(String token) {
-		return "refresh".equals(parse(token).getBody().get("typ", String.class));
+		return "refresh".equals(parse(token).getPayload().get("typ", String.class)); // ✅
 	}
 
-	/**
-	 * 토큰의 subject(사용자 이름)를 추출
-	 *
-	 * @param token 토큰 문자열
-	 * @return 추출된 사용자 이름 (Long 타입)
-	 */
-	public Long subjectUserNm(String token) {
-		return Long.valueOf(parse(token).getBody().getSubject());
+	public String subjectUserNm(String token) {
+		return parse(token).getPayload().getSubject();
 	}
 
+	public int getRefreshExpDays() {
+		return props.getJwt().getRefreshExpDays();
+	}
 }

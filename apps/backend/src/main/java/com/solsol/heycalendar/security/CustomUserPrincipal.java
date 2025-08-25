@@ -19,11 +19,16 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class CustomUserPrincipal implements UserDetails {
-	private Long userNm;
+	private String userNm;
 	private String userId;
 	private String password;
 	private String userName;
 	private String role;
+
+	private Long deptNm;       // 학과 (BIGINT)
+	private Long collegeNm;    // 단과대학 (BIGINT)
+	private Long univNm;       // 대학교 (BIGINT)
+	private Integer grade;     // 학년 (INT)
 
 	/**
 	 * User 엔티티 객체를 기반으로 CustomUserPrincipal 객체를 생성
@@ -32,8 +37,12 @@ public class CustomUserPrincipal implements UserDetails {
 	 * @return 생성된 CustomUserPrincipal 객체
 	 */
 	public static CustomUserPrincipal create(User user) {
-		return new CustomUserPrincipal(user.getUserNm(), user.getUserId(), user.getUserKey(),
-			user.getRole() != null ? user.getRole().name() : "STUDENT");
+		return new CustomUserPrincipal(user.getUserNm(), user.getUserId(), user.getPassword(), user.getUserName(),
+			user.getRole() != null ? user.getRole().name() : "STUDENT",
+			user.getDeptNm(),
+			user.getCollegeNm(),
+			user.getUnivNm(),
+			user.getGrade());
 	}
 
 	@Override
@@ -48,7 +57,7 @@ public class CustomUserPrincipal implements UserDetails {
 
 	@Override
 	public String getUsername() {
-		return userId;
+		return userName;
 	}
 
 	@Override

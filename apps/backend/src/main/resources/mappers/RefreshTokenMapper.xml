@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.RefreshTokenMapper">
+
+    <sql id="Refresh_Columns">
+        `id`,
+    `userNm`,
+    `userId`,
+    `token`,
+    `issuedAt`,
+    `expiresAt`,
+    `revoked`,
+    `userAgent`,
+    `ip`,
+    `rotatedFrom`
+    </sql>
+
+    <resultMap id="RefreshTokenResultMap" type="com.solsol.heycalendar.domain.RefreshToken">
+        <id     property="id"        column="id"/>
+        <result property="userNm"     column="userNm"/>
+        <result property="userId"     column="userId"/>
+        <result property="token"      column="token"/>
+        <result property="issuedAt"   column="issuedAt"  javaType="java.time.LocalDateTime"/>
+        <result property="expiresAt"  column="expiresAt" javaType="java.time.LocalDateTime"/>
+        <result property="revoked"    column="revoked"   javaType="boolean"/>
+        <result property="userAgent"  column="userAgent"/>
+        <result property="ip"         column="ip"/>
+        <result property="rotatedFrom" column="rotatedFrom"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.solsol.heycalendar.domain.RefreshToken" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `refresh_token` (
+            `userNm`, `userId`, `token`, `issuedAt`, `expiresAt`, `revoked`, `userAgent`, `ip`, `rotatedFrom`
+        ) VALUES (
+                     #{userNm}, #{userId}, #{token},
+                     #{issuedAt}, #{expiresAt}, #{revoked},
+                     #{userAgent}, #{ip}, #{rotatedFrom}
+                 )
+    </insert>
+
+    <select id="findActiveByToken" parameterType="string" resultMap="RefreshTokenResultMap">
+        SELECT
+        <include refid="Refresh_Columns"/>
+        FROM `refresh_token`
+        WHERE `token` = #{tokenJti}
+        AND `revoked` = 0
+        AND `expiresAt` > NOW()
+        LIMIT 1
+    </select>
+
+    <update id="revokeByToken" parameterType="string">
+        UPDATE `refresh_token`
+        SET `revoked` = 1
+        WHERE `token` = #{tokenJti}
+    </update>
+
+    <update id="revokeAllByUserNm" parameterType="string">
+        UPDATE `refresh_token`
+        SET `revoked` = 1
+        WHERE `userNm` = #{userNm}
+          AND `revoked` = 0
+    </update>
+    <!-- 마지막 사용 시각 업데이트 -->
+    <update id="touchLastUsed" parameterType="string">
+        UPDATE `refresh_token`
+        SET `lastUsedAt` = NOW()
+        WHERE `token` = #{tokenJti}
+    </update>
+
+</mapper>

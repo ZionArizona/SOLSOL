@@ -7,10 +7,21 @@ import org.apache.ibatis.annotations.Param;
 
 import com.solsol.heycalendar.domain.User;
 
+/**
+ * 사용자 조회/수정용 MyBatis 매퍼.
+ */
 @Mapper
 public interface UserMapper {
-	User selectByUsername(@Param("username") String name);
-	User selectByUserNm(@Param("userNm") Long id);
-	User selectByUserId(@Param("userId") String userId);
 	Optional<User> findByUserId(@Param("userId") String userId);
+	Optional<User> findByUserNm(@Param("userNm") String userNm);
+	Optional<User> findByUserKey(@Param("userKey") String userKey);
+
+	int updatePasswordByUserId(@Param("userId") String userId,
+		@Param("encodedPassword") String encodedPassword);
+
+	int updateUserKeyByUserId(@Param("userId") String userId,
+		@Param("userKey") String userKey);
+
+	int clearUserKeyByUserId(@Param("userId") String userId);
+	int clearUserKeyByUserKey(@Param("userKey") String userKey);
 }

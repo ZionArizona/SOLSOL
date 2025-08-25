@@ -74,10 +74,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	 * @return 추출된 JWT 토큰 문자열, 없거나 형식이 맞지 않으면 null
 	 */
 	private String getJwtFromRequest(HttpServletRequest request) {
-		String bearerToken = request.getHeader(jwtProperties.getJwt().getHeaderString());
-		if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(jwtProperties.getJwt().getTokenPrefix())) {
-			return bearerToken.substring(jwtProperties.getJwt().getTokenPrefix().length());
-		}
-		return null;
+		String headerName = jwtProperties.getJwt().getHeaderString(); // e.g. "Authorization"
+		if (!StringUtils.hasText(headerName)) return null;
+
+		String headerVal = request.getHeader(headerName);
+		String prefix = jwtProperties.getJwt().getNormalizedTokenPrefix(); // "Bearer" → "Bearer"
+		if (!StringUtils.hasText(headerVal) || !StringUtils.hasText(prefix)) return null;
+
+		String lowerHeader = headerVal.toLowerCase();
+		String lowerPrefix = prefix.toLowerCase();
+
+		if (!lowerHeader.startsWith(lowerPrefix)) return null;
+
+		String after = headerVal.substring(prefix.length()).stripLeading(); // 공백 유연 처리
+		return after.isEmpty() ? null : after;
 	}
+
+
 }
