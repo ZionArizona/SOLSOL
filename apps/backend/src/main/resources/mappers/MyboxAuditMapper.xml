@@ -1,0 +1,13 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.solsol.heycalendar.mapper.MyboxAuditMapper">
+
+    <insert id="insert" parameterType="com.solsol.heycalendar.domain.MyboxAudit" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO `Mybox_audit`
+        (mybox_id, actor_userNm, action, object_key_enc, file_name_enc, size_bytes,
+         checksum_sha256, s3_etag, s3_version_id, actor_ip, user_agent, detail)
+        VALUES (#{myboxId}, #{actorUserNm}, #{action}, #{objectKeyEnc}, #{fileNameEnc}, #{sizeBytes},
+                #{checksumSha256}, #{s3Etag}, #{s3VersionId}, #{actorIp}, #{userAgent}, #{detail})
+    </insert>
+</mapper>

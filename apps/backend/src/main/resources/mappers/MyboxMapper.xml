@@ -1,0 +1,53 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.solsol.heycalendar.mapper.MyboxMapper">
+    
+    <resultMap id="MyboxMap" type="com.solsol.heycalendar.domain.Mybox">
+        <id property="myboxId" column="id"/>
+        <result property="userNm" column="userNm"/>
+        <result property="objectKeyEnc" column="object_key_enc"/>
+        <result property="fileNameEnc" column="file_name_enc"/>
+        <result property="contentType" column="content_type"/>
+        <result property="sizeBytes" column="size_bytes"/>
+        <result property="checksumSha256" column="checksum_sha256"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert"
+            parameterType="com.solsol.heycalendar.domain.Mybox"
+            useGeneratedKeys="true" keyProperty="myboxId">
+        INSERT INTO `Mybox`
+        (userNm, object_key_enc, file_name_enc, content_type, size_bytes, checksum_sha256)
+        VALUES (#{userNm}, #{objectKeyEnc}, #{fileNameEnc}, #{contentType}, #{sizeBytes}, #{checksumSha256})
+    </insert>
+
+    <select id="selectByIdAndUser" resultMap="MyboxMap">
+        SELECT *
+        FROM `Mybox`
+        WHERE id = #{id}
+          AND userNm = #{userNm}
+    </select>
+
+    <select id="selectPageByUser" resultMap="MyboxMap">
+        SELECT *
+        FROM `Mybox`
+        WHERE userNm = #{userNm}
+        ORDER BY id DESC
+            LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*)
+        FROM `Mybox`
+        WHERE userNm = #{userNm}
+    </select>
+
+    <delete id="deleteByIdAndUser">
+        DELETE
+        FROM `Mybox`
+        WHERE id = #{id}
+          AND userNm = #{userNm}
+    </delete>
+</mapper>
