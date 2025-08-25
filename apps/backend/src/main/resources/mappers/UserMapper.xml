@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.UserMapper">
+
+    <!-- 공통 컬럼 리스트 -->
+    <sql id="User_Columns">
+        `userNm`,
+    `userMileage`,
+    `accountNm`,
+    `userId`,
+    `password`,
+    `userKey`,
+    `userName`,
+    `state`,
+    `grade`,
+    `gpa`,
+    `createdAt`,
+    `updatedAt`,
+    `role`,
+    `deptNm`,
+    `collegeNm`,
+    `univNm`
+    </sql>
+
+    <!-- ResultMap: ENUM과 LocalDateTime 자동 매핑(기본 TypeHandler 사용) -->
+    <resultMap id="UserResultMap" type="com.solsol.heycalendar.domain.User">
+        <id     property="userNm"      column="userNm"/>
+        <result property="userMileage" column="userMileage"/>
+        <result property="accountNm"   column="accountNm"/>
+        <result property="userId"      column="userId"/>
+        <result property="password"    column="password"/>
+        <result property="userKey"     column="userKey"/>
+        <result property="userName"    column="userName"/>
+        <result property="state"       column="state"    javaType="com.solsol.heycalendar.domain.Status"/>
+        <result property="grade"       column="grade"/>
+        <result property="gpa"         column="gpa"      javaType="java.math.BigDecimal"/>
+        <result property="createdAt"   column="createdAt" javaType="java.time.LocalDateTime"/>
+        <result property="updatedAt"   column="updatedAt" javaType="java.time.LocalDateTime"/>
+        <result property="role"        column="role"     javaType="com.solsol.heycalendar.domain.Role"/>
+        <result property="deptNm"      column="deptNm"/>
+        <result property="collegeNm"   column="collegeNm"/>
+        <result property="univNm"      column="univNm"/>
+    </resultMap>
+
+    <!-- userId로 단건 조회 -->
+    <select id="findByUserId" parameterType="string" resultMap="UserResultMap">
+        SELECT
+        <include refid="User_Columns"/>
+        FROM `User`
+        WHERE `userId` = #{userId}
+        LIMIT 1
+    </select>
+
+    <!-- userNm(학번)로 단건 조회 -->
+    <select id="findByUserNm" parameterType="string" resultMap="UserResultMap">
+        SELECT
+        <include refid="User_Columns"/>
+        FROM `User`
+        WHERE `userNm` = #{userNm}
+        LIMIT 1
+    </select>
+
+    <!-- 비밀번호 해시 수정 -->
+    <update id="updatePasswordByUserId">
+        UPDATE `User`
+        SET
+            `password` = #{encodedPassword},
+            `updatedAt` = CURRENT_TIMESTAMP
+        WHERE `userId` = #{userId}
+    </update>
+
+    <!-- 비밀번호 재설정용 코드 저장 -->
+    <update id="updateUserKeyByUserId">
+        UPDATE `User`
+        SET
+            `userKey` = #{userKey},
+            `updatedAt` = CURRENT_TIMESTAMP
+        WHERE `userId` = #{userId}
+    </update>
+
+    <!-- 비밀번호 재설정 완료 후 코드 제거 -->
+    <update id="clearUserKeyByUserId">
+        UPDATE `User`
+        SET
+            `userKey` = NULL,
+            `updatedAt` = CURRENT_TIMESTAMP
+        WHERE `userId` = #{userId}
+    </update>
+
+    <!-- 🔹 userKey로 단건 조회 -->
+    <select id="findByUserKey" parameterType="string" resultMap="UserResultMap">
+        SELECT
+        <include refid="User_Columns"/>
+        FROM `User`
+        WHERE `userKey` = #{userKey}
+        LIMIT 1
+    </select>
+
+    <!-- 🔹 userKey로 토큰 제거 -->
+    <update id="clearUserKeyByUserKey">
+        UPDATE `User`
+        SET
+            `userKey` = NULL,
+            `updatedAt` = CURRENT_TIMESTAMP
+        WHERE `userKey` = #{userKey}
+    </update>
+
+</mapper>

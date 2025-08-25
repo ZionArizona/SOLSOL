@@ -5,6 +5,8 @@ import com.solsol.heycalendar.domain.RefreshToken;
 import com.solsol.heycalendar.domain.User;
 import com.solsol.heycalendar.dto.request.AuthRequest;
 import com.solsol.heycalendar.dto.request.LogoutRequest;
+import com.solsol.heycalendar.dto.request.PasswordResetConfirmRequest;
+import com.solsol.heycalendar.dto.request.PasswordResetRequest;
 import com.solsol.heycalendar.dto.request.RefreshReqeust;
 import com.solsol.heycalendar.dto.response.AuthResponse;
 import com.solsol.heycalendar.mapper.RefreshTokenMapper;
@@ -14,10 +16,13 @@ import com.solsol.heycalendar.security.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -28,10 +33,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.UUID;
-
+import java.security.SecureRandom;
 /**
  * 인증 관련 비즈니스 로직을 처리하는 서비스
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -40,6 +46,7 @@ public class AuthService {
 	private final JwtUtil jwtUtil;
 	private final UserMapper userMapper;
 	private final RefreshTokenMapper refreshTokenMapper;
+	private final PasswordEncoder passwordEncoder;
 
 	/**
 	 * 사용자 로그인을 처리하고 토큰을 발급
@@ -98,7 +105,7 @@ public class AuthService {
 			throw new RuntimeException("Invalid Refresh Token");
 		}
 
-		String jti = jwtUtil.parse(oldRefreshTokenString).getBody().getId();
+		String jti = jwtUtil.parse(oldRefreshTokenString).getPayload().getId();
 		RefreshToken oldRefreshToken = refreshTokenMapper.findActiveByToken(jti);
 
 		if (oldRefreshToken == null) {
@@ -171,5 +178,81 @@ public class AuthService {
 		return Instant.ofEpochMilli(date.getTime())
 			.atZone(ZoneId.systemDefault())
 			.toLocalDateTime();
+	}
+
+	/**
+	 * 비밀번호 재설정(요청): 임시코드를 발급하여 User.userKey에 저장.
+	 * 일반적으로는 이메일/SMS 발송이 추가된다.
+	 */
+	@Transactional
+	public void requestPasswordReset(PasswordResetRequest request) {
+		final String userId = request.getUserId();
+
+		// 1) 사용자 존재 여부 확인
+		userMapper.findByUserId(userId)
+			.orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
+
+		// 2) 임시 코드(또는 토큰) 생성 - 여기서는 6자리 숫자 코드 사용
+		String token = generateResetCode(6);
+
+		// 3) userKey에 저장
+		int updated = userMapper.updateUserKeyByUserId(userId, token);
+		if (updated != 1) {
+			throw new IllegalStateException("Failed to store reset token.");
+		}
+
+		// 4) 이메일/SMS 발송 연동 지점
+		log.info("[PasswordReset][request] userId={}, token={}", userId, token);
+	}
+
+	/**
+	 * 비밀번호 재설정(확정): token(User.userKey) 검증 후 비밀번호를 새로 저장.
+	 * 성공 시 userKey를 null 로 클리어.
+	 */
+	@Transactional
+	public void confirmPasswordReset(PasswordResetConfirmRequest request) {
+		final String token = request.getToken();
+		final String rawNewPassword = request.getNewPassword();
+
+		// 1) 토큰으로 사용자 조회
+		User user = userMapper.findByUserKey(token)
+			.orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset token."));
+
+		// 2) 비밀번호 해시 저장
+		String encoded = passwordEncoder.encode(rawNewPassword);
+		int updated = userMapper.updatePasswordByUserId(user.getUserId(), encoded);
+		if (updated != 1) {
+			throw new IllegalStateException("Failed to update password.");
+		}
+
+		// 3) 토큰 제거
+		userMapper.clearUserKeyByUserKey(token);
+
+		// 4) (선택) 해당 사용자의 모든 활성 리프레시 토큰 무효화 → 강제 재로그인 유도
+		try {
+			// B안: userNm은 VARCHAR(20) → String 타입으로 맞추세요.
+			refreshTokenMapper.revokeAllByUserNm(user.getUserNm());
+		} catch (Exception ex) {
+			log.warn("[PasswordReset][confirm] revokeAllByUserNm failed: userNm={}", user.getUserNm(), ex);
+		}
+
+		log.info("[PasswordReset][confirm] userId={} password reset completed", user.getUserId());
+	}
+
+	/**
+	 * 비밀번호 재설정용 숫자 코드 생성기.
+	 * SecureRandom 기반으로 len자리 숫자 토큰을 생성합니다.
+	 * @param len 생성할 자리수 (예: 6)
+	 * @return 숫자 토큰 문자열
+	 */
+	private static final char[] RESET_DIGITS = "0123456789".toCharArray();
+	private static final SecureRandom RESET_RAND = new SecureRandom();
+
+	private String generateResetCode(int len) {
+		char[] buf = new char[len];
+		for (int i = 0; i < len; i++) {
+			buf[i] = RESET_DIGITS[RESET_RAND.nextInt(RESET_DIGITS.length)];
+		}
+		return new String(buf);
 	}
 }

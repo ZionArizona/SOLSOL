@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-	private Long userNm;
+	private String userNm;
 	private String accountNm;
 	private String userId;
 	private String password;

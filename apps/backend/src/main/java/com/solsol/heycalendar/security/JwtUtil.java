@@ -18,6 +18,8 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.WeakKeyException;
 import javax.crypto.SecretKey;
+
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,21 +31,24 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class JwtUtil {
 	private final JwtProperties props;
+	private SecretKey secretKey;
 
 	/** JWT 서명에 사용할 키 생성 */
-	private SecretKey key() { // ✅ 반환 타입 SecretKey
+	@PostConstruct
+	void init() {
 		byte[] bytes = props.getJwt().getSecret().getBytes(StandardCharsets.UTF_8);
-		return Keys.hmacShaKeyFor(bytes); // 최소 32바이트 권장
+		this.secretKey = Keys.hmacShaKeyFor(bytes);
 	}
+	private SecretKey key() { return this.secretKey; }
 
 	/** 액세스 토큰 생성 */
-	public String createAccessToken(Long userNm, String userId, String role) {
+	public String createAccessToken(String userNm, String userId, String role) {
 		Instant now = Instant.now();
 		Instant exp = now.plusSeconds(props.getJwt().getAccessExpMin() * 60L);
 
 		return Jwts.builder()
 			.issuer(props.getJwt().getIssuer())
-			.subject(String.valueOf(userNm))
+			.subject(userNm)
 			.claims(Map.of("userId", userId, "role", role, "typ", "access"))
 			.issuedAt(Date.from(now))
 			.expiration(Date.from(exp))
@@ -52,13 +57,13 @@ public class JwtUtil {
 	}
 
 	/** 리프레시 토큰 생성 */
-	public String createRefreshToken(Long userNm, String jti) {
+	public String createRefreshToken(String userNm, String jti) {
 		Instant now = Instant.now();
 		Instant exp = now.plusSeconds(props.getJwt().getRefreshExpDays() * 86400L);
 
 		return Jwts.builder()
 			.issuer(props.getJwt().getIssuer())
-			.subject(String.valueOf(userNm))
+			.subject(userNm)
 			.id(jti)
 			.claims(Map.of("typ", "refresh"))
 			.issuedAt(Date.from(now))
@@ -93,6 +98,8 @@ public class JwtUtil {
 		try {
 			parse(token);
 			return true;
+		} catch (WeakKeyException e) {
+			log.warn("Weak JWT Secret Key.", e);
 		} catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
 			log.info("Invalid JWT Token", e);
 		} catch (ExpiredJwtException e) {
@@ -101,8 +108,6 @@ public class JwtUtil {
 			log.info("Unsupported JWT Token", e);
 		} catch (IllegalArgumentException e) {
 			log.info("JWT claims string is empty.", e);
-		} catch (WeakKeyException e) {
-			log.warn("Weak JWT Secret Key.", e);
 		}
 		return false;
 	}
@@ -115,7 +120,11 @@ public class JwtUtil {
 		return "refresh".equals(parse(token).getPayload().get("typ", String.class)); // ✅
 	}
 
-	public Long subjectUserNm(String token) {
-		return Long.valueOf(parse(token).getPayload().getSubject());
+	public String subjectUserNm(String token) {
+		return parse(token).getPayload().getSubject();
+	}
+
+	public int getRefreshExpDays() {
+		return props.getJwt().getRefreshExpDays();
 	}
 }
