@@ -1,10 +1,21 @@
 import React, {useState, useRef} from 'react';
-import { View, StyleSheet, StatusBar, ImageBackground, Platform, TouchableOpacity, Image, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView} from 'react-native';
+import { View, StyleSheet, StatusBar, ImageBackground, Platform, TouchableOpacity, Image, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Alert} from 'react-native';
+import {router} from 'expo-router';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
   onBack: () => void;
 }
+
+
+const goBackOrHome = () => {
+  if ((router as any).canGoBack?.()) router.back();  // 스택에 이전 페이지 있으면 pop
+  else router.replace('/');                          // 없으면 메인으로 (index.tsx 기준)
+};
+
+
+// const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:3000';
+const API_BASE = 'http://localhost:8080';
 
 const LoginPage = ({ onLoginSuccess, onBack }: LoginPageProps) => {
     const emailInputRef = useRef<TextInput>(null);
@@ -12,14 +23,44 @@ const LoginPage = ({ onLoginSuccess, onBack }: LoginPageProps) => {
 
     const [email, setEmail] = useState('');
     const [pw, setPw] = useState('');
-    const [maskedPw, setMaskedPw] = useState('');
     const [autoLogin, setAutoLogin] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const handlePasswordChange = (text: string) => {
-        setPw(text);
-        // 입력된 텍스트를 점으로 마스킹
-        setMaskedPw('•'.repeat(text.length));
-    }; 
+    const handleLogin = async () => {
+        if (!email.trim() || !pw) {
+        Alert.alert('로그인', '이메일과 비밀번호를 입력해주세요.');
+        return;
+        }
+        try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+            userId: email.trim(),
+            password: pw,
+            }),
+        });
+
+        // 응답 파싱
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+            throw new Error(msg);
+        }
+
+        console.log('✅ 로그인 성공:', data);
+        // TODO: 토큰 저장 등 필요 시 처리
+        onLoginSuccess();
+        } catch (err: any) {
+        console.error('❌ 로그인 실패:', err?.message || err);
+        Alert.alert('로그인 실패', err?.message || '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        } finally {
+        setLoading(false);
+        }
+  };
+
 
     return (
         <KeyboardAvoidingView 
@@ -28,19 +69,16 @@ const LoginPage = ({ onLoginSuccess, onBack }: LoginPageProps) => {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
             {/* 상태바 설정 => 상단에 시간, 배터리, 와이파이 정보를 수정하기 위한 용도!*/ }
-            <StatusBar
-            translucent={false}
-            backgroundColor={'#ffffff'}
-            barStyle="dark-content"
-            />
+            <StatusBar translucent={false} backgroundColor={'#ffffff'} barStyle="dark-content"/>
 
             {/* 뒤로가기 버튼 */}
-            <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Image source={require('../../assets/images/BackIcon.png')} style={styles.backIcon}/>
+            <TouchableOpacity onPress={goBackOrHome} style={styles.backButton}>
+                <Image source={require('../../assets/images/BackIcon.png')} style={styles.backIcon}/>
             </TouchableOpacity>
 
             {/* 이미지 바탕 화면 */}
             <ImageBackground source={require('../../assets/images/SOLSOLBackground.png')} style={styles.background} resizeMode="cover">
+                
                 <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.content}>
                     {/* 곰 캐릭터 (173x173), StatusBar로부터 124, 좌우 110 */}
@@ -79,11 +117,15 @@ const LoginPage = ({ onLoginSuccess, onBack }: LoginPageProps) => {
                             style={[styles.input, { marginTop: 20 }]}
                             placeholder="비밀번호를 입력해주세요"
                             placeholderTextColor="#888"
-                            value={maskedPw}
-                            onChangeText={handlePasswordChange}
+                            value={pw}
+                            onChangeText={(text)=>{
+                                setPw(text);
+                                console.log("입력된 비밀번호 : ", text);
+                            }}
                             keyboardType="default"
                             autoComplete="off"
                             textContentType="password"
+                            secureTextEntry={true}
                             onFocus={() => console.log('Password input focused')}
                             onBlur={() => console.log('Password input blurred')}
                             testID="password-input"
@@ -91,30 +133,31 @@ const LoginPage = ({ onLoginSuccess, onBack }: LoginPageProps) => {
                         />
                     </TouchableOpacity>
 
-                    {/* 로그인 버튼 (비밀번호와 24 간격, 좌우 40) */}
-                    <Pressable style={[styles.loginButton, { marginTop: 24 }]} onPress={onLoginSuccess}>
-                        <Text style={styles.loginText}>로그인</Text>
+                     {/* 로그인 버튼 */}
+                    <Pressable style={[styles.loginButton, { marginTop: 24, opacity: loading ? 0.6 : 1 }]} onPress={handleLogin} disabled={loading}>
+                        <Text style={styles.loginText}>{loading ? '로그인 중...' : '로그인'}</Text>
                     </Pressable>
 
-                    {/* 옵션 행 (로그인과 12 간격, 좌우 40)
-                        - [□ 자동로그인]  |  [아직 회원이 아니신가요?  회원가입] */}
+                    
+
                     <View style={styles.optionsRow}>
-                        {/* 자동로그인 + 체크박스(커스텀) */}
+                        {/* 자동로그인 토글 */}
                         <Pressable style={styles.autoRow} onPress={() => setAutoLogin(v => !v)}>
-                        <View style={[styles.checkbox, autoLogin && styles.checkboxChecked]}>
+                            <View style={[styles.checkbox, autoLogin && styles.checkboxChecked]}>
                             {autoLogin && <View style={styles.checkboxDot} />}
-                        </View>
-                        <Text style={styles.optionText}>자동로그인</Text>
+                            </View>
+                            <Text style={styles.optionText}>자동로그인</Text>
                         </Pressable>
 
-                        {/* 회원가입 유도 */}
+                        {/* 회원가입 이동 */}
                         <View style={styles.signupRow}>
-                        <Text style={styles.optionText}>아직 회원이 아니신가요?</Text>
-                        <Pressable onPress={() => {/* TODO: navigate to SignUp */}}>
-                            <Text style={styles.link}>회원가입</Text>
-                        </Pressable>
+                            <Text style={styles.optionText}>아직 회원이 아니신가요?</Text>
+                            <Pressable onPress={() => router.push('/UserBasic/RegistPage')}>
+                                <Text style={styles.link}>회원가입</Text>
+                            </Pressable>
                         </View>
                     </View>
+
                 </View>
                 </ScrollView>
             </ImageBackground>
@@ -144,7 +187,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
+    top: 48,
     left: 16,
     zIndex: 10,
     padding: 8,

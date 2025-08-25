@@ -24,7 +24,7 @@ const HeaderBar = ({ onLoginPress }: HeaderBarProps) => {
         <Text style={styles.title} numberOfLines={1}>한양대학교</Text>
       </View>
 
-      {/* 오른쪽 아이콘들 */}
+      {/* 오른쪽 로그인 아이콘 클릭시 */}
       <TouchableOpacity 
         onPress={onLoginPress}
         style={[styles.loginButton, { top: LOGIN_TOP, right: LOGIN_RIGHT }]}
