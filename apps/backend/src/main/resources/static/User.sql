@@ -21,19 +21,20 @@ CREATE TABLE `User` (
 
 
 CREATE TABLE `refresh_token` (
-                                 `id` BIGINT NOT NULL AUTO_INCREMENT,
-                                 `userNm` VARCHAR(20) NOT NULL,
-                                 `userId` VARCHAR(100) NOT NULL,
-                                 `token` VARCHAR(64) NOT NULL,              -- JTI
-                                 `issuedAt` DATETIME NOT NULL,
-                                 `expiresAt` DATETIME NOT NULL,
-                                 `revoked` TINYINT(1) NOT NULL DEFAULT 0,
-                                 `userAgent` VARCHAR(255) NULL,
-                                 `ip` VARCHAR(64) NULL,
-                                 `rotatedFrom` VARCHAR(64) NULL,
-                                 `lastUsedAt` DATETIME NULL,
-                                 PRIMARY KEY (`id`),
-                                 UNIQUE KEY `UK_refresh_token_token` (`token`),
-                                 KEY `IDX_refresh_userNm` (`userNm`)
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `userNm` VARCHAR(20) NOT NULL,
+    `userId` VARCHAR(100) NOT NULL,
+    `token` VARCHAR(64) NOT NULL,              -- JTI
+    `issuedAt` DATETIME NOT NULL,
+    `expiresAt` DATETIME NOT NULL,
+    `revoked` TINYINT(1) NOT NULL DEFAULT 0,
+    `userAgent` VARCHAR(255) NULL,
+    `ip` VARCHAR(64) NULL,
+    `rotatedFrom` VARCHAR(64) NULL,
+    `lastUsedAt` DATETIME NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `UK_refresh_token_token` (`token`),
+    KEY `IDX_refresh_userNm` (`userNm`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE INDEX IDX_User_userKey ON `User` (`userKey`);

@@ -1,6 +1,7 @@
 package com.solsol.heycalendar.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.solsol.heycalendar.config.JwtProperties;
 import com.solsol.heycalendar.dto.request.AuthRequest;
 import com.solsol.heycalendar.dto.response.AuthResponse;
 import com.solsol.heycalendar.security.JwtAuthenticationFilter; // ← 실제 경로로
@@ -11,9 +12,12 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -24,11 +28,32 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(
 	controllers = AuthController.class,
-	excludeAutoConfiguration = { SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class },
-	excludeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = com.solsol.heycalendar.config.SecurityConfig.class)
+	excludeAutoConfiguration = {
+		SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class
+	},
+	excludeFilters = @Filter(
+		type = FilterType.ASSIGNABLE_TYPE,
+		classes = com.solsol.heycalendar.config.SecurityConfig.class
+	)
 )
 @AutoConfigureMockMvc(addFilters = false) // 시큐리티 필터 체인 비활성화
+@Import(AuthControllerTest.TestJwtPropsConfig.class)
 class AuthControllerTest {
+
+	@TestConfiguration
+	static class TestJwtPropsConfig {
+		@Bean
+		JwtProperties jwtProperties() {
+			JwtProperties p = new JwtProperties();
+			p.getJwt().setHeaderString("Authorization");
+			p.getJwt().setTokenPrefix("Bearer");
+			// 필요하면 만료/issuer 등도 세팅 가능
+			p.getJwt().setIssuer("heycalendar");
+			p.getJwt().setAccessExpMin(30);
+			p.getJwt().setRefreshExpDays(7);
+			return p;
+		}
+	}
 
 	@Autowired MockMvc mockMvc;
 	@Autowired ObjectMapper objectMapper;

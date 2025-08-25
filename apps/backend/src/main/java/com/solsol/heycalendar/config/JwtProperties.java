@@ -19,16 +19,20 @@ public class JwtProperties {
 		private String secret;
 		private int accessExpMin;
 		private int refreshExpDays;
-		private String headerString;
 		private String tokenPrefix;
+		private String headerString;
 
 
 		public void setIssuer(String s) { this.issuer = s; }
 		public void setSecret(String s) { this.secret = s; }
 		public void setAccessExpMin(int v) { this.accessExpMin = v; }
 		public void setRefreshExpDays(int v) { this.refreshExpDays = v; }
-		public void setHeaderString(String s) { this.headerString = s; }
 		public void setTokenPrefix(String s) { this.tokenPrefix = s; }
+		public void setHeaderString(String s) { this.headerString = s; }
+
+		public String getNormalizedTokenPrefix() {
+			return tokenPrefix == null ? "" : tokenPrefix.trim();
+		}
 	}
 
 	@Getter

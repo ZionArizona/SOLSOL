@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * 토큰 재발급 요청을 위한 DTO
@@ -13,7 +12,7 @@ import lombok.Setter;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RefreshReqeust {
+public class RefreshRequest {
 	// 토큰 재발급에 사용할 리프레시 토큰
 	private String refreshToken;
 }

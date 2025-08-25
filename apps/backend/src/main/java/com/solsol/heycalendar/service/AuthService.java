@@ -1,16 +1,16 @@
 package com.solsol.heycalendar.service;
 
-import com.solsol.heycalendar.config.JwtProperties;
 import com.solsol.heycalendar.domain.RefreshToken;
 import com.solsol.heycalendar.domain.User;
 import com.solsol.heycalendar.dto.request.AuthRequest;
 import com.solsol.heycalendar.dto.request.LogoutRequest;
 import com.solsol.heycalendar.dto.request.PasswordResetConfirmRequest;
 import com.solsol.heycalendar.dto.request.PasswordResetRequest;
-import com.solsol.heycalendar.dto.request.RefreshReqeust;
+import com.solsol.heycalendar.dto.request.RefreshRequest;
 import com.solsol.heycalendar.dto.response.AuthResponse;
 import com.solsol.heycalendar.mapper.RefreshTokenMapper;
 import com.solsol.heycalendar.mapper.UserMapper;
+import com.solsol.heycalendar.security.AuthTokenService;
 import com.solsol.heycalendar.security.CustomUserPrincipal;
 import com.solsol.heycalendar.security.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -44,6 +44,7 @@ public class AuthService {
 
 	private final AuthenticationManager authenticationManager;
 	private final JwtUtil jwtUtil;
+	private final AuthTokenService authTokenService;
 	private final UserMapper userMapper;
 	private final RefreshTokenMapper refreshTokenMapper;
 	private final PasswordEncoder passwordEncoder;
@@ -65,10 +66,19 @@ public class AuthService {
 
 		CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
 
-		String accessToken = jwtUtil.createAccessToken(principal.getUserNm(), principal.getUserId(), principal.getRole());
+		String accessToken = authTokenService.createAccessToken(
+			principal.getUserNm(),
+			principal.getUserId(),
+			principal.getRole(),
+			principal.getUsername(),
+			principal.getDeptNm(),
+			principal.getCollegeNm(),
+			principal.getUnivNm(),
+			principal.getGrade()
+		);
 
 		String jti = UUID.randomUUID().toString();
-		String refreshTokenString = jwtUtil.createRefreshToken(principal.getUserNm(), jti);
+		String refreshTokenString = authTokenService.createRefreshToken(principal.getUserNm(), jti);
 
 		Claims refreshClaims = jwtUtil.parse(refreshTokenString).getPayload();
 
@@ -91,41 +101,55 @@ public class AuthService {
 	}
 
 	/**
-	 * 리프레시 토큰을 사용하여 새로운 액세스 토큰과 리프레시 토큰을 발급 (토큰 순환)
-	 *
-	 * @param refreshRequest 재발급 요청 정보 (리프레시 토큰)
-	 * @return 새로 발급된 액세스 토큰과 리프레시 토큰
-	 * @throws RuntimeException 유효하지 않은 리프레시 토큰이거나 DB에 존재하지 않을 경우
+	 * 리프레시 토큰으로 새로운 액세스/리프레시 토큰을 발급(토큰 순환)
+	 * - 액세스 토큰 클레임: userId, role, typ=access, userName, deptNm, collegeNm, univNm, grade
 	 */
 	@Transactional
-	public AuthResponse refresh(RefreshReqeust refreshRequest) {
+	public AuthResponse refresh(RefreshRequest refreshRequest) {
 		String oldRefreshTokenString = refreshRequest.getRefreshToken();
 
+		// 1) 형식/유형 검증
 		if (!jwtUtil.validateToken(oldRefreshTokenString) || !jwtUtil.isRefresh(oldRefreshTokenString)) {
 			throw new RuntimeException("Invalid Refresh Token");
 		}
 
+		// 2) DB에서 활성 리프레시 토큰 찾기
 		String jti = jwtUtil.parse(oldRefreshTokenString).getPayload().getId();
 		RefreshToken oldRefreshToken = refreshTokenMapper.findActiveByToken(jti);
-
 		if (oldRefreshToken == null) {
 			throw new RuntimeException("Refresh token not found or revoked.");
 		}
 
+		// 3) 기존 리프레시 토큰 무효화
 		refreshTokenMapper.revokeByToken(jti);
 
+		// 4) 사용자 조회
 		User user = userMapper.findByUserId(oldRefreshToken.getUserId())
 			.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+		// 5) 새 액세스 토큰 생성 (로그인과 동일한 클레임 포함)
 		String role = user.getRole() != null ? user.getRole().name() : "STUDENT";
-		String newAccessToken = jwtUtil.createAccessToken(user.getUserNm(), user.getUserId(), role);
+		String newAccessToken = authTokenService.createAccessToken(
+			user.getUserNm(),
+			user.getUserId(),
+			role,
+			user.getUserName(),
+			user.getDeptNm(),
+			user.getCollegeNm(),
+			user.getUnivNm(),
+			user.getGrade()
+		);
 
-		String newJti = UUID.randomUUID().toString();
-		String newRefreshTokenString = jwtUtil.createRefreshToken(user.getUserNm(), newJti);
+		// 6) 새 리프레시 토큰 생성 + 저장
+		String newJti = java.util.UUID.randomUUID().toString();
+		String newRefreshTokenString = authTokenService.createRefreshToken(user.getUserNm(), newJti);
 
 		Claims newRefreshClaims = jwtUtil.parse(newRefreshTokenString).getPayload();
 
-		HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+		jakarta.servlet.http.HttpServletRequest request =
+			((org.springframework.web.context.request.ServletRequestAttributes)
+				org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes())
+				.getRequest();
 
 		RefreshToken newRefreshToken = RefreshToken.builder()
 			.userNm(user.getUserNm())
@@ -141,8 +165,10 @@ public class AuthService {
 
 		refreshTokenMapper.insert(newRefreshToken);
 
+		// 7) 반환
 		return new AuthResponse(newAccessToken, newRefreshTokenString);
 	}
+
 
 	/**
 	 * 사용자 로그아웃을 처리합니다. 전달받은 리프레시 토큰을 무효화

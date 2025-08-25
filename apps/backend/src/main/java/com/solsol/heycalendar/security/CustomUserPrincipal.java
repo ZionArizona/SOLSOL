@@ -25,6 +25,11 @@ public class CustomUserPrincipal implements UserDetails {
 	private String userName;
 	private String role;
 
+	private Long deptNm;       // 학과 (BIGINT)
+	private Long collegeNm;    // 단과대학 (BIGINT)
+	private Long univNm;       // 대학교 (BIGINT)
+	private Integer grade;     // 학년 (INT)
+
 	/**
 	 * User 엔티티 객체를 기반으로 CustomUserPrincipal 객체를 생성
 	 *
@@ -33,7 +38,11 @@ public class CustomUserPrincipal implements UserDetails {
 	 */
 	public static CustomUserPrincipal create(User user) {
 		return new CustomUserPrincipal(user.getUserNm(), user.getUserId(), user.getPassword(), user.getUserName(),
-			user.getRole() != null ? user.getRole().name() : "STUDENT");
+			user.getRole() != null ? user.getRole().name() : "STUDENT",
+			user.getDeptNm(),
+			user.getCollegeNm(),
+			user.getUnivNm(),
+			user.getGrade());
 	}
 
 	@Override
@@ -48,7 +57,7 @@ public class CustomUserPrincipal implements UserDetails {
 
 	@Override
 	public String getUsername() {
-		return userId;
+		return userName;
 	}
 
 	@Override

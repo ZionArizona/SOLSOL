@@ -41,34 +41,28 @@ public class JwtUtil {
 	}
 	private SecretKey key() { return this.secretKey; }
 
-	/** 액세스 토큰 생성 */
-	public String createAccessToken(String userNm, String userId, String role) {
-		Instant now = Instant.now();
-		Instant exp = now.plusSeconds(props.getJwt().getAccessExpMin() * 60L);
-
+	// (1) Access Token 등 jti 없이 서명할 때 사용
+	public String sign(String subject, Map<String, Object> claims, Date issuedAt, Date expiration) {
 		return Jwts.builder()
 			.issuer(props.getJwt().getIssuer())
-			.subject(userNm)
-			.claims(Map.of("userId", userId, "role", role, "typ", "access"))
-			.issuedAt(Date.from(now))
-			.expiration(Date.from(exp))
-			.signWith(key(), Jwts.SIG.HS256) // ✅ 0.12.x
+			.subject(subject)
+			.claims(claims)
+			.issuedAt(issuedAt)
+			.expiration(expiration)
+			.signWith(key(), Jwts.SIG.HS256)
 			.compact();
 	}
 
-	/** 리프레시 토큰 생성 */
-	public String createRefreshToken(String userNm, String jti) {
-		Instant now = Instant.now();
-		Instant exp = now.plusSeconds(props.getJwt().getRefreshExpDays() * 86400L);
-
+	// (2) Refresh Token 등 jti가 필요한 경우 사용
+	public String sign(String subject, String jti, Map<String, Object> claims, Date issuedAt, Date expiration) {
 		return Jwts.builder()
 			.issuer(props.getJwt().getIssuer())
-			.subject(userNm)
-			.id(jti)
-			.claims(Map.of("typ", "refresh"))
-			.issuedAt(Date.from(now))
-			.expiration(Date.from(exp))
-			.signWith(key(), Jwts.SIG.HS256) // ✅
+			.subject(subject)
+			.id(jti) // jti 설정
+			.claims(claims)
+			.issuedAt(issuedAt)
+			.expiration(expiration)
+			.signWith(key(), Jwts.SIG.HS256)
 			.compact();
 	}
 
