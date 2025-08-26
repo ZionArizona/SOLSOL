@@ -20,11 +20,11 @@ export default function MyPage() {
 
       <View style={styles.myButtonWrap}>
         <TouchableOpacity
-          onPress={() => router.push("/MyPage")}
+          onPress={() => router.push("UserBasic/MyPage")}
           activeOpacity={0.85}
           style={styles.myButton}
         >
-          <UserCircleIcon size={22} />
+          <UserCircleIcon size={20} />
         </TouchableOpacity>
       </View>
 
@@ -69,15 +69,6 @@ const styles = StyleSheet.create({
     elevation: 999,
   },
   myButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    padding: 4,
   },
 });

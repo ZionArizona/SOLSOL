@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, Platform } from "react-native";
+import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, Platform, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 
 // theme
@@ -13,6 +13,7 @@ import { StudentCard } from "../../components/home/StudentCard";
 import { PromoBanner } from "../../components/home/PromoBanner";
 import { MileageCard } from "../../components/home/MileageCard";
 import { ThisWeekList } from "../../components/home/ThisWeekList";
+import { UserCircleIcon } from "../../components/shared/icons";
 
 export default function MainPage() {
   const points = useMemo(() => 4000, []);
@@ -30,7 +31,16 @@ export default function MainPage() {
       >
         {/* 📱 모바일 폭 고정 컨테이너 */}
         <View style={styles.phone}>
-          <HeaderSection school="한양대학교"/>
+          <View style={styles.headerWithProfile}>
+            <HeaderSection school="한양대학교"/>
+            <TouchableOpacity 
+              style={styles.profileButton} 
+              onPress={() => router.push("/UserBasic/MyPage")}
+              activeOpacity={0.8}
+            >
+              <UserCircleIcon size={20} />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.block}>
             <StudentCard
@@ -86,5 +96,14 @@ const styles = StyleSheet.create({
   block: {
     // 각 섹션 사이 간격 (피그마 느낌의 세로 간격)
     marginTop: 12,
+  },
+  headerWithProfile: {
+    position: "relative",
+  },
+  profileButton: {
+    position: "absolute",
+    right: 18,
+    top: 18,
+    padding: 4,
   },
 });
