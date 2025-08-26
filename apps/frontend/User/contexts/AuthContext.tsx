@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // 백엔드에 토큰 갱신 요청
-      const response = await fetch(`${API_BASE}/auth/refresh`, {
+      const response = await fetch(`${API_BASE}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

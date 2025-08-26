@@ -1,0 +1,45 @@
+:root{
+  --panel:#fff; --line:#e9edf3; --shadow:0 10px 22px rgba(17,17,17,.06);
+  --primary:#6f84e6; --muted:#6b7280; --text:#111827;
+}
+.notice-wrap{
+  min-height: calc(100vh - 72px);
+  background: url('../assets/background.png') center/cover no-repeat fixed;
+  padding:28px 0 60px;
+}
+.notice-head{
+  width:min(1100px, 92%); margin:0 auto 14px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.notice-head h1{ margin:0; font-size:28px; font-weight:800; color:#1f2937; }
+.filters{ display:flex; gap:8px; }
+.filters select, .filters input{
+  height:36px; border:1px solid var(--line); border-radius:10px; background:#fff; padding:0 12px;
+}
+.notice-grid{
+  width:min(1100px, 92%); margin:0 auto;
+  display:grid; grid-template-columns: repeat(3,1fr); gap:12px;
+}
+@media (max-width:1100px){ .notice-grid{ grid-template-columns: repeat(2,1fr);} }
+@media (max-width:680px){ .notice-grid{ grid-template-columns: 1fr;} }
+.empty-card{
+  grid-column:1/-1; background:#fff; border:1px dashed var(--line); border-radius:12px; padding:32px; text-align:center; color:var(--muted);
+}
+
+/* PublicNoticeCard */
+.pnc{
+  background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow);
+  padding:14px; display:flex; flex-direction:column; gap:8px;
+}
+.pnc-top{ display:flex; align-items:center; gap:8px; }
+.pnc .badge{ background:#e7eaff; color:#3443a6; font-weight:800; font-size:12px; padding:4px 8px; border-radius:999px; }
+.pnc .title{ margin:0; font-size:18px; font-weight:800; color:#1f2937; }
+.pnc .excerpt{ color:#444; line-height:1.6; margin:2px 0 6px; height:3.2em; overflow:hidden; }
+.pnc .meta{ display:flex; gap:10px; color:#6b7280; font-size:13px; }
+.pnc .tag{ background:#f4f6fd; padding:2px 8px; border-radius:8px; font-weight:700; color:#374151; }
+.pnc .btn{ align-self:flex-end; height:32px; padding:0 12px; border:none; border-radius:8px; background:var(--primary); color:#fff; font-weight:800; cursor:pointer; }
+
+.pgn{ width:min(1100px,92%); margin:18px auto 0; display:flex; gap:6px; justify-content:center; }
+.pgn button{ height:32px; padding:0 10px; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; }
+.pgn button.act{ background:#e7eaff; color:#3443a6; font-weight:800; border-color:transparent; }
+.pgn button:disabled{ opacity:.5; cursor:default; }

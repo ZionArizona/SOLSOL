@@ -1,0 +1,112 @@
+:root{
+  --glass: rgba(255,255,255,.62);
+  --shadow: 0 14px 30px rgba(0,0,0,.12);
+  --text:#2b2b2b;
+  --muted:#6b7280;
+  --blue:#6f84e6;               /* 로그인 버튼 컬러 */
+}
+
+/* 배경: 제공한 assets/background.png */
+.login-wrap{
+  min-height: calc(100vh - 72px); /* Navbar 높이만큼 보정 */
+  background: url('../assets/background.png') center/cover no-repeat fixed;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:56px 0 80px;
+}
+
+/* 가운데 그리드 (왼쪽 피치 + 오른쪽 카드) */
+.login-container{
+  width:min(1120px, 92%);
+  display:grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap:26px;
+}
+
+/* 왼쪽 블랙 박스 */
+.pitch{
+  background:#0d0d0d;
+  border-radius:8px;
+  padding:36px 28px;
+  color:#fff;
+  display:flex;
+  align-items:flex-end;
+  min-height:320px;
+  box-shadow:var(--shadow);
+}
+.pitch h1{
+  margin:0;
+  font-weight:800;
+  letter-spacing:.2px;
+  line-height:1.2;
+  font-size:28px;
+}
+
+/* 오른쪽 글래스 카드 */
+.login-card{
+  background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.55));
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:14px;
+  backdrop-filter: blur(10px);
+  box-shadow:var(--shadow);
+  padding:26px;
+  min-height:320px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* 폼 */
+.form{width:min(420px, 100%);}
+
+.form input{
+  width:100%;
+  height:34px;
+  border:1px solid #cfd3db;
+  border-radius:4px;
+  padding:0 10px;
+  margin-bottom:12px;
+  font:inherit;
+  color:var(--text);
+  background:#fff;
+}
+
+.btn-login{
+  width:100%;
+  height:36px;
+  border:none;
+  border-radius:4px;
+  font-weight:700;
+  color:#fff;
+  background:var(--blue);
+  cursor:pointer;
+  margin:6px 0 12px;
+}
+
+.meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:13px;
+  color:var(--muted);
+}
+
+.auto{
+  display:inline-flex; align-items:center; gap:6px;
+}
+
+.links{
+  display:flex; align-items:center; gap:8px;
+}
+.links .signup{
+  color:#222; font-weight:700; text-decoration:none;
+}
+
+/* 반응형 */
+@media (max-width: 860px){
+  .login-container{ grid-template-columns: 1fr; }
+  .pitch{ order:2; }
+  .login-card{ order:1; }
+}

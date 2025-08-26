@@ -1,8 +1,9 @@
+
 import { useEffect, useState } from 'react';
 import { ImageBackground, Platform, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
 import HeaderBar from './UserBasic/HeaderBar';
 import LoginPage from './UserBasic/LoginPage';
-import MainPage from './MainPage';
+import MainPage from './UserBasic/MainPage';
 import MyCalendar from './Schedule/MyCalendar';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -49,21 +50,13 @@ export default function App() {
     return (
       <View style={styles.container}>
         <StatusBar translucent={false} backgroundColor={'#ffffff'} barStyle="dark-content" />
-        
-        {/* 캘린더로 이동하는 버튼 추가 */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.calendarButton} 
-            onPress={() => {
-              console.log('캘린더 버튼 클릭됨');
-              setShowCalendar(true);
-            }}
-          >
-            <Text style={styles.calendarButtonText}>📅 내 캘린더 보기</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <MainPage onLogout={handleLogout} />
+        <ImageBackground
+          source={require('../assets/images/SOLSOLBackground.png')}
+          style={styles.background}
+          resizeMode="cover"
+        >
+          <MainPage />
+        </ImageBackground>
       </View>
     );
   }
@@ -77,27 +70,18 @@ export default function App() {
   return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => {}} />;
 }
 
-
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0},
-  background: { flex: 1, justifyContent: 'flex-start', alignItems: 'stretch'},
-  centerContent: { justifyContent: 'center', alignItems: 'center'},
-  buttonContainer: { position: 'absolute', top: 100, right: 20, zIndex: 999, elevation: 999},
-  calendarButton: {
-    backgroundColor: '#FF6B6B',  // 빨간색으로 변경해서 더 눈에 띄게
-    paddingHorizontal: 25,
-    paddingVertical: 15,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 999,
+  container: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
   },
-  calendarButtonText: { color: '#ffffff', fontSize: 18, fontWeight: 'bold'},
+  background: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
