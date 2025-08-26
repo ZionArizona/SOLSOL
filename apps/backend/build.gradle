@@ -24,10 +24,6 @@ repositories {
 	mavenCentral()
 }
 
-ext {
-    awsSdkVersion = '2.27.20'
-}
-
 dependencies {
 	// --- Spring Boot Core ---
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -45,9 +41,11 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 
+    // === AWS SDK (S3 업로드 등) ===
+    implementation "software.amazon.awssdk:s3:2.27.20"
+    runtimeOnly  "software.amazon.awssdk:url-connection-client:2.27.20"
     // AWS
     implementation 'software.amazon.awssdk:s3'
-    implementation 'software.amazon.awssdk:s3-presigner'
     runtimeOnly 'software.amazon.awssdk:url-connection-client'
 
     // --- DevTools / Annotation Processors ---

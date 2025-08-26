@@ -19,7 +19,7 @@ import com.solsol.heycalendar.dto.request.UploadCompleteRequest;
 import com.solsol.heycalendar.dto.response.MyboxDetailResponse;
 import com.solsol.heycalendar.dto.response.MyboxResponse;
 import com.solsol.heycalendar.dto.response.PresignedUrlResponse;
-import com.solsol.heycalendar.mybox.service.MyboxService;
+import com.solsol.heycalendar.service.MyboxService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
