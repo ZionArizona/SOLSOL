@@ -1,24 +1,31 @@
 // app/UserBasic/RegistPage.tsx
 import React, { useState } from 'react';
-import {View, Text, ImageBackground, Image, TouchableOpacity, KeyboardAvoidingView, StyleSheet, StatusBar, Platform, TextInput, ScrollView, Keyboard, TouchableWithoutFeedback, Alert, Pressable} from 'react-native';
+import {View, Text, ImageBackground, Image, TouchableOpacity, KeyboardAvoidingView, StyleSheet, StatusBar, Platform, TextInput, ScrollView, Keyboard, TouchableWithoutFeedback, Alert, Pressable, FlatList} from 'react-native';
 import { router } from 'expo-router';
+// import RNPickerSelect from 'react-native-picker-select';
+// import { Picker } from '@react-native-picker/picker';
 // 필요 시 .env: EXPO_PUBLIC_API_BASE
 
 const API_BASE = 'http://localhost:8080';
+
+// 10개 대학교 목록
+const universities = [{ label: '경기대학교', value: '경기대학교' },{ label: '광주대학교', value: '광주대학교' },{ label: '동국대학교', value: '동국대학교' },{ label: '용인대학교', value: '용인대학교' },{ label: '숙명여자대학교', value: '숙명여자대학교' },
+  { label: '이화여자대학교', value: '이화여자대학교' },{ label: '전북과학대학교', value: '전북과학대학교' },{ label: '청주대학교', value: '청주대학교' },{ label: '한양대학교', value: '한양대학교' },{ label: '홍익대학교', value: '홍익대학교' }];
 
 export default function RegistPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [pw, setPw] = useState('');
-    const [school, setSchool] = useState('');
+    const [univName, setUnivName] = useState('');
     const [dept, setDept] = useState('');
     const [studentId, setStudentId] = useState('');
     const [agreeAll, setAgreeAll] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
 
     const handleRegister = async () => {
 
-    if ( !name.trim() || !email.trim() || !pw.trim() || !school.trim() ||!dept.trim() || !studentId.trim() ) {
+    if ( !name.trim() || !email.trim() || !pw.trim() || !univName.trim() ||!dept.trim() || !studentId.trim() ) {
         Alert.alert('입력 필요', '모두 입력해 주세요.'); return;
     }
 
@@ -32,7 +39,7 @@ export default function RegistPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-            userName : name.trim(), userId : email.trim(), password : pw, univName : school.trim(), deptName : dept.trim(), userNm : studentId.trim()
+            userName : name.trim(), userId : email.trim(), password : pw, univName : univName.trim(), deptName : dept.trim(), userNm : studentId.trim()
             }),
         });
 
@@ -77,7 +84,11 @@ export default function RegistPage() {
           style={styles.background}
           resizeMode="cover"
         >
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 120 }}>
+          <ScrollView 
+            keyboardShouldPersistTaps="handled" 
+            contentContainerStyle={{ paddingBottom: 120 }}
+            onTouchStart={() => setShowDropdown(false)}
+          >
             <View style={styles.headerWrap}>
               <View style={styles.headerRow}>
                 <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -97,7 +108,39 @@ export default function RegistPage() {
               <TextInput style={[styles.inputBox, { marginTop: 14 }]} placeholder="이름 *" placeholderTextColor="#888" value={name} onChangeText={setName} />
               <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="이메일 *" placeholderTextColor="#888" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
               <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="비밀번호 *" placeholderTextColor="#888" secureTextEntry textContentType="password" value={pw} onChangeText={setPw} />
-              <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="학교 선택하기 *" placeholderTextColor="#888" value={school} onChangeText={setSchool} />
+              <View style={{ marginTop: 12, position: 'relative', zIndex: 1 }}>
+                <TouchableOpacity 
+                  style={styles.dropdownButton}
+                  onPress={() => setShowDropdown(!showDropdown)}
+                >
+                  <Text style={univName ? styles.dropdownText : styles.dropdownPlaceholder}>
+                    {univName || '학교 선택하기 *'}
+                  </Text>
+                  <Text style={styles.dropdownArrow}>{showDropdown ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+                
+                {showDropdown && (
+                  <View style={styles.dropdownList}>
+                    <FlatList
+                      data={universities}
+                      keyExtractor={(item) => item.value}
+                      style={styles.dropdownScroll}
+                      showsVerticalScrollIndicator={true}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            setUnivName(item.value);
+                            setShowDropdown(false);
+                          }}
+                        >
+                          <Text style={styles.dropdownItemText}>{item.label}</Text>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </View>
+                )}
+              </View>
               <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="학과 *" placeholderTextColor="#888" value={dept} onChangeText={setDept} />
               <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="학번 *" placeholderTextColor="#888" keyboardType="numeric" value={studentId} onChangeText={setStudentId} />
 
@@ -183,4 +226,60 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   joinText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  /* 커스텀 드롭다운 */
+  dropdownButton: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#BDBDBD',
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    justifyContent: 'space-between',
+  },
+  dropdownText: {
+    fontSize: 14,
+    color: '#111',
+  },
+  dropdownPlaceholder: {
+    fontSize: 14,
+    color: '#888',
+  },
+  dropdownArrow: {
+    fontSize: 14,
+    color: '#666',
+  },
+  dropdownList: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#BDBDBD',
+    borderRadius: 4,
+    marginTop: 2,
+    maxHeight: 200,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 52,
+    zIndex: 1000,
+  },
+  dropdownScroll: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: '#111',
+  },
 });

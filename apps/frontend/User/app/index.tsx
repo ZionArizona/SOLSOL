@@ -3,7 +3,7 @@ import { ImageBackground, Platform, ScrollView, StatusBar, StyleSheet, View, Act
 import HeaderBar from './UserBasic/HeaderBar';
 import LoginPage from './UserBasic/LoginPage';
 import MainPage from './MainPage';
-import MyCalendar from './MyCalendar';
+import MyCalendar from './Schedule/MyCalendar';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function App() {
