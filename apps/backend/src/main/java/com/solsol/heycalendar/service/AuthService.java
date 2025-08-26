@@ -290,10 +290,42 @@ public class AuthService {
 	/**
 	 * 회원가입 처리 및 신한은행 계정 생성
 	 */
-	@Transactional
 	public SignupResponse signup(SignupRequest request) {
 		log.info("Starting signup process for userId: {}", request.getUserId());
 
+		// 1단계: 기본 회원가입 처리 (트랜잭션)
+		String userId = createBasicUser(request);
+		
+		// 2단계: 신한은행 연동 (별도 처리)
+		try {
+			shinhanBankService.createMemberAndAccount(userId, request.getUserNm());
+			log.info("Shinhan Bank integration completed for userId: {}", userId);
+		} catch (Exception e) {
+			log.warn("Shinhan Bank integration failed for userId: {}, but signup continues. Error: {}", 
+				userId, e.getMessage());
+		}
+
+		// 3단계: 최종 사용자 정보 조회
+		User finalUser = userMapper.findByUserId(userId)
+				.orElseThrow(() -> new IllegalStateException("Failed to retrieve created user"));
+
+		SignupResponse response = SignupResponse.builder()
+				.userNm(finalUser.getUserNm())
+				.userId(finalUser.getUserId())
+				.userName(finalUser.getUserName())
+				.userKey(finalUser.getUserKey())
+				.accountNm(finalUser.getAccountNm())
+				.build();
+
+		log.info("Signup completed successfully for userId: {}", request.getUserId());
+		return response;
+	}
+
+	/**
+	 * 기본 회원 정보 저장 (트랜잭션)
+	 */
+	@Transactional
+	private String createBasicUser(SignupRequest request) {
 		// 1) 계좌생성 동의 체크
 		if (!request.isAccountCreationConsent()) {
 			throw new IllegalArgumentException("Account creation consent is required");
@@ -324,38 +356,15 @@ public class AuthService {
 				.deptNm(request.getDeptNm())
 				.collegeNm(collegeNm)
 				.univNm(request.getUnivNm())
-				.role(Role.STUDENT)
+				.role(Role.student)
 				.build();
 
 		int inserted = userMapper.insertUser(user);
 		if (inserted != 1) {
 			throw new IllegalStateException("Failed to insert user");
 		}
-
-		// 6) 신한은행 API 호출 (사용자 생성 + 계좌 생성)
-		try {
-			shinhanBankService.createMemberAndAccount(request.getUserId(), request.getUserNm());
-			log.info("Shinhan Bank integration completed for userId: {}", request.getUserId());
-		} catch (Exception e) {
-			log.error("Shinhan Bank integration failed for userId: {}", request.getUserId(), e);
-			// 신한은행 연동 실패 시 사용자 삭제는 하지 않고 로그만 남김
-			// 운영 환경에서는 별도 처리 로직 필요
-		}
-
-		// 7) 최종 사용자 정보 조회 (신한은행 정보 포함)
-		User finalUser = userMapper.findByUserId(request.getUserId())
-				.orElseThrow(() -> new IllegalStateException("Failed to retrieve created user"));
-
-		SignupResponse response = SignupResponse.builder()
-				.userNm(finalUser.getUserNm())
-				.userId(finalUser.getUserId())
-				.userName(finalUser.getUserName())
-				.userKey(finalUser.getUserKey())
-				.accountNm(finalUser.getAccountNm())
-				.build();
-
-		log.info("Signup completed successfully for userId: {}", request.getUserId());
-		return response;
+		
+		return request.getUserId();
 	}
 
 	/**

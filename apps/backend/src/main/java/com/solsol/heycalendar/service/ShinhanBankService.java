@@ -14,7 +14,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
@@ -58,6 +60,7 @@ public class ShinhanBankService {
     @Data
     @Builder
     public static class AccountCreationRequest {
+        @JsonProperty("Header")
         private Header Header;
         private String accountTypeUniqueNo;
     }
@@ -80,48 +83,51 @@ public class ShinhanBankService {
     public static class AccountCreationResponse {
         @JsonProperty("REC")
         private AccountRec rec;
-        
+
         @Data
         public static class AccountRec {
             private String bankCode;
             private String accountNo;
-            private String currency;
+            private Currency currency;
+        }
+
+        @Data
+        public static class Currency {
+            private String code;
+            private String name;
         }
     }
 
-    /**
-     * 신한은행 사용자 계정 생성 및 계좌 개설
-     */
+
     public void createMemberAndAccount(String userId, String userNm) {
+        log.info("===== Shinhan Bank 통합 시작: userId={} =====", userId);
+        String userKey = null;
+        String accountNo = null;
+
         try {
-            log.info("Starting Shinhan Bank member and account creation for userId: {}", userId);
-            
-            // 1단계: 사용자 계정 생성
-            String userKey = createMember(userId);
-            log.info("Member created successfully. UserKey: {}", userKey);
-            
-            // 2단계: 계좌 생성
-            String accountNo = createAccount(userKey);
-            log.info("Account created successfully. AccountNo: {}", accountNo);
-            
-            // 3단계: DB에 유저키와 계좌번호 저장
-            int updated = userMapper.updateUserKeyAndAccountByUserId(userId, userKey, accountNo);
-            if (updated != 1) {
-                throw new IllegalStateException("Failed to update user with userKey and accountNo");
-            }
-            
-            log.info("Successfully completed Shinhan Bank integration for userId: {}, userKey: {}, accountNo: {}", 
-                    userId, userKey, accountNo);
-            
+            log.info("-> Member 생성 시도: userId={}", userId);
+            userKey = createMember(userId);
+            log.info("✅ Member 생성 성공: userId={}, userKey={}", userId, userKey);
+
         } catch (Exception e) {
-            log.error("Failed to create Shinhan Bank member and account for userId: {}", userId, e);
-            throw new RuntimeException("Shinhan Bank API integration failed: " + e.getMessage(), e);
+            log.error("❌ Member 생성 실패: userId={}", userId, e);
+            throw e;
         }
+
+        try {
+            log.info("-> Account 생성 시도: userKey={}", userKey);
+            accountNo = createAccount(userKey);
+            log.info("✅ Account 생성 성공: userKey={}, accountNo={}", userKey, accountNo);
+
+        } catch (Exception e) {
+            log.error("❌ Account 생성 실패: userKey={}", userKey, e);
+            throw e;
+        }
+
+        // DB 업데이트를 별도 트랜잭션에서 처리
+        updateUserBankInfo(userId, userKey, accountNo);
     }
 
-    /**
-     * 신한은행 사용자 계정 생성
-     */
     private String createMember(String userId) {
         MemberCreationRequest request = MemberCreationRequest.builder()
                 .apiKey(apiKey)
@@ -130,40 +136,38 @@ public class ShinhanBankService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-
         HttpEntity<MemberCreationRequest> entity = new HttpEntity<>(request, headers);
 
         try {
-            log.debug("Sending member creation request to: {}", MEMBER_API_URL);
-            log.debug("Request body: {}", objectMapper.writeValueAsString(request));
-            
-            ResponseEntity<MemberCreationResponse> response = restTemplate.postForEntity(
-                    MEMBER_API_URL, entity, MemberCreationResponse.class);
+            log.debug("Member API 호출: URL={}, request={}", MEMBER_API_URL, objectMapper.writeValueAsString(request));
+            ResponseEntity<MemberCreationResponse> response = restTemplate.postForEntity(MEMBER_API_URL, entity, MemberCreationResponse.class);
+            MemberCreationResponse body = response.getBody();
 
-            MemberCreationResponse responseBody = response.getBody();
-            if (responseBody == null || responseBody.getUserKey() == null) {
+            if (body == null || body.getUserKey() == null) {
+                log.warn("⚠️ Member API 응답 이상: userId={}", userId);
                 throw new RuntimeException("Invalid response from Shinhan Bank member creation API");
             }
 
-            log.info("Member creation successful for userId: {}", userId);
-            return responseBody.getUserKey();
+            return body.getUserKey();
 
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize member creation request", e);
-            throw new RuntimeException("Failed to create member request", e);
+        } catch (HttpClientErrorException e) {
+            String resp = e.getResponseBodyAsString();
+            log.error("❌ Member API 오류: userId={}, response={}", userId, resp);
+            if (resp != null && resp.contains("E4002")) {
+                log.warn("User 이미 존재: userId={}", userId);
+                throw new RuntimeException("User already exists", e);
+            }
+            throw new RuntimeException("Member creation failed", e);
         } catch (Exception e) {
-            log.error("Failed to create Shinhan Bank member for userId: {}", userId, e);
+            log.error("❌ Member 생성 예외: userId={}", userId, e);
             throw new RuntimeException("Member creation failed", e);
         }
     }
 
-    /**
-     * 신한은행 계좌 생성
-     */
     private String createAccount(String userKey) {
         String currentDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmm00"));
-        String institutionTransactionUniqueNo = generateInstitutionTransactionUniqueNo();
+        String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));
+        String txnNo = generateInstitutionTransactionUniqueNo();
 
         Header header = Header.builder()
                 .apiName("createDemandDepositAccount")
@@ -172,7 +176,7 @@ public class ShinhanBankService {
                 .institutionCode("00100")
                 .fintechAppNo("001")
                 .apiServiceCode("createDemandDepositAccount")
-                .institutionTransactionUniqueNo(institutionTransactionUniqueNo)
+                .institutionTransactionUniqueNo(txnNo)
                 .apiKey(apiKey)
                 .userKey(userKey)
                 .build();
@@ -184,45 +188,49 @@ public class ShinhanBankService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-
         HttpEntity<AccountCreationRequest> entity = new HttpEntity<>(request, headers);
 
         try {
-            log.debug("Sending account creation request to: {}", ACCOUNT_API_URL);
-            log.debug("Request body: {}", objectMapper.writeValueAsString(request));
-            
-            ResponseEntity<AccountCreationResponse> response = restTemplate.postForEntity(
-                    ACCOUNT_API_URL, entity, AccountCreationResponse.class);
+            log.debug("Account API 호출: URL={}, request={}", ACCOUNT_API_URL, objectMapper.writeValueAsString(request));
+            ResponseEntity<AccountCreationResponse> response = restTemplate.postForEntity(ACCOUNT_API_URL, entity, AccountCreationResponse.class);
+            AccountCreationResponse body = response.getBody();
 
-            AccountCreationResponse responseBody = response.getBody();
-            if (responseBody == null || responseBody.getRec() == null || responseBody.getRec().getAccountNo() == null) {
+            if (body == null || body.getRec() == null || body.getRec().getAccountNo() == null) {
+                log.warn("⚠️ Account API 응답 이상: userKey={}", userKey);
                 throw new RuntimeException("Invalid response from Shinhan Bank account creation API");
             }
 
-            String accountNo = responseBody.getRec().getAccountNo();
-            log.info("Account creation successful. AccountNo: {}", accountNo);
-            return accountNo;
+            return body.getRec().getAccountNo();
 
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize account creation request", e);
-            throw new RuntimeException("Failed to create account request", e);
         } catch (Exception e) {
-            log.error("Failed to create Shinhan Bank account for userKey: {}", userKey, e);
+            log.error("❌ Account 생성 예외: userKey={}", userKey, e);
             throw new RuntimeException("Account creation failed", e);
         }
     }
 
-    /**
-     * 20자리 난수 생성
-     */
     private String generateInstitutionTransactionUniqueNo() {
         SecureRandom random = new SecureRandom();
         StringBuilder sb = new StringBuilder(20);
-        
-        for (int i = 0; i < 20; i++) {
-            sb.append(random.nextInt(10));
-        }
-        
+        for (int i = 0; i < 20; i++) sb.append(random.nextInt(10));
         return sb.toString();
+    }
+    
+    /**
+     * 사용자 은행 정보 업데이트 (별도 트랜잭션)
+     */
+    @Transactional
+    private void updateUserBankInfo(String userId, String userKey, String accountNo) {
+        try {
+            int updated = userMapper.updateUserKeyAndAccountByUserId(userId, userKey, accountNo);
+            if (updated != 1) {
+                log.error("❌ DB 업데이트 실패: userId={}, userKey={}, accountNo={}", userId, userKey, accountNo);
+                throw new IllegalStateException("Failed to update user with userKey and accountNo");
+            }
+            log.info("===== Shinhan Bank 통합 완료: userId={}, userKey={}, accountNo={} =====", userId, userKey, accountNo);
+
+        } catch (Exception e) {
+            log.error("❌ DB 저장 실패: userId={}", userId, e);
+            throw e;
+        }
     }
 }
