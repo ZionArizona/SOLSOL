@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, Platform, TouchableOpacity } from "react-native";
+import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, Platform, Text , TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 
 // theme
@@ -52,7 +52,7 @@ export default function MainPage() {
 
           
           <View style={styles.block}>
-            <p>Hey Calendar !</p>
+            <Text>Hey Calendar !</Text>
             <PromoBanner
               title={`신청부터 지금까지,\n헤이영 캘린더가\n다 챙겨드려요`}
               ctaLabel="나의 일정 바로가기"
