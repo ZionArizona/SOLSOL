@@ -15,8 +15,6 @@ const goBackOrHome = () => {
   else router.replace('/');                          // 없으면 메인으로 (index.tsx 기준)
 };
 
-
-// const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:3000';
 const API_BASE = 'http://localhost:8080';
 
 const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
@@ -47,6 +45,10 @@ const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
 
         // 응답 파싱
         const data: AuthTokens = await res.json().catch(() => ({}));
+        
+        console.log('🔍 백엔드 응답 데이터:', JSON.stringify(data, null, 2));
+        console.log('📊 응답 상태:', res.status);
+        console.log('📋 응답 헤더:', Object.fromEntries(res.headers.entries()));
 
         if (!res.ok) {
             const msg = (data && (data as any).message || (data as any).error) || `HTTP ${res.status}`;
@@ -61,10 +63,10 @@ const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
         // 로그인 성공 콜백
         onLoginSuccess();
         } catch (err: any) {
-        console.error('❌ 로그인 실패:', err?.message || err);
+            console.error('❌ 로그인 실패:', err?.message || err);
         Alert.alert('로그인 실패', err?.message || '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
   };
 
@@ -152,29 +154,26 @@ const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
-  },
-  background: { flex: 1, justifyContent: 'flex-start', alignItems: 'stretch',},
-  scrollContent: { flexGrow: 1,},
-  content: { flex: 1,},
-  text: { fontSize: 24, fontWeight: 'bold',},
-  backButton: { position: 'absolute', top: 48, left: 16, zIndex: 10, padding: 8,},
-  backIcon: { width: 24, height: 24, resizeMode: 'contain', },
-  character: { width: 173, height: 173, alignSelf: 'center', marginTop: 124, marginHorizontal: 110, resizeMode: 'contain', },
-  title: { marginTop: 12, marginHorizontal: 114, height: 48, textAlign: 'center', fontSize: 20, fontWeight: '700', lineHeight: 24, color: '#111', },
-  input: { marginHorizontal: 40, minHeight: 48, borderWidth: 1, borderColor: '#C9C9C9', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, backgroundColor: 'rgba(255,255,255,0.9)', fontSize: 16, color: '#000',},
-  loginButton: { marginHorizontal: 40, height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#8FA1FF', },
-  loginText: { color: '#fff', fontWeight: '700', fontSize: 16, },
-  optionsRow: { marginTop: 12, marginHorizontal: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },
-  autoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, },
-  checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: 1.5, borderColor: '#8FA1FF', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', },
-  checkboxChecked: { borderColor: '#6E87FF', backgroundColor: '#E9EDFF', },
-  checkboxDot: { width: 10, height: 10, },
+  container: { flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0},
+  background: { flex: 1, justifyContent: 'flex-start', alignItems: 'stretch'},
+  scrollContent: { flexGrow: 1},
+  content: { flex: 1},
+  text: { fontSize: 24, fontWeight: 'bold'},
+  backButton: { position: 'absolute', top: 48, left: 16, zIndex: 10, padding: 8},
+  backIcon: { width: 24, height: 24, resizeMode: 'contain'},
+  character: { width: 173, height: 173, alignSelf: 'center', marginTop: 124, marginHorizontal: 110, resizeMode: 'contain'},
+  title: { marginTop: 12, marginHorizontal: 114, height: 48, textAlign: 'center', fontSize: 20, fontWeight: '700', lineHeight: 24, color: '#111'},
+  input: { marginHorizontal: 40, minHeight: 48, borderWidth: 1, borderColor: '#C9C9C9', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, backgroundColor: 'rgba(255,255,255,0.9)', fontSize: 16, color: '#000'},
+  loginButton: { marginHorizontal: 40, height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#8FA1FF'},
+  loginText: { color: '#fff', fontWeight: '700', fontSize: 16},
+  optionsRow: { marginTop: 12, marginHorizontal: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  autoRow: { flexDirection: 'row', alignItems: 'center', gap: 8},
+  checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: 1.5, borderColor: '#8FA1FF', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff'},
+  checkboxChecked: { borderColor: '#6E87FF', backgroundColor: '#E9EDFF'},
+  checkboxDot: { width: 10, height: 10},
   optionText: { fontSize: 13, color: '#333', },
-  signupRow: { flexDirection: 'row', alignItems: 'center', gap: 8, },
-  link: { fontSize: 13, fontWeight: '700', color: '#6E87FF', },
+  signupRow: { flexDirection: 'row', alignItems: 'center', gap: 8},
+  link: { fontSize: 13, fontWeight: '700', color: '#6E87FF'},
 });
 
 export default LoginPage;

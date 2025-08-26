@@ -44,12 +44,7 @@ export default function App() {
     return <MyCalendar onBack={() => setShowCalendar(false)} />;
   }
 
-  // 로그인 페이지 표시
-  if (showLoginPage) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setShowLoginPage(false)} />;
-  }
-
-  // 로그인 된 상태면 MainPage.tsx 표시
+  // 로그인 된 상태면 MainPage.tsx로 자동 이동
   if (isAuthenticated) {
     return (
       <View style={styles.container}>
@@ -73,66 +68,21 @@ export default function App() {
     );
   }
 
-  // 로그인 안 된 상태의 초기 화면
-  return (
-    <View style={styles.container}>
-        {/* 상태바 설정 => 상단에 시간, 배터리, 와이파이 정보를 수정하기 위한 용도!*/ }
-        <StatusBar
-          translucent={false}
-          backgroundColor={'#ffffff'}
-          barStyle="dark-content"
-        />
+  // 로그인 페이지 표시 (토큰이 없을 때 기본적으로 표시)
+  if (showLoginPage) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setShowLoginPage(false)} />;
+  }
 
-        {/* 캘린더로 이동하는 버튼 추가 (로그인 안 된 상태에서도) */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.calendarButton} 
-            onPress={() => {
-              console.log('캘린더 버튼 클릭됨 (비로그인)');
-              setShowCalendar(true);
-            }}
-          >
-            <Text style={styles.calendarButtonText}>📅 내 캘린더 보기</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 이미지 바탕 화면 */}
-        <ImageBackground
-          source={require('../assets/images/SOLSOLBackground.png')}
-          style={styles.background}
-          resizeMode="cover" // 화면에 꽉 차게
-        >
-
-        <HeaderBar onLoginPress={handleLoginIconPress}/>
-
-        </ImageBackground>
-      </View>
-  );
+  // 로그인 안 된 상태면 LoginPage로 자동 이동
+  return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => {}} />;
 }
 
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
-    //StatusBar.translucent=false,
-  },
-  background: {
-    flex: 1,
-    justifyContent: 'flex-start', // 중앙 정렬 예시
-    alignItems: 'stretch',
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonContainer: {
-    position: 'absolute',
-    top: 100,
-    right: 20,
-    zIndex: 999,
-    elevation: 999,
-  },
+  container: { flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0},
+  background: { flex: 1, justifyContent: 'flex-start', alignItems: 'stretch'},
+  centerContent: { justifyContent: 'center', alignItems: 'center'},
+  buttonContainer: { position: 'absolute', top: 100, right: 20, zIndex: 999, elevation: 999},
   calendarButton: {
     backgroundColor: '#FF6B6B',  // 빨간색으로 변경해서 더 눈에 띄게
     paddingHorizontal: 25,
@@ -149,9 +99,5 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 999,
   },
-  calendarButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+  calendarButtonText: { color: '#ffffff', fontSize: 18, fontWeight: 'bold'},
 });
