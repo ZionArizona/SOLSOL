@@ -1,0 +1,87 @@
+import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import logo from '../assets/heyLogo.png'
+
+const navStyle={
+  wrap:{
+    position:'sticky',top:0,zIndex:10,background:'rgba(255,255,255,.85)',
+    backdropFilter:'saturate(1.2) blur(8px)', borderBottom:'1px solid rgba(0,0,0,.06)'
+  },
+  inner:{display:'flex',alignItems:'center',justifyContent:'space-between',height:'72px'}
+}
+
+export default function Navbar(){
+  const [user, setUser] = useState(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      setUser(JSON.parse(userData))
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (refreshToken) {
+        await fetch('http://localhost:8080/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken })
+        })
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+    
+    // 로컬 스토리지 정리
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('user')
+    
+    setUser(null)
+    navigate('/login')
+  }
+
+  return (
+    <div style={navStyle.wrap}>
+      <div className="container" style={navStyle.inner}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <Link to="/">
+            <img src={logo} alt="HEY CALENDAR" height="60"/>
+          </Link>
+        </div>
+        <nav style={{display:'flex',gap:'28px',fontWeight:600,color:'#4b5563',alignItems:'center'}}>
+          {user ? (
+            <>
+              <Link to="/admin/submissions" style={{textDecoration:'none',color:'#4b5563'}}>서류관리</Link>
+              <Link to="/admin/scholarships" style={{textDecoration:'none',color:'#4b5563'}}>장학금관리</Link>
+              <span style={{color:'#666'}}>{user.userName}님</span>
+              <button 
+                onClick={handleLogout}
+                style={{
+                  background:'none', 
+                  border:'none', 
+                  color:'#4b5563',
+                  fontWeight:600,
+                  cursor:'pointer',
+                  textDecoration:'underline'
+                }}
+              >
+                로그아웃
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" style={{textDecoration:'none',color:'#4b5563'}}>로그인</Link>
+              <Link to="/signup" style={{textDecoration:'none',color:'#4b5563'}}>회원가입</Link>
+            </>
+          )}
+        </nav>
+      </div>
+    </div>
+  )
+}
