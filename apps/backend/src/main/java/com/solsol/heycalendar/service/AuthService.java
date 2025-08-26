@@ -34,8 +34,10 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.UUID;
 import java.security.SecureRandom;
+
 /**
- * 인증 관련 비즈니스 로직을 처리하는 서비스
+ * 인증 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ * 로그인, 로그아웃, 토큰 재발급, 비밀번호 재설정 등의 기능을 담당합니다.
  */
 @Slf4j
 @Service
@@ -101,8 +103,10 @@ public class AuthService {
 	}
 
 	/**
-	 * 리프레시 토큰으로 새로운 액세스/리프레시 토큰을 발급(토큰 순환)
-	 * - 액세스 토큰 클레임: userId, role, typ=access, userName, deptNm, collegeNm, univNm, grade
+	 * 리프레시 토큰을 사용하여 새로운 액세스 토큰과 리프레시 토큰을 발급합니다 (토큰 순환).
+	 *
+	 * @param refreshRequest 재발급 요청 DTO (리프레시 토큰)
+	 * @return 새로 발급된 토큰 정보를 담은 응답 DTO
 	 */
 	@Transactional
 	public AuthResponse refresh(RefreshRequest refreshRequest) {
@@ -189,7 +193,7 @@ public class AuthService {
 				refreshTokenMapper.revokeByToken(jti);
 			}
 		} catch (Exception e) {
-			// 로그아웃 시 발생하는 토큰 관련 오류는 무시합니다.
+			log.warn("로그아웃 처리 중 유효하지 않은 토큰이 감지되었습니다. JTI를 추출할 수 없습니다.", e);
 		}
 	}
 
@@ -207,8 +211,9 @@ public class AuthService {
 	}
 
 	/**
-	 * 비밀번호 재설정(요청): 임시코드를 발급하여 User.userKey에 저장.
-	 * 일반적으로는 이메일/SMS 발송이 추가된다.
+	 * 비밀번호 재설정 요청을 처리합니다. 임시 코드를 생성하여 사용자 정보에 저장합니다.
+	 *
+	 * @param request 비밀번호 재설정 요청 DTO
 	 */
 	@Transactional
 	public void requestPasswordReset(PasswordResetRequest request) {
@@ -224,7 +229,7 @@ public class AuthService {
 		// 3) userKey에 저장
 		int updated = userMapper.updateUserKeyByUserId(userId, token);
 		if (updated != 1) {
-			throw new IllegalStateException("Failed to store reset token.");
+			throw new IllegalStateException("비밀번호 재설정 토큰 저장에 실패했습니다.");
 		}
 
 		// 4) 이메일/SMS 발송 연동 지점
@@ -232,8 +237,9 @@ public class AuthService {
 	}
 
 	/**
-	 * 비밀번호 재설정(확정): token(User.userKey) 검증 후 비밀번호를 새로 저장.
-	 * 성공 시 userKey를 null 로 클리어.
+	 * 비밀번호 재설정을 확정합니다. 임시 코드를 검증하고 새 비밀번호로 업데이트합니다.
+	 *
+	 * @param request 비밀번호 재설정 확정 요청 DTO
 	 */
 	@Transactional
 	public void confirmPasswordReset(PasswordResetConfirmRequest request) {
@@ -242,13 +248,13 @@ public class AuthService {
 
 		// 1) 토큰으로 사용자 조회
 		User user = userMapper.findByUserKey(token)
-			.orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset token."));
+			.orElseThrow(() -> new IllegalArgumentException("유효하지 않거나 만료된 재설정 토큰입니다."));
 
 		// 2) 비밀번호 해시 저장
 		String encoded = passwordEncoder.encode(rawNewPassword);
 		int updated = userMapper.updatePasswordByUserId(user.getUserId(), encoded);
 		if (updated != 1) {
-			throw new IllegalStateException("Failed to update password.");
+			throw new IllegalStateException("비밀번호 업데이트에 실패했습니다.");
 		}
 
 		// 3) 토큰 제거
@@ -259,10 +265,10 @@ public class AuthService {
 			// B안: userNm은 VARCHAR(20) → String 타입으로 맞추세요.
 			refreshTokenMapper.revokeAllByUserNm(user.getUserNm());
 		} catch (Exception ex) {
-			log.warn("[PasswordReset][confirm] revokeAllByUserNm failed: userNm={}", user.getUserNm(), ex);
+			log.warn("[PasswordReset] 확정 단계에서 모든 리프레시 토큰 무효화 실패: userNm={}", user.getUserNm(), ex);
 		}
 
-		log.info("[PasswordReset][confirm] userId={} password reset completed", user.getUserId());
+		log.info("[PasswordReset] 완료: userId={} 비밀번호 재설정 성공", user.getUserId());
 	}
 
 	/**
@@ -275,6 +281,9 @@ public class AuthService {
 	private static final SecureRandom RESET_RAND = new SecureRandom();
 
 	private String generateResetCode(int len) {
+		if (len <= 0) {
+			throw new IllegalArgumentException("코드 길이는 0보다 커야 합니다.");
+		}
 		char[] buf = new char[len];
 		for (int i = 0; i < len; i++) {
 			buf[i] = RESET_DIGITS[RESET_RAND.nextInt(RESET_DIGITS.length)];
