@@ -8,33 +8,31 @@
     <!-- 공통 컬럼 리스트 -->
     <sql id="User_Columns">
         `userNm`,
-    `userMileage`,
-    `accountNm`,
-    `userId`,
-    `password`,
-    `userKey`,
-    `userName`,
-    `state`,
-    `grade`,
-    `gpa`,
-    `createdAt`,
-    `updatedAt`,
-    `role`,
-    `deptNm`,
-    `collegeNm`,
-    `univNm`
+        `accountNm`,
+        `userId`,
+        `password`,
+        `userKey`,
+        `userName`,
+        `status`,
+        `grade`,
+        `gpa`,
+        `createdAt`,
+        `updatedAt`,
+        `role`,
+        `deptNm`,
+        `collegeNm`,
+        `univNm`
     </sql>
 
     <!-- ResultMap: ENUM과 LocalDateTime 자동 매핑(기본 TypeHandler 사용) -->
     <resultMap id="UserResultMap" type="com.solsol.heycalendar.domain.User">
         <id     property="userNm"      column="userNm"/>
-        <result property="userMileage" column="userMileage"/>
         <result property="accountNm"   column="accountNm"/>
         <result property="userId"      column="userId"/>
         <result property="password"    column="password"/>
         <result property="userKey"     column="userKey"/>
         <result property="userName"    column="userName"/>
-        <result property="state"       column="state"    javaType="com.solsol.heycalendar.domain.Status"/>
+        <result property="status"      column="status"    javaType="com.solsol.heycalendar.domain.Status"/>
         <result property="grade"       column="grade"/>
         <result property="gpa"         column="gpa"      javaType="java.math.BigDecimal"/>
         <result property="createdAt"   column="createdAt" javaType="java.time.LocalDateTime"/>
@@ -107,5 +105,46 @@
             `updatedAt` = CURRENT_TIMESTAMP
         WHERE `userKey` = #{userKey}
     </update>
+
+    <!-- 🔹 신한은행 유저키와 계좌번호 저장 -->
+    <update id="updateUserKeyAndAccountByUserId">
+        UPDATE `User`
+        SET
+            `userKey` = #{userKey},
+            `accountNm` = #{accountNm},
+            `updatedAt` = CURRENT_TIMESTAMP
+        WHERE `userId` = #{userId}
+    </update>
+
+    <!-- 🔹 회원가입 시 사용자 등록 -->
+    <insert id="insertUser" parameterType="com.solsol.heycalendar.domain.User">
+        INSERT INTO `User` (
+            `userNm`,
+            `userId`,
+            `password`,
+            `userName`,
+            `state`,
+            `grade`,
+            `deptNm`,
+            `collegeNm`,
+            `univNm`,
+            `role`,
+            `createdAt`,
+            `updatedAt`
+        ) VALUES (
+            #{userNm},
+            #{userId},
+            #{password},
+            #{userName},
+            #{status},
+            #{grade},
+            #{deptNm},
+            #{collegeNm},
+            #{univNm},
+            #{role},
+            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP
+        )
+    </insert>
 
 </mapper>
