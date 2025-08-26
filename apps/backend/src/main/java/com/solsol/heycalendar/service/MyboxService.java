@@ -1,4 +1,4 @@
-package com.solsol.heycalendar.mybox.service;
+package com.solsol.heycalendar.service;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
