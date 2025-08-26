@@ -13,8 +13,13 @@ import com.solsol.heycalendar.dto.request.LogoutRequest;
 import com.solsol.heycalendar.dto.request.PasswordResetConfirmRequest;
 import com.solsol.heycalendar.dto.request.PasswordResetRequest;
 import com.solsol.heycalendar.dto.request.RefreshRequest;
+import com.solsol.heycalendar.dto.request.SignupRequest;
 import com.solsol.heycalendar.dto.response.AuthResponse;
+import com.solsol.heycalendar.dto.response.SignupResponse;
 import com.solsol.heycalendar.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 /**
  * 인증 관련 API를 처리하는 컨트롤러입니다. (로그인, 로그아웃, 토큰 재발급)
@@ -43,6 +48,11 @@ public class AuthController {
 	 * @return 발급된 토큰 정보를 포함하는 응답
 	 */
 	@PostMapping("/login")
+	@Operation(
+		summary = "로그인",
+		description = "사용자 로그인을 처리하고 JWT 토큰을 발급합니다.",
+		security = {}
+	)
 	public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody AuthRequest authRequest) {
 		AuthResponse authResponse = authService.login(authRequest);
 
@@ -99,5 +109,27 @@ public class AuthController {
 	public ResponseEntity<ApiResponse<Void>> confirmPasswordReset(@RequestBody PasswordResetConfirmRequest request) {
 		authService.confirmPasswordReset(request);
 		return ResponseEntity.ok(ApiResponse.success("Password reset successful", null));
+	}
+
+	/**
+	 * 회원가입을 처리합니다. 신한은행 API와 연동하여 사용자 계정 및 계좌를 생성합니다.
+	 *
+	 * @param signupRequest 회원가입 요청 DTO
+	 * @return ResponseEntity<ApiResponse<SignupResponse>>
+	 */
+	@PostMapping("/signup")
+	@Operation(
+		summary = "회원가입", 
+		description = "신한은행 API와 연동하여 사용자 계정 및 계좌를 생성합니다.",
+		security = {}
+	)
+	@ApiResponses(value = {
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원가입 성공"),
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류")
+	})
+	public ResponseEntity<ApiResponse<SignupResponse>> signup(@RequestBody SignupRequest signupRequest) {
+		SignupResponse signupResponse = authService.signup(signupRequest);
+		return ResponseEntity.ok(new ApiResponse<>(true, "Signup successful.", "OK", signupResponse));
 	}
 }
