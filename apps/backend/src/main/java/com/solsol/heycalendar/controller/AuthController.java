@@ -92,6 +92,12 @@ public class AuthController {
 		return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다.", null));
 	}
 
+	/**
+	 * 만료된 액세스 토큰을 새로운 토큰으로 재발급합니다.
+	 *
+	 * @param refreshRequest 재발급 요청 DTO (리프레시 토큰)
+	 * @return 새로 발급된 토큰 정보를 포함하는 응답
+	 */
 	@Operation(summary = "토큰 재발급", description = "만료된 액세스 토큰을 리프레시 토큰으로 갱신합니다.")
 	@PostMapping("/refresh")
 	public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
@@ -101,6 +107,12 @@ public class AuthController {
 			.body(ApiResponse.success("토큰이 성공적으로 재발급되었습니다.", authResponse));
 	}
 
+	/**
+	 * 비밀번호 재설정 요청 엔드포인트입니다.
+	 *
+	 * @param request 비밀번호 재설정 요청 DTO
+	 * @return ResponseEntity<ApiResponse<Void>>
+	 */
 	@Operation(summary = "비밀번호 재설정 요청", description = "비밀번호 재설정을 위한 인증 코드를 요청합니다.")
 	@PostMapping("/password/reset/request")
 	public ResponseEntity<ApiResponse<Void>> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
@@ -108,6 +120,12 @@ public class AuthController {
 		return ResponseEntity.ok(ApiResponse.success("비밀번호 재설정 요청이 완료되었습니다.", null));
 	}
 
+	/**
+	 * 비밀번호 재설정 확정 엔드포인트입니다.
+	 *
+	 * @param request 비밀번호 재설정 확정 요청 DTO
+	 * @return ResponseEntity<ApiResponse<Void>>
+	 */
 	@Operation(summary = "비밀번호 재설정 확인", description = "인증 코드로 비밀번호 재설정을 확정 처리합니다.")
 	@PostMapping("/password/reset/confirm")
 	public ResponseEntity<ApiResponse<Void>> confirmPasswordReset(
