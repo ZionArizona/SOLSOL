@@ -1,36 +1,22 @@
 import { useEffect, useState } from 'react';
-import { ImageBackground, Platform, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { ImageBackground, Platform, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
 import HeaderBar from './UserBasic/HeaderBar';
 import LoginPage from './UserBasic/LoginPage';
 import MainPage from './MainPage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import MyCalendar from './MyCalendar';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [showLoginPage, setShowLoginPage] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
-    checkLoginStatus();
-  }, []);
-
-  const checkLoginStatus = async () => {
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      const loginStatus = await AsyncStorage.getItem('isLoggedIn');
-      
-      if (token && loginStatus === 'true') {
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
-      }
-    } catch (error) {
-      console.error('Error checking login status:', error);
-      setIsLoggedIn(false);
-    } finally {
-      setIsLoading(false);
+    // 로그인 상태이면 로그 출력 (디버깅용)
+    if (isAuthenticated && user) {
+      console.log('✅ 자동 로그인 완료:', user.userName);
     }
-  };
+  }, [isAuthenticated, user]);
 
   const handleLoginIconPress = () => {
     setShowLoginPage(true);
@@ -38,25 +24,53 @@ export default function App() {
 
   const handleLoginSuccess = () => {
     setShowLoginPage(false);
-    checkLoginStatus();
+    // AuthContext가 자동으로 상태를 업데이트하므로 별도 체크 불필요
+  };
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#8FA1FF" />
       </View>
     );
   }
 
-  // 로그인 된 상태면 MainPage.tsx 표시
-  if (isLoggedIn) {
-    return <MainPage onLogout={checkLoginStatus} />;
+  // MyCalendar 페이지 표시
+  if (showCalendar) {
+    return <MyCalendar onBack={() => setShowCalendar(false)} />;
   }
 
   // 로그인 페이지 표시
   if (showLoginPage) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} onBack={() => setShowLoginPage(false)} />;
+  }
+
+  // 로그인 된 상태면 MainPage.tsx 표시
+  if (isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <StatusBar translucent={false} backgroundColor={'#ffffff'} barStyle="dark-content" />
+        
+        {/* 캘린더로 이동하는 버튼 추가 */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={styles.calendarButton} 
+            onPress={() => {
+              console.log('캘린더 버튼 클릭됨');
+              setShowCalendar(true);
+            }}
+          >
+            <Text style={styles.calendarButtonText}>📅 내 캘린더 보기</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <MainPage onLogout={handleLogout} />
+      </View>
+    );
   }
 
   // 로그인 안 된 상태의 초기 화면
@@ -68,6 +82,19 @@ export default function App() {
           backgroundColor={'#ffffff'}
           barStyle="dark-content"
         />
+
+        {/* 캘린더로 이동하는 버튼 추가 (로그인 안 된 상태에서도) */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={styles.calendarButton} 
+            onPress={() => {
+              console.log('캘린더 버튼 클릭됨 (비로그인)');
+              setShowCalendar(true);
+            }}
+          >
+            <Text style={styles.calendarButtonText}>📅 내 캘린더 보기</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* 이미지 바탕 화면 */}
         <ImageBackground
@@ -98,5 +125,33 @@ const styles = StyleSheet.create({
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  buttonContainer: {
+    position: 'absolute',
+    top: 100,
+    right: 20,
+    zIndex: 999,
+    elevation: 999,
+  },
+  calendarButton: {
+    backgroundColor: '#FF6B6B',  // 빨간색으로 변경해서 더 눈에 띄게
+    paddingHorizontal: 25,
+    paddingVertical: 15,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 999,
+  },
+  calendarButtonText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
