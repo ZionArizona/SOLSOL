@@ -1,0 +1,95 @@
+:root{
+  --panel:#fff;
+  --line:#e9edf3;
+  --muted:#6b7280;
+  --text:#111827;
+  --primary:#6f84e6;
+  --purple:#7a7de2;
+  --shadow:0 10px 24px rgba(0,0,0,.06);
+  --radius:12px;
+}
+
+/* 패널 */
+.form-panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px 20px 28px;
+}
+
+/* 페이지 타이틀 */
+.page-title{
+  font-size:18px; font-weight:800; margin:4px 0 14px;
+  padding-bottom:10px; border-bottom:2px solid #cfd4ff;
+}
+.page-title .req{ color:#ef4444; }
+
+/* 섹션 */
+.section{ margin:18px 0 22px; }
+.section-head{
+  font-weight:800; color:#1f1f1f; margin-bottom:12px;
+  padding:8px 0; border-bottom:2px solid #cfd4ff;
+}
+.section-body{ padding:0 2px; }
+
+/* 그리드 */
+.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:900px){ .grid-2{ grid-template-columns:1fr; } }
+
+/* 라벨 & 입력 */
+.field{ display:flex; flex-direction:column; gap:6px; }
+.label{ font-weight:700; color:#374151; font-size:13px; }
+.ip{
+  width:100%; height:36px; border:1px solid var(--line); border-radius:8px;
+  padding:0 10px; font:inherit; background:#fff; color:var(--text);
+}
+.ta{
+  width:100%; border:1px solid var(--line); border-radius:8px; font:inherit; padding:10px;
+}
+
+.radios{ display:flex; gap:16px; align-items:center; }
+.radios label{ color:#374151; font-size:14px; display:flex; gap:6px; align-items:center; }
+
+/* 제출서류/평가기준 */
+.criteria-row{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.flex1{ flex:1; }
+.w120{ width:120px; }
+.with-suffix{ position:relative; }
+.with-suffix .suffix{
+  position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:12px; color:#6b7280;
+}
+.btn-add{
+  height:36px; padding:0 14px; border:none; border-radius:8px; cursor:pointer;
+  background:#e7eaff; color:#3443a6; font-weight:800;
+}
+.criteria-list{
+  background:#f4f7ff; border:1px solid var(--line); border-radius:8px; padding:10px;
+}
+.empty{ color:#6b7280; font-size:13px; }
+.chip{
+  display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px;
+  background:#fff; border:1px solid var(--line); margin:6px 0;
+}
+.chip .name{ font-weight:800; }
+.chip .meta{ color:#6b7280; font-size:13px; }
+.chip .del{
+  margin-left:auto; border:none; background:#ffe6e6; color:#b03030; font-weight:800;
+  height:28px; padding:0 10px; border-radius:6px; cursor:pointer;
+}
+.weight-note{ margin-top:6px; font-size:13px; color:#a16207; }
+.weight-note.ok{ color:#0e7f4f; }
+
+/* 드롭존 */
+.dropzone{
+  border:2px dashed #d3d9ef; border-radius:12px; padding:32px 10px;
+  text-align:center; color:#6b7280; background:#fafbff;
+}
+
+/* 제출 버튼 */
+.submit-row{ display:flex; justify-content:center; margin-top:18px; }
+.btn-primary{
+  min-width:220px; height:40px; border:none; border-radius:8px;
+  background:var(--primary); color:#fff; font-weight:800; cursor:pointer;
+  box-shadow:0 12px 22px rgba(111,132,230,.28);
+}
