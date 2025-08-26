@@ -24,4 +24,10 @@ public interface UserMapper {
 
 	int clearUserKeyByUserId(@Param("userId") String userId);
 	int clearUserKeyByUserKey(@Param("userKey") String userKey);
+
+	int updateUserKeyAndAccountByUserId(@Param("userId") String userId,
+		@Param("userKey") String userKey,
+		@Param("accountNm") String accountNm);
+	
+	int insertUser(User user);
 }

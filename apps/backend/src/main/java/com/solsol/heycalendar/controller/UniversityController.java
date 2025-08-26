@@ -8,6 +8,8 @@ import com.solsol.heycalendar.dto.response.DepartmentResponse;
 import com.solsol.heycalendar.dto.response.UniversityHierarchyResponse;
 import com.solsol.heycalendar.dto.response.UniversityResponse;
 import com.solsol.heycalendar.service.UniversityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +23,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
-/**
- * University Controller
- * 
- * REST API endpoints for university, college, and department management.
- */
+@Tag(name = "대학 관리", description = "대학, 단과대, 학과 정보 관리 API")
 @Slf4j
 @RestController
 @RequestMapping("/api/universities")
@@ -35,11 +33,7 @@ public class UniversityController {
     
     private final UniversityService universityService;
     
-    /**
-     * Get all universities
-     * 
-     * @return List of universities
-     */
+    @Operation(summary = "대학 전체 목록 조회", description = "등록된 모든 대학 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<List<UniversityResponse>> getAllUniversities() {
         log.info("GET /api/universities - Fetching all universities");
@@ -47,12 +41,7 @@ public class UniversityController {
         return ResponseEntity.ok(universities);
     }
     
-    /**
-     * Get university by ID with complete hierarchy
-     * 
-     * @param univNm University identifier
-     * @return University with colleges and departments
-     */
+    @Operation(summary = "대학 상세 정보 조회", description = "특정 대학의 단과대 및 학과 정보를 포함한 상세 정보를 조회합니다.")
     @GetMapping("/{univNm}")
     public ResponseEntity<UniversityHierarchyResponse> getUniversityById(
             @PathVariable @NotBlank String univNm) {
@@ -61,12 +50,7 @@ public class UniversityController {
         return ResponseEntity.ok(university);
     }
     
-    /**
-     * Create new university
-     * 
-     * @param request University creation request
-     * @return Created university
-     */
+    @Operation(summary = "대학 새로 등록", description = "새로운 대학 정보를 등록합니다.")
     @PostMapping
     public ResponseEntity<UniversityResponse> createUniversity(
             @Valid @RequestBody UniversityRequest request) {
@@ -75,13 +59,7 @@ public class UniversityController {
         return ResponseEntity.status(HttpStatus.CREATED).body(university);
     }
     
-    /**
-     * Update existing university
-     * 
-     * @param univNm University identifier
-     * @param request University update request
-     * @return Updated university
-     */
+    @Operation(summary = "대학 정보 수정", description = "기존 대학의 정보를 수정합니다.")
     @PutMapping("/{univNm}")
     public ResponseEntity<UniversityResponse> updateUniversity(
             @PathVariable @NotBlank String univNm,
@@ -91,12 +69,7 @@ public class UniversityController {
         return ResponseEntity.ok(university);
     }
     
-    /**
-     * Delete university
-     * 
-     * @param univNm University identifier
-     * @return No content response
-     */
+    @Operation(summary = "대학 삭제", description = "등록된 대학을 삭제합니다.")
     @DeleteMapping("/{univNm}")
     public ResponseEntity<Void> deleteUniversity(
             @PathVariable @NotBlank String univNm) {
@@ -105,12 +78,7 @@ public class UniversityController {
         return ResponseEntity.noContent().build();
     }
     
-    /**
-     * Get colleges by university
-     * 
-     * @param univNm University identifier
-     * @return List of colleges in the university
-     */
+    @Operation(summary = "대학의 단과대 목록 조회", description = "특정 대학에 속한 모든 단과대 목록을 조회합니다.")
     @GetMapping("/{univNm}/colleges")
     public ResponseEntity<List<CollegeResponse>> getCollegesByUniversity(
             @PathVariable @NotBlank String univNm) {
@@ -119,13 +87,7 @@ public class UniversityController {
         return ResponseEntity.ok(colleges);
     }
     
-    /**
-     * Create new college in university
-     * 
-     * @param univNm University identifier
-     * @param request College creation request
-     * @return Created college
-     */
+    @Operation(summary = "단과대 등록", description = "특정 대학에 새로운 단과대를 등록합니다.")
     @PostMapping("/{univNm}/colleges")
     public ResponseEntity<CollegeResponse> createCollege(
             @PathVariable @NotBlank String univNm,
@@ -135,13 +97,7 @@ public class UniversityController {
         return ResponseEntity.status(HttpStatus.CREATED).body(college);
     }
     
-    /**
-     * Get departments by college
-     * 
-     * @param univNm University identifier
-     * @param collegeNm College identifier
-     * @return List of departments in the college
-     */
+    @Operation(summary = "단과대의 학과 목록 조회", description = "특정 단과대에 속한 모든 학과 목록을 조회합니다.")
     @GetMapping("/{univNm}/colleges/{collegeNm}/departments")
     public ResponseEntity<List<DepartmentResponse>> getDepartmentsByCollege(
             @PathVariable @NotBlank String univNm,
@@ -151,14 +107,7 @@ public class UniversityController {
         return ResponseEntity.ok(departments);
     }
     
-    /**
-     * Create new department in college
-     * 
-     * @param univNm University identifier
-     * @param collegeNm College identifier
-     * @param request Department creation request
-     * @return Created department
-     */
+    @Operation(summary = "학과 등록", description = "특정 단과대에 새로운 학과를 등록합니다.")
     @PostMapping("/{univNm}/colleges/{collegeNm}/departments")
     public ResponseEntity<DepartmentResponse> createDepartment(
             @PathVariable @NotBlank String univNm,

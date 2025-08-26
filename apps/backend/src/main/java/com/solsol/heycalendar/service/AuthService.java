@@ -7,7 +7,11 @@ import com.solsol.heycalendar.dto.request.LogoutRequest;
 import com.solsol.heycalendar.dto.request.PasswordResetConfirmRequest;
 import com.solsol.heycalendar.dto.request.PasswordResetRequest;
 import com.solsol.heycalendar.dto.request.RefreshRequest;
+import com.solsol.heycalendar.dto.request.SignupRequest;
 import com.solsol.heycalendar.dto.response.AuthResponse;
+import com.solsol.heycalendar.dto.response.SignupResponse;
+import com.solsol.heycalendar.domain.Role;
+import com.solsol.heycalendar.domain.Status;
 import com.solsol.heycalendar.mapper.RefreshTokenMapper;
 import com.solsol.heycalendar.mapper.UserMapper;
 import com.solsol.heycalendar.security.AuthTokenService;
@@ -48,6 +52,7 @@ public class AuthService {
 	private final UserMapper userMapper;
 	private final RefreshTokenMapper refreshTokenMapper;
 	private final PasswordEncoder passwordEncoder;
+	private final ShinhanBankService shinhanBankService;
 
 	/**
 	 * 사용자 로그인을 처리하고 토큰을 발급
@@ -280,5 +285,105 @@ public class AuthService {
 			buf[i] = RESET_DIGITS[RESET_RAND.nextInt(RESET_DIGITS.length)];
 		}
 		return new String(buf);
+	}
+
+	/**
+	 * 회원가입 처리 및 신한은행 계정 생성
+	 */
+	public SignupResponse signup(SignupRequest request) {
+		log.info("Starting signup process for userId: {}", request.getUserId());
+
+		// 1단계: 기본 회원가입 처리 (트랜잭션)
+		String userId = createBasicUser(request);
+		
+		// 2단계: 신한은행 연동 (별도 처리)
+		try {
+			shinhanBankService.createMemberAndAccount(userId, request.getUserNm());
+			log.info("Shinhan Bank integration completed for userId: {}", userId);
+		} catch (Exception e) {
+			log.warn("Shinhan Bank integration failed for userId: {}, but signup continues. Error: {}", 
+				userId, e.getMessage());
+		}
+
+		// 3단계: 최종 사용자 정보 조회
+		User finalUser = userMapper.findByUserId(userId)
+				.orElseThrow(() -> new IllegalStateException("Failed to retrieve created user"));
+
+		SignupResponse response = SignupResponse.builder()
+				.userNm(finalUser.getUserNm())
+				.userId(finalUser.getUserId())
+				.userName(finalUser.getUserName())
+				.userKey(finalUser.getUserKey())
+				.accountNm(finalUser.getAccountNm())
+				.build();
+
+		log.info("Signup completed successfully for userId: {}", request.getUserId());
+		return response;
+	}
+
+	/**
+	 * 기본 회원 정보 저장 (트랜잭션)
+	 */
+	@Transactional
+	private String createBasicUser(SignupRequest request) {
+		// 1) 계좌생성 동의 체크
+		if (!request.isAccountCreationConsent()) {
+			throw new IllegalArgumentException("Account creation consent is required");
+		}
+
+		// 2) 중복 사용자 체크
+		if (userMapper.findByUserId(request.getUserId()).isPresent()) {
+			throw new IllegalStateException("User already exists with userId: " + request.getUserId());
+		}
+		if (userMapper.findByUserNm(request.getUserNm()).isPresent()) {
+			throw new IllegalStateException("User already exists with userNm: " + request.getUserNm());
+		}
+
+		// 3) 비밀번호 해시화
+		String encodedPassword = passwordEncoder.encode(request.getPassword());
+
+		// 4) 대학에 따른 단과대학 자동 매핑 (하드코딩)
+		Long collegeNm = mapUniversityToCollege(request.getUnivNm());
+
+		// 5) 사용자 정보 DB 저장 (신한은행 정보는 나중에 업데이트)
+		User user = User.builder()
+				.userNm(request.getUserNm())
+				.userId(request.getUserId())
+				.password(encodedPassword)
+				.userName(request.getUserName())
+				.status(Status.ENROLLED)
+				.grade(request.getGrade())
+				.deptNm(request.getDeptNm())
+				.collegeNm(collegeNm)
+				.univNm(request.getUnivNm())
+				.role(Role.student)
+				.build();
+
+		int inserted = userMapper.insertUser(user);
+		if (inserted != 1) {
+			throw new IllegalStateException("Failed to insert user");
+		}
+		
+		return request.getUserId();
+	}
+
+	/**
+	 * 대학교 번호에 따른 단과대학 매핑 (하드코딩)
+	 */
+	private Long mapUniversityToCollege(Long univNm) {
+		// 실제 프로젝트에서는 DB에서 조회하거나 별도 매핑 테이블 사용
+		switch (univNm.intValue()) {
+			case 1: return 1L; // 서울대학교 -> 공과대학
+			case 2: return 2L; // 연세대학교 -> 공과대학
+			case 3: return 3L; // 고려대학교 -> 공과대학
+			case 4: return 4L; // 한양대학교 -> 공과대학
+			case 5: return 5L; // 성균관대학교 -> 공과대학
+			case 6: return 6L; // 경희대학교 -> 공과대학
+			case 7: return 7L; // 중앙대학교 -> 공과대학
+			case 8: return 8L; // 한국외국어대학교 -> 공과대학
+			case 9: return 9L; // 서강대학교 -> 공과대학
+			case 10: return 10L; // 이화여자대학교 -> 공과대학
+			default: return 1L; // 기본값
+		}
 	}
 }
