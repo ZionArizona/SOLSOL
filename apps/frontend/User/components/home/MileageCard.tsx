@@ -44,7 +44,7 @@ export const MileageCard = ({ label, points, onPressScholar }: Props) => {
         <Shortcut 
           title="알림함" 
           Icon={BellIcon} 
-          onPress={() => router.push("/UserBasic/MyPage")}
+          onPress={() => router.push("/Notifications/Notifications")}
         />
       </View>
     </View>

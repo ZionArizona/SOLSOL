@@ -13,7 +13,7 @@ import { StudentCard } from "../../components/home/StudentCard";
 import { PromoBanner } from "../../components/home/PromoBanner";
 import { MileageCard } from "../../components/home/MileageCard";
 import { ThisWeekList } from "../../components/home/ThisWeekList";
-import { UserCircleIcon } from "../../components/shared/icons";
+import { UserCircleIcon, MenuIcon, BellIcon } from "../../components/shared/icons";
 
 export default function MainPage() {
   const points = useMemo(() => 4000, []);
@@ -33,13 +33,29 @@ export default function MainPage() {
         <View style={styles.phone}>
           <View style={styles.headerWithProfile}>
             <HeaderSection school="한양대학교"/>
-            <TouchableOpacity 
-              style={styles.profileButton} 
-              onPress={() => router.push("/UserBasic/MyPage")}
-              activeOpacity={0.8}
-            >
-              <UserCircleIcon size={20} />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity 
+                style={styles.headerButton} 
+                onPress={() => router.push("/Menu/Menu")}
+                activeOpacity={0.8}
+              >
+                <MenuIcon size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.headerButton} 
+                onPress={() => router.push("/Notifications/Notifications")}
+                activeOpacity={0.8}
+              >
+                <BellIcon size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.profileButton} 
+                onPress={() => router.push("/UserBasic/MyPage")}
+                activeOpacity={0.8}
+              >
+                <UserCircleIcon size={20} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.block}>
@@ -100,10 +116,17 @@ const styles = StyleSheet.create({
   headerWithProfile: {
     position: "relative",
   },
-  profileButton: {
+  headerButtons: {
     position: "absolute",
     right: 18,
     top: 18,
+    flexDirection: "row",
+    gap: 8,
+  },
+  headerButton: {
+    padding: 4,
+  },
+  profileButton: {
     padding: 4,
   },
 });

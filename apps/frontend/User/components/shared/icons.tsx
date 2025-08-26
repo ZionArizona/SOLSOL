@@ -3,6 +3,8 @@ import Svg, { Path, Rect, Circle } from "react-native-svg";
 
 /** 공통: size prop */
 type P = { size?: number; style?: any };
+type PBase = { size?: number; style?: any };
+type PColor = PBase & { color?: string };
 
 export const CalendarIcon = ({ size = 28, style }: P) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
@@ -113,5 +115,26 @@ export const UserCircleIcon = ({ size = 24, style }: P) => (
     <Circle cx="12" cy="12" r="10" stroke="#2B3A5A" strokeWidth={1.8} />
     <Path d="M12 12a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" stroke="#2B3A5A" strokeWidth={1.8}/>
     <Path d="M5.5 18.2c1.8-2.6 4.4-3.9 6.5-3.9s4.7 1.3 6.5 3.9" stroke="#2B3A5A" strokeWidth={1.8} strokeLinecap="round"/>
+  </Svg>
+);
+
+export const SearchIcon = ({ size = 18, color = "#2C3E66", style }: PColor) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" style={style} fill="none">
+    <Path d="M11 19a8 8 0 1 1 5.292-13.964A8 8 0 0 1 11 19Z" stroke={color} strokeWidth={1.8}/>
+    <Path d="M16.65 16.65L21 21" stroke={color} strokeWidth={1.8} strokeLinecap="round"/>
+  </Svg>
+);
+
+export const UploadIcon = ({ size = 16, color = "#6B86FF", style }: PColor) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" style={style} fill="none">
+    <Path d="M12 16V6" stroke={color} strokeWidth={2} strokeLinecap="round"/>
+    <Path d="M8 9l4-4 4 4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M4 18h16" stroke={color} strokeWidth={2} strokeLinecap="round"/>
+  </Svg>
+);
+
+export const BulkManageIcon = ({ size = 16, color = "#6B86FF", style }: PColor) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" style={style} fill="none">
+    <Path d="M4 6h16M4 12h16M4 18h16" stroke={color} strokeWidth={2} strokeLinecap="round"/>
   </Svg>
 );
