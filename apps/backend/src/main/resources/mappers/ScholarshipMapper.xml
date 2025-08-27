@@ -203,6 +203,10 @@
 		SELECT * FROM scholarship_notice WHERE id = #{id}
 	</select>
 
+	<select id="findAllNotices" resultMap="NoticeMap">
+		SELECT * FROM scholarship_notice ORDER BY created_at DESC
+	</select>
+
 	<insert id="upsertNotice" parameterType="com.solsol.heycalendar.domain.ScholarshipNotice">
 		INSERT INTO scholarship_notice (scholarship_id, title, content, image_url)
 		VALUES (#{scholarshipId}, #{title}, #{content}, #{imageUrl})

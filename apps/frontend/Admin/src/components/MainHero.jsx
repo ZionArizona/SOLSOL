@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 const h = {
   section:{ padding:'72px 0 40px' },
   title:{
@@ -13,12 +15,18 @@ const h = {
 }
 
 export default function Hero(){
+  const navigate = useNavigate()
+  
+  const handleScholarshipClick = () => {
+    navigate('/admin/scholarships')
+  }
+
   return (
     <section style={h.section}>
       <div className="container">
         <h1 style={h.title}>장학금을 더 간단하게 등록하고 싶다면?</h1>
         <div style={h.ctaWrap}>
-          <button style={h.cta}>
+          <button style={h.cta} onClick={handleScholarshipClick}>
             장학금 등록하러 가기&nbsp;➜
           </button>
         </div>

@@ -16,6 +16,13 @@ export default function ScholarshipEdit(){
     fetchScholarshipData()
   }, [id])
 
+  // 날짜를 YYYY-MM-DD 형식으로 변환하는 헬퍼 함수
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    return date.toISOString().split('T')[0]
+  }
+
   const fetchScholarshipData = async () => {
     try {
       const scholarship = await scholarshipApi.getScholarship(id)
@@ -35,8 +42,37 @@ export default function ScholarshipEdit(){
         std: c.stdPoint,
         weight: c.weightPercent
       }))
-      transformedData.tags = tagsData
-      transformedData.notices = noticesData
+      
+      // 태그를 chips 형태로 변환 (ScholarshipForm에서 chips 필드를 사용)
+      transformedData.chips = tagsData.map(tag => tag.name || tag.tagName || tag).join(', ')
+      
+      // categories 필드 설정 (이미 transformForFrontend에서 처리되지만 덮어쓰기)
+      if (scholarship.category) {
+        transformedData.categories = Array.isArray(scholarship.category) 
+          ? scholarship.category.join(', ')
+          : scholarship.category
+      }
+      
+      // 공지사항 정보
+      if (noticesData && noticesData.length > 0) {
+        const firstNotice = noticesData[0]
+        transformedData.notice = {
+          title: firstNotice.title || firstNotice.noticeTitle,
+          content: firstNotice.content || firstNotice.noticeContent
+        }
+      }
+      
+      // 심사 관련 정보 (ScholarshipForm에서 judge 필드를 사용)
+      transformedData.judge = {
+        mode: scholarshipUtils.getEvaluationMethodLabel(scholarship.evaluationMethod) || '서류심사',
+        interviewDate: formatDateForInput(scholarship.interviewDate),
+        judgeStart: formatDateForInput(scholarship.evaluationStartDate),
+        resultDate: formatDateForInput(scholarship.resultAnnouncementDate)
+      }
+      
+      // 날짜 필드들도 form 입력용 형식으로 변환
+      transformedData.startDate = formatDateForInput(scholarship.recruitmentStartDate)
+      transformedData.endDate = formatDateForInput(scholarship.recruitmentEndDate)
       
       setData(transformedData)
     } catch (error) {
@@ -62,11 +98,13 @@ export default function ScholarshipEdit(){
   const save = async (payload) => {
     try {
       const updateData = scholarshipUtils.transformForBackend(payload)
+      console.log('Sending update data:', updateData) // 디버깅용 로그
       await scholarshipApi.updateScholarship(id, updateData)
       alert('저장되었습니다.')
       nav(`/admin/scholarships/${id}`)
     } catch (error) {
       console.error('Failed to update scholarship:', error)
+      console.error('Original payload:', payload) // 디버깅용 로그
       alert('저장에 실패했습니다: ' + error.message)
     }
   }
