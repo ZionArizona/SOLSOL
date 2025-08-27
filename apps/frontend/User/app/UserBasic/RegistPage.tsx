@@ -1,69 +1,78 @@
-// app/UserBasic/RegistPage.tsx
 import React, { useState } from 'react';
-import {View, Text, ImageBackground, Image, TouchableOpacity, KeyboardAvoidingView, StyleSheet, StatusBar, Platform, TextInput, ScrollView, Keyboard, TouchableWithoutFeedback, Alert, Pressable, FlatList} from 'react-native';
+import { View, Text, ImageBackground, Image, TouchableOpacity, KeyboardAvoidingView, StyleSheet, StatusBar, Platform, TextInput, ScrollView, Keyboard, TouchableWithoutFeedback, Alert, Pressable, Modal } from 'react-native';
 import { router } from 'expo-router';
-// import RNPickerSelect from 'react-native-picker-select';
-// import { Picker } from '@react-native-picker/picker';
-// 필요 시 .env: EXPO_PUBLIC_API_BASE
 
 const API_BASE = 'http://localhost:8080';
 
 // 10개 대학교 목록
-const universities = [{ label: '경기대학교', value: '경기대학교' },{ label: '광주대학교', value: '광주대학교' },{ label: '동국대학교', value: '동국대학교' },{ label: '용인대학교', value: '용인대학교' },{ label: '숙명여자대학교', value: '숙명여자대학교' },
-  { label: '이화여자대학교', value: '이화여자대학교' },{ label: '전북과학대학교', value: '전북과학대학교' },{ label: '청주대학교', value: '청주대학교' },{ label: '한양대학교', value: '한양대학교' },{ label: '홍익대학교', value: '홍익대학교' }];
+const universities = [ { label: '경기대학교', value: '경기대학교' }, { label: '광주대학교', value: '광주대학교' }, { label: '동국대학교', value: '동국대학교' }, { label: '용인대학교', value: '용인대학교' }, { label: '숙명여자대학교', value: '숙명여자대학교' }, { label: '이화여자대학교', value: '이화여자대학교' }, { label: '전북과학대학교', value: '전북과학대학교' }, { label: '청주대학교', value: '청주대학교' }, { label: '한양대학교', value: '한양대학교' }, { label: '홍익대학교', value: '홍익대학교' }];
 
 export default function RegistPage() {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [pw, setPw] = useState('');
-    const [univName, setUnivName] = useState('');
-    const [dept, setDept] = useState('');
-    const [studentId, setStudentId] = useState('');
-    const [agreeAll, setAgreeAll] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    const [showDropdown, setShowDropdown] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [univName, setUnivName] = useState('');   // 화면 표시용
+  const [univValue, setUnivValue] = useState(''); // 서버 전송용
+  const [dept, setDept] = useState('');
+  const [studentId, setStudentId] = useState('');
+  const [agreeAll, setAgreeAll] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
     const handleRegister = async () => {
-
-    if ( !name.trim() || !email.trim() || !pw.trim() || !univName.trim() ||!dept.trim() || !studentId.trim() ) {
-        Alert.alert('입력 필요', '모두 입력해 주세요.'); return;
+    if ( !name.trim() || !email.trim() || !pw.trim() || !univValue.trim() || !dept.trim() || !studentId.trim() ) {
+      Alert.alert('입력 필요', '모두 입력해 주세요.');
+      return;
     }
 
     if (!agreeAll) {
-        Alert.alert('동의 필요', '이용약관 및 개인정보 수집·이용에 모두 동의해주세요.');
-        return;
+      Alert.alert('동의 필요', '이용약관 및 개인정보 수집·이용에 모두 동의해주세요.');
+      return;
     }
+
     try {
-        setSubmitting(true);
-        const res = await fetch(`${API_BASE}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            userName : name.trim(), userId : email.trim(), password : pw, univName : univName.trim(), deptName : dept.trim(), userNm : studentId.trim()
-            }),
-        });
+      setSubmitting(true);
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userName: name.trim(),
+          userId: email.trim(),
+          password: pw,
+          univName: univValue.trim(),
+          deptName: dept.trim(),
+          userNm: studentId.trim(),
+        }),
+      });
 
-        const raw = await res.text();
-        let ok = res.ok;
-        try {
-            const json = JSON.parse(raw);
-            ok = ok && (json.ok === true || json.status === 'ok');
-        } catch {
-            if (raw.trim().toLowerCase() === 'ok') ok = true;
-        }
+      const raw = await res.text();
+      
+      // 백엔드 응답 데이터 출력
+      console.log('🔍 백엔드 응답 데이터:', raw);
+      console.log('📊 응답 상태:', res.status);
+      console.log('📋 응답 헤더:', Object.fromEntries(res.headers.entries()));
+      
+      let ok = res.ok;
+      try {
+        const json = JSON.parse(raw);
+        console.log('📋 파싱된 JSON:', JSON.stringify(json, null, 2));
+        ok = ok && (json.ok === true || json.status === 'ok');
+      } catch {
+        console.log('⚠️ JSON 파싱 실패, 텍스트 응답:', raw);
+        if (raw.trim().toLowerCase() === 'ok') ok = true;
+      }
 
-        if(!ok) throw new Error(raw || `HTTP ${res.status}`);
-        
-        Alert.alert('가입 완료', '회원가입 요청이 정상 처리되었습니다.', [
+      if (!ok) throw new Error(raw || `HTTP ${res.status}`);
+
+      Alert.alert('가입 완료', '회원가입 요청이 정상 처리되었습니다.', [
         {
-            text: '확인',
-            onPress: () => {
+          text: '확인',
+          onPress: () => {
             if ((router as any).canGoBack?.()) router.back();
-            else router.replace('/UserBasic/LoginPage'); // 혹은 '/'
-            }
-        }
-        ]);
-
+            else router.replace('/UserBasic/LoginPage');
+          },
+        },
+      ]);
     } catch (e: any) {
       Alert.alert('가입 실패', e?.message || '잠시 후 다시 시도해주세요.');
     } finally {
@@ -84,17 +93,25 @@ export default function RegistPage() {
           style={styles.background}
           resizeMode="cover"
         >
-          <ScrollView 
-            keyboardShouldPersistTaps="handled" 
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingBottom: 120 }}
-            onTouchStart={() => setShowDropdown(false)}
+            // onTouchStart={() => setShowDropdown(false)}  // ⛔️ 제거: 모달 스크롤 시 닫히는 원인
           >
             <View style={styles.headerWrap}>
               <View style={styles.headerRow}>
-                <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Image source={require('../../assets/images/BackIcon.png')} style={styles.backIcon} />
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Image
+                    source={require('../../assets/images/BackIcon.png')}
+                    style={styles.backIcon}
+                  />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle} numberOfLines={1}>회원 가입</Text>
+                <Text style={styles.headerTitle} numberOfLines={1}>
+                  회원 가입
+                </Text>
               </View>
             </View>
 
@@ -103,49 +120,129 @@ export default function RegistPage() {
               <Text style={styles.requiredText}>* 필수입력사항</Text>
             </View>
 
-
             <View style={styles.formWrap}>
-              <TextInput style={[styles.inputBox, { marginTop: 14 }]} placeholder="이름 *" placeholderTextColor="#888" value={name} onChangeText={setName} />
-              <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="이메일 *" placeholderTextColor="#888" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-              <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="비밀번호 *" placeholderTextColor="#888" secureTextEntry textContentType="password" value={pw} onChangeText={setPw} />
-              <View style={{ marginTop: 12, position: 'relative', zIndex: 1 }}>
-                <TouchableOpacity 
-                  style={styles.dropdownButton}
-                  onPress={() => setShowDropdown(!showDropdown)}
-                >
-                  <Text style={univName ? styles.dropdownText : styles.dropdownPlaceholder}>
-                    {univName || '학교 선택하기 *'}
-                  </Text>
-                  <Text style={styles.dropdownArrow}>{showDropdown ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
-                
-                {showDropdown && (
-                  <View style={styles.dropdownList}>
-                    <FlatList
-                      data={universities}
-                      keyExtractor={(item) => item.value}
-                      style={styles.dropdownScroll}
-                      showsVerticalScrollIndicator={true}
-                      renderItem={({ item }) => (
+              <TextInput
+                style={[styles.inputBox, { marginTop: 14 }]}
+                placeholder="이름 *"
+                placeholderTextColor="#888"
+                value={name}
+                onChangeText={setName}
+              />
+
+              <TextInput
+                style={[styles.inputBox, { marginTop: 12 }]}
+                placeholder="이메일 *"
+                placeholderTextColor="#888"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+
+              <TextInput
+                style={[styles.inputBox, { marginTop: 12 }]}
+                placeholder="비밀번호 *"
+                placeholderTextColor="#888"
+                secureTextEntry
+                textContentType="password"
+                value={pw}
+                onChangeText={setPw}
+              />
+
+              {/* 학교 선택 드롭다운 버튼 */}
+              <TouchableOpacity
+                style={[styles.dropdownButton, { marginTop: 12 }]}
+                onPress={() => setShowDropdown(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={univName ? styles.dropdownText : styles.dropdownPlaceholder}>
+                  {univName || '학교 선택하기 *'}
+                </Text>
+                <Text style={styles.dropdownArrow}>▼</Text>
+              </TouchableOpacity>
+
+              {/* 모달: 대학교 선택 */}
+              <Modal
+                visible={showDropdown}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowDropdown(false)}
+                presentationStyle="overFullScreen"
+              >
+                <View style={styles.modalOverlay}>
+                  {/* 배경 터치 시 닫힘 */}
+                  <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
+                    <View style={styles.modalBackground} />
+                  </TouchableWithoutFeedback>
+
+                  <View style={styles.modalContent}>
+                    <Text style={styles.modalTitle}>학교 선택</Text>
+
+                    {/* ⬇️ 스크롤 시 모달이 닫히지 않도록 제스처 캡처 추가 */}
+                    <ScrollView
+                      style={styles.modalScroll}
+                      showsVerticalScrollIndicator
+                      bounces={false}
+                      keyboardShouldPersistTaps="handled"
+                      onStartShouldSetResponderCapture={() => true}
+                      onMoveShouldSetResponderCapture={() => true}
+                    >
+                      {universities.map((uni) => (
                         <TouchableOpacity
-                          style={styles.dropdownItem}
+                          key={uni.value}
+                          style={[
+                            styles.modalItem,
+                            univName === uni.label && styles.modalItemSelected,
+                          ]}
                           onPress={() => {
-                            setUnivName(item.value);
+                            setUnivName(uni.label);   // 화면 표시용
+                            setUnivValue(uni.value);  // 서버 전송용
                             setShowDropdown(false);
                           }}
+                          activeOpacity={0.7}
                         >
-                          <Text style={styles.dropdownItemText}>{item.label}</Text>
+                          <Text
+                            style={[
+                              styles.modalItemText,
+                              univName === uni.label && styles.modalItemTextSelected,
+                            ]}
+                          >
+                            {uni.label}
+                          </Text>
+                          {univName === uni.label && <Text style={styles.checkMark}>✓</Text>}
                         </TouchableOpacity>
-                      )}
-                    />
+                      ))}
+                    </ScrollView>
+
+                    <TouchableOpacity
+                      style={styles.modalCloseButton}
+                      onPress={() => setShowDropdown(false)}
+                    >
+                      <Text style={styles.modalCloseText}>닫기</Text>
+                    </TouchableOpacity>
                   </View>
-                )}
-              </View>
-              <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="학과 *" placeholderTextColor="#888" value={dept} onChangeText={setDept} />
-              <TextInput style={[styles.inputBox, { marginTop: 12 }]} placeholder="학번 *" placeholderTextColor="#888" keyboardType="numeric" value={studentId} onChangeText={setStudentId} />
+                </View>
+              </Modal>
+
+              <TextInput
+                style={[styles.inputBox, { marginTop: 12 }]}
+                placeholder="학과 *"
+                placeholderTextColor="#888"
+                value={dept}
+                onChangeText={setDept}
+              />
+
+              <TextInput
+                style={[styles.inputBox, { marginTop: 12 }]}
+                placeholder="학번 *"
+                placeholderTextColor="#888"
+                keyboardType="numeric"
+                value={studentId}
+                onChangeText={setStudentId}
+              />
 
               <View style={{ marginTop: 20 }}>
-                <View style={styles.consentBox}>
+                <View className="consent" style={styles.consentBox}>
                   <Text style={styles.consentTitle}>헤이영 캠퍼스 계좌 생성 동의서</Text>
                   <Text style={styles.bullet}>{'\u2022'} 신한은행 연동 계좌 생성에 동의합니다.</Text>
                   <Text style={styles.bullet}>{'\u2022'} 신한은행 개인 정보 사용에 동의합니다.</Text>
@@ -155,15 +252,20 @@ export default function RegistPage() {
                 </View>
               </View>
 
-              {/* ✅ 동의 체크: 동의서와 14만큼 간격 */}
-              <Pressable style={[styles.agreeRow, { marginTop: 14 }]} onPress={() => setAgreeAll(v => !v)}>
+              {/* 동의 체크 */}
+              <Pressable
+                style={[styles.agreeRow, { marginTop: 14 }]}
+                onPress={() => setAgreeAll((v) => !v)}
+              >
                 <View style={[styles.checkbox, agreeAll && styles.checkboxChecked]}>
                   {agreeAll && <View style={styles.checkboxDot} />}
                 </View>
-                <Text style={styles.agreeText}>이용약관 및 개인정보 수집, 이용에 모두 동의합니다.</Text>
+                <Text style={styles.agreeText}>
+                  이용약관 및 개인정보 수집, 이용에 모두 동의합니다.
+                </Text>
               </Pressable>
 
-              {/* ✅ 회원가입 버튼: 동의 텍스트와 16만큼 간격 */}
+              {/* 회원가입 버튼 */}
               <Pressable
                 onPress={handleRegister}
                 style={[styles.joinButton, { marginTop: 16, opacity: submitting ? 0.7 : 1 }]}
@@ -187,43 +289,82 @@ const styles = StyleSheet.create({
   headerWrap: { paddingTop: 36, paddingHorizontal: 16 },
   headerRow: { flexDirection: 'row', alignItems: 'center' },
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  headerTitle: {width: 80, height: 27, marginLeft: 130, fontSize: 20, fontWeight: '700', color: '#111',includeFontPadding: false, textAlignVertical: 'center', lineHeight: 24,},
+  headerTitle: {
+    width: 80,
+    height: 27,
+    marginLeft: 130,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    lineHeight: 24,
+  },
 
   /* INFORMATION 라인 */
-  infoRow: { marginTop: 39, paddingLeft: 34, paddingRight: 34, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',},
+  infoRow: {
+    marginTop: 39,
+    paddingLeft: 34,
+    paddingRight: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   infoLabel: { fontSize: 16, fontWeight: '600', color: '#111' },
   requiredText: { fontSize: 13, color: '#111' },
 
   /* 폼 */
   formWrap: { paddingLeft: 34, paddingRight: 34 },
   inputBox: {
-    height: 50, width: '100%',
-    borderWidth: 1, borderColor: '#BDBDBD', borderRadius: 4,
-    paddingHorizontal: 12, backgroundColor: 'rgba(255,255,255,0.9)',
-    fontSize: 14, color: '#111',
+    height: 50,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#BDBDBD',
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    fontSize: 14,
+    color: '#111',
   },
 
   /* 동의서 박스 */
-  consentBox: { backgroundColor: '#fff', borderRadius: 8, padding: 16, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 2,},
-  consentTitle: { fontSize: 16, fontWeight: '700', color: '#111', marginBottom: 10,},
-  bullet: { fontSize: 14, color: '#111', marginBottom: 6,},
+  consentBox: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  consentTitle: { fontSize: 16, fontWeight: '700', color: '#111', marginBottom: 10 },
+  bullet: { fontSize: 14, color: '#111', marginBottom: 6 },
 
   /* 동의 체크 */
-  agreeRow: { flexDirection: 'row', alignItems: 'center',},
+  agreeRow: { flexDirection: 'row', alignItems: 'center' },
   checkbox: {
-    width: 18, height: 18, borderRadius: 4,
-    borderWidth: 1.5, borderColor: '#8FA1FF',
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#fff', marginRight: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#8FA1FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    marginRight: 8,
   },
-  checkboxChecked: { borderColor: '#6E87FF', backgroundColor: '#E9EDFF',},
+  checkboxChecked: { borderColor: '#6E87FF', backgroundColor: '#E9EDFF' },
   checkboxDot: { width: 10, height: 10, backgroundColor: '#6E87FF' },
   agreeText: { fontSize: 13, color: '#333' },
 
   /* 회원가입 버튼 */
   joinButton: {
-    height: 48, borderRadius: 10, backgroundColor: '#8FA1FF',
-    alignItems: 'center', justifyContent: 'center',
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#8FA1FF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   joinText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 
@@ -239,47 +380,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     justifyContent: 'space-between',
   },
-  dropdownText: {
-    fontSize: 14,
-    color: '#111',
-  },
-  dropdownPlaceholder: {
-    fontSize: 14,
-    color: '#888',
-  },
-  dropdownArrow: {
-    fontSize: 14,
-    color: '#666',
-  },
-  dropdownList: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#BDBDBD',
-    borderRadius: 4,
-    marginTop: 2,
-    maxHeight: 200,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+  dropdownText: { fontSize: 14, color: '#111' },
+  dropdownPlaceholder: { fontSize: 14, color: '#888' },
+  dropdownArrow: { fontSize: 14, color: '#666' },
+
+  /* Modal 스타일 */
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  modalBackground: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
-    top: 52,
-    zIndex: 1000,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  dropdownScroll: {
-    maxHeight: 200,
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '80%',
+    maxHeight: '60%',
   },
-  dropdownItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  dropdownItemText: {
-    fontSize: 14,
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
     color: '#111',
   },
+  modalScroll: { maxHeight: 300 },
+  modalItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalItemSelected: { backgroundColor: '#E9EDFF' },
+  modalItemText: { fontSize: 16, color: '#111', flex: 1 },
+  modalItemTextSelected: { color: '#6E87FF', fontWeight: '600' },
+  checkMark: { fontSize: 18, color: '#6E87FF', fontWeight: 'bold' },
+  modalCloseButton: {
+    marginTop: 20,
+    backgroundColor: '#8FA1FF',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalCloseText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
