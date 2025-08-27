@@ -19,7 +19,7 @@ public class User {
 	private String password;
 	private String userKey;
 	private String userName;
-	private Status status;
+	private State state;
 	private int grade;
 	private BigDecimal gpa;
 	private LocalDateTime createdAt;
