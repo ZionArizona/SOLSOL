@@ -27,8 +27,8 @@ public class ScholarshipBookmarkService {
         
         // 이미 찜했는지 확인
         if (scholarshipBookmarkMapper.exists(userNm, scholarshipId)) {
-            log.warn("Already bookmarked - userNm: {}, scholarshipId: {}", userNm, scholarshipId);
-            throw new IllegalStateException("이미 찜한 장학금입니다.");
+            log.info("Already bookmarked - userNm: {}, scholarshipId: {}", userNm, scholarshipId);
+            return; // 이미 찜한 경우 성공으로 처리
         }
         
         ScholarshipBookmark bookmark = ScholarshipBookmark.builder()
@@ -50,8 +50,8 @@ public class ScholarshipBookmarkService {
         
         // 찜했는지 확인
         if (!scholarshipBookmarkMapper.exists(userNm, scholarshipId)) {
-            log.warn("Bookmark not found - userNm: {}, scholarshipId: {}", userNm, scholarshipId);
-            throw new IllegalStateException("찜하지 않은 장학금입니다.");
+            log.info("Bookmark not found - userNm: {}, scholarshipId: {}", userNm, scholarshipId);
+            return; // 이미 찜하지 않은 경우 성공으로 처리
         }
         
         scholarshipBookmarkMapper.delete(userNm, scholarshipId);
