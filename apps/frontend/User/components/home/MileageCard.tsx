@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
 import { colors } from "../../theme/colors";
 import { Shortcut } from "../shared/Shortcut";
 import { CalendarIcon, FileBoxIcon, ScholarshipIcon, BellIcon } from "../shared/icons";
@@ -25,10 +26,26 @@ export const MileageCard = ({ label, points, onPressScholar }: Props) => {
       </Text>
 
       <View style={styles.row}>
-        <Shortcut title="마이 캘린더" Icon={CalendarIcon} />
-        <Shortcut title="마이 서류 박스" Icon={FileBoxIcon} />
-        <Shortcut title="마이 장학금" Icon={ScholarshipIcon} />
-        <Shortcut title="알림함" Icon={BellIcon} />
+        <Shortcut 
+          title="마이 캘린더" 
+          Icon={CalendarIcon} 
+          onPress={() => router.push("/Schedule/MyCalendar")}
+        />
+        <Shortcut 
+          title="마이 서류 박스" 
+          Icon={FileBoxIcon} 
+          onPress={() => router.push("/MyDocs/MyDocs")}
+        />
+        <Shortcut 
+          title="마이 장학금" 
+          Icon={ScholarshipIcon} 
+          onPress={() => router.push("/MyScholarship/MyScholarship")}
+        />
+        <Shortcut 
+          title="알림함" 
+          Icon={BellIcon} 
+          onPress={() => router.push("/UserBasic/MyPage")}
+        />
       </View>
     </View>
   );

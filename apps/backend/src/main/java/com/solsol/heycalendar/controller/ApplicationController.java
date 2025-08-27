@@ -7,6 +7,8 @@ import com.solsol.heycalendar.dto.response.ApplicationDetailResponse;
 import com.solsol.heycalendar.dto.response.ApplicationDocumentResponse;
 import com.solsol.heycalendar.dto.response.ApplicationResponse;
 import com.solsol.heycalendar.service.ApplicationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,9 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 
-/**
- * REST Controller for scholarship application management
- */
+@Tag(name = "장학금 신청", description = "장학금 신청 관련 API")
 @Slf4j
 @RestController
 @RequestMapping("/api/applications")
@@ -29,10 +29,7 @@ public class ApplicationController {
 
     private final ApplicationService applicationService;
 
-    /**
-     * Get all applications
-     * @return List of all applications
-     */
+    @Operation(summary = "전체 장학금 신청 목록 조회", description = "시스템에 등록된 모든 장학금 신청 내역을 조회합니다.")
     @GetMapping
     public ResponseEntity<List<ApplicationResponse>> getAllApplications() {
         log.info("Fetching all applications");
@@ -40,11 +37,7 @@ public class ApplicationController {
         return ResponseEntity.ok(applications);
     }
 
-    /**
-     * Get applications by user
-     * @param userNm User name
-     * @return List of user's applications
-     */
+    @Operation(summary = "사용자별 장학금 신청 내역 조회", description = "특정 사용자가 신청한 장학금 목록을 조회합니다.")
     @GetMapping("/user/{userNm}")
     public ResponseEntity<List<ApplicationResponse>> getApplicationsByUser(
             @PathVariable String userNm) {
@@ -53,11 +46,7 @@ public class ApplicationController {
         return ResponseEntity.ok(applications);
     }
 
-    /**
-     * Get applications by scholarship
-     * @param scholarshipNm Scholarship name
-     * @return List of scholarship's applications
-     */
+    @Operation(summary = "장학금별 신청자 목록 조회", description = "특정 장학금에 대한 모든 신청자 목록을 조회합니다.")
     @GetMapping("/scholarship/{scholarshipNm}")
     public ResponseEntity<List<ApplicationResponse>> getApplicationsByScholarship(
             @PathVariable String scholarshipNm) {
@@ -66,12 +55,7 @@ public class ApplicationController {
         return ResponseEntity.ok(applications);
     }
 
-    /**
-     * Get detailed application information
-     * @param userNm User name
-     * @param scholarshipNm Scholarship name
-     * @return Detailed application information
-     */
+    @Operation(summary = "장학금 신청 상세 정보 조회", description = "특정 사용자의 특정 장학금 신청에 대한 상세 정보를 조회합니다.")
     @GetMapping("/{userNm}/{scholarshipNm}")
     public ResponseEntity<ApplicationDetailResponse> getApplicationDetail(
             @PathVariable String userNm,
@@ -81,11 +65,7 @@ public class ApplicationController {
         return ResponseEntity.ok(application);
     }
 
-    /**
-     * Submit a new application
-     * @param request Application submission request
-     * @return Created application information
-     */
+    @Operation(summary = "장학금 신청", description = "새로운 장학금 신청을 제출합니다.")
     @PostMapping
     public ResponseEntity<ApplicationResponse> submitApplication(
             @Valid @RequestBody ApplicationRequest request) {
@@ -95,13 +75,7 @@ public class ApplicationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(application);
     }
 
-    /**
-     * Approve an application
-     * @param userNm User name
-     * @param scholarshipNm Scholarship name
-     * @param request Review request with reason and reviewer
-     * @return Updated application information
-     */
+    @Operation(summary = "장학금 신청 승인", description = "장학금 신청을 승인 처리합니다.")
     @PutMapping("/{userNm}/{scholarshipNm}/approve")
     public ResponseEntity<ApplicationResponse> approveApplication(
             @PathVariable String userNm,
@@ -113,13 +87,7 @@ public class ApplicationController {
         return ResponseEntity.ok(application);
     }
 
-    /**
-     * Reject an application
-     * @param userNm User name
-     * @param scholarshipNm Scholarship name
-     * @param request Review request with reason and reviewer
-     * @return Updated application information
-     */
+    @Operation(summary = "장학금 신청 거부", description = "장학금 신청을 거부 처리합니다.")
     @PutMapping("/{userNm}/{scholarshipNm}/reject")
     public ResponseEntity<ApplicationResponse> rejectApplication(
             @PathVariable String userNm,
@@ -131,13 +99,7 @@ public class ApplicationController {
         return ResponseEntity.ok(application);
     }
 
-    /**
-     * Upload document for application
-     * @param userNm User name
-     * @param scholarshipNm Scholarship name
-     * @param request Document upload request
-     * @return Uploaded document information
-     */
+    @Operation(summary = "신청서류 업로드", description = "장학금 신청에 필요한 서류를 업로드합니다.")
     @PostMapping("/{userNm}/{scholarshipNm}/documents")
     public ResponseEntity<ApplicationDocumentResponse> uploadDocument(
             @PathVariable String userNm,
@@ -153,12 +115,7 @@ public class ApplicationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(document);
     }
 
-    /**
-     * Get documents for application
-     * @param userNm User name
-     * @param scholarshipNm Scholarship name
-     * @return List of application documents
-     */
+    @Operation(summary = "신청서류 목록 조회", description = "특정 장학금 신청에 업로드된 서류 목록을 조회합니다.")
     @GetMapping("/{userNm}/{scholarshipNm}/documents")
     public ResponseEntity<List<ApplicationDocumentResponse>> getApplicationDocuments(
             @PathVariable String userNm,
@@ -168,13 +125,7 @@ public class ApplicationController {
         return ResponseEntity.ok(documents);
     }
 
-    /**
-     * Delete a document
-     * @param userNm User name
-     * @param scholarshipNm Scholarship name
-     * @param documentNm Document name
-     * @return Success response
-     */
+    @Operation(summary = "신청서류 삭제", description = "업로드된 장학금 신청 서류를 삭제합니다.")
     @DeleteMapping("/{userNm}/{scholarshipNm}/documents/{documentNm}")
     public ResponseEntity<Void> deleteDocument(
             @PathVariable String userNm,
