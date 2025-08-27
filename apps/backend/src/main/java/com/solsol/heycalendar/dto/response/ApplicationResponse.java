@@ -21,8 +21,6 @@ public class ApplicationResponse {
     private String scholarshipNm;
     private ApplicationState state;
     private LocalDateTime appliedAt;
-    private LocalDateTime updatedAt;
-    private String reviewedBy;
     
     // Additional fields for UI display
     private String userDisplayName;

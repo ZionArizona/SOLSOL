@@ -22,9 +22,7 @@ public class ApplicationDetailResponse {
     private String scholarshipNm;
     private ApplicationState state;
     private LocalDateTime appliedAt;
-    private LocalDateTime updatedAt;
     private String reason;
-    private String reviewedBy;
     
     // Additional fields for UI display
     private String userDisplayName;

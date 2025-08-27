@@ -37,10 +37,9 @@ export default function ScholarshipCard({data}){
       </div>
 
       <div className="sch-foot">
-        <button className="card-btn">상세보기</button>
-        <button className="card-btn">지원자 보기</button>
-        <button className="card-btn ghost">복사</button>
-        <button className="card-btn danger">삭제</button>
+        <button className="card-btn" onClick={data.onDetail}>상세보기</button>
+        <button className="card-btn" onClick={data.onApplicants}>지원자 보기</button>
+        <button className="card-btn danger" onClick={data.onDelete}>삭제</button>
       </div>
     </article>
   )

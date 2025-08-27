@@ -21,8 +21,4 @@ public class Application {
     private ApplicationState state;  // PENDING, APPROVED, REJECTED
     private LocalDateTime appliedAt;
     private String reason;           // Reason for rejection or additional notes
-    
-    // Additional fields for better management
-    private LocalDateTime updatedAt;
-    private String reviewedBy;       // Who reviewed the application
 }
