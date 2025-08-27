@@ -11,7 +11,7 @@ import com.solsol.heycalendar.dto.request.SignupRequest;
 import com.solsol.heycalendar.dto.response.AuthResponse;
 import com.solsol.heycalendar.dto.response.SignupResponse;
 import com.solsol.heycalendar.domain.Role;
-import com.solsol.heycalendar.domain.Status;
+import com.solsol.heycalendar.domain.State;
 import com.solsol.heycalendar.mapper.RefreshTokenMapper;
 import com.solsol.heycalendar.mapper.UserMapper;
 import com.solsol.heycalendar.security.AuthTokenService;
@@ -351,7 +351,7 @@ public class AuthService {
 				.userId(request.getUserId())
 				.password(encodedPassword)
 				.userName(request.getUserName())
-				.status(Status.ENROLLED)
+				.state(State.ENROLLED)
 				.grade(request.getGrade())
 				.deptNm(request.getDeptNm())
 				.collegeNm(collegeNm)
