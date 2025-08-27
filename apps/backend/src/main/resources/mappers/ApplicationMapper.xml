@@ -7,9 +7,19 @@
     <resultMap id="ApplicationResultMap" type="com.solsol.heycalendar.entity.Application">
         <id property="userNm" column="userNm" />
         <id property="scholarshipNm" column="scholarshipNm" />
-        <result property="state" column="state" typeHandler="org.apache.ibatis.type.EnumTypeHandler" />
+        <result property="state" column="state" typeHandler="com.solsol.heycalendar.config.ApplicationStateTypeHandler" />
         <result property="appliedAt" column="applied_at" />
         <result property="reason" column="reason" />
+    </resultMap>
+
+    <!-- Result Map for ApplicationResponse with Scholarship Info -->
+    <resultMap id="ApplicationResponseResultMap" type="com.solsol.heycalendar.dto.response.ApplicationResponse">
+        <result property="userNm" column="userNm"/>
+        <result property="scholarshipNm" column="scholarshipNm"/>
+        <result property="scholarshipName" column="scholarship_name"/>
+        <result property="state" column="state" typeHandler="com.solsol.heycalendar.config.ApplicationStateTypeHandler"/>
+        <result property="appliedAt" column="applied_at"/>
+        <result property="reason" column="reason"/>
     </resultMap>
 
     <!-- Find all applications -->
@@ -111,6 +121,34 @@
         SELECT COUNT(*)
         FROM application
         WHERE scholarshipNm = #{scholarshipNm}
+    </select>
+
+    <!-- === New queries with scholarship information === -->
+
+    <!-- Find applications by user with scholarship information -->
+    <select id="findApplicationsWithScholarshipByUser" resultMap="ApplicationResponseResultMap">
+        SELECT a.userNm, a.scholarshipNm, s.scholarship_name, a.state, a.applied_at, a.reason
+        FROM application a
+        JOIN scholarship s ON a.scholarshipNm = s.id
+        WHERE a.userNm = #{userNm}
+        ORDER BY a.applied_at DESC
+    </select>
+
+    <!-- Find all applications with scholarship information (Admin) -->
+    <select id="findAllApplicationsWithScholarship" resultMap="ApplicationResponseResultMap">
+        SELECT a.userNm, a.scholarshipNm, s.scholarship_name, a.state, a.applied_at, a.reason
+        FROM application a
+        JOIN scholarship s ON a.scholarshipNm = s.id
+        ORDER BY a.applied_at DESC
+    </select>
+
+    <!-- Find applications by scholarship with user information -->
+    <select id="findApplicationsWithUserByScholarship" resultMap="ApplicationResponseResultMap">
+        SELECT a.userNm, a.scholarshipNm, s.scholarship_name, a.state, a.applied_at, a.reason
+        FROM application a
+        JOIN scholarship s ON a.scholarshipNm = s.id
+        WHERE a.scholarshipNm = #{scholarshipNm}
+        ORDER BY a.applied_at DESC
     </select>
 
 </mapper>

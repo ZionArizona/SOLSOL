@@ -5,88 +5,81 @@
 
     <!-- Result map for Exchange entity -->
     <resultMap id="ExchangeResultMap" type="com.solsol.heycalendar.domain.Exchange">
-        <id property="exchangeNm" column="exchange_nm"/>
-        <result property="userNm" column="user_nm"/>
+        <id property="exchangeNm" column="exchangeNm"/>
+        <result property="userNm" column="userNm"/>
         <result property="amount" column="amount"/>
         <result property="state" column="state" 
                 typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
         <result property="appliedAt" column="applied_at"/>
         <result property="processedAt" column="processed_at"/>
-        <result property="reason" column="reason"/>
     </resultMap>
 
     <!-- Insert new exchange record -->
     <insert id="insert" parameterType="com.solsol.heycalendar.domain.Exchange">
         INSERT INTO exchange (
-            exchange_nm,
-            user_nm,
+            exchangeNm,
+            userNm,
             amount,
             state,
             applied_at,
-            processed_at,
-            reason
+            processed_at
         ) VALUES (
             #{exchangeNm},
             #{userNm},
             #{amount},
             #{state,typeHandler=org.apache.ibatis.type.EnumTypeHandler},
             #{appliedAt},
-            #{processedAt},
-            #{reason}
+            #{processedAt}
         )
     </insert>
 
     <!-- Update exchange record -->
     <update id="update" parameterType="com.solsol.heycalendar.domain.Exchange">
         UPDATE exchange SET
-            user_nm = #{userNm},
+            userNm = #{userNm},
             amount = #{amount},
             state = #{state,typeHandler=org.apache.ibatis.type.EnumTypeHandler},
             applied_at = #{appliedAt},
-            processed_at = #{processedAt},
-            reason = #{reason}
-        WHERE exchange_nm = #{exchangeNm}
+            processed_at = #{processedAt}
+        WHERE exchangeNm = #{exchangeNm}
     </update>
 
     <!-- Find exchange record by primary key -->
     <select id="findById" resultMap="ExchangeResultMap">
         SELECT 
-            exchange_nm,
-            user_nm,
+            exchangeNm,
+            userNm,
             amount,
             state,
             applied_at,
-            processed_at,
-            reason
+            processed_at
         FROM exchange
-        WHERE exchange_nm = #{exchangeNm}
+        WHERE exchangeNm = #{exchangeNm}
     </select>
 
     <!-- Find exchange records by user name -->
     <select id="findByUserNm" resultMap="ExchangeResultMap">
         SELECT 
-            exchange_nm,
-            user_nm,
+            exchangeNm,
+            userNm,
             amount,
             state,
             applied_at,
-            processed_at,
-            reason
+            processed_at
         FROM exchange
-        WHERE user_nm = #{userNm}
+        WHERE userNm = #{userNm}
         ORDER BY applied_at DESC
     </select>
 
     <!-- Find all exchange records -->
     <select id="findAll" resultMap="ExchangeResultMap">
         SELECT 
-            exchange_nm,
-            user_nm,
+            exchangeNm,
+            userNm,
             amount,
             state,
             applied_at,
-            processed_at,
-            reason
+            processed_at
         FROM exchange
         ORDER BY applied_at DESC
     </select>
@@ -94,13 +87,12 @@
     <!-- Find exchange records by state -->
     <select id="findByState" resultMap="ExchangeResultMap">
         SELECT 
-            exchange_nm,
-            user_nm,
+            exchangeNm,
+            userNm,
             amount,
             state,
             applied_at,
-            processed_at,
-            reason
+            processed_at
         FROM exchange
         WHERE state = #{state,typeHandler=org.apache.ibatis.type.EnumTypeHandler}
         ORDER BY applied_at DESC
@@ -109,15 +101,14 @@
     <!-- Find exchange records by user name and state -->
     <select id="findByUserNmAndState" resultMap="ExchangeResultMap">
         SELECT 
-            exchange_nm,
-            user_nm,
+            exchangeNm,
+            userNm,
             amount,
             state,
             applied_at,
-            processed_at,
-            reason
+            processed_at
         FROM exchange
-        WHERE user_nm = #{userNm}
+        WHERE userNm = #{userNm}
           AND state = #{state,typeHandler=org.apache.ibatis.type.EnumTypeHandler}
         ORDER BY applied_at DESC
     </select>
@@ -126,7 +117,7 @@
     <select id="calculateTotalByUserNmAndState" resultType="java.lang.Integer">
         SELECT COALESCE(SUM(amount), 0)
         FROM exchange
-        WHERE user_nm = #{userNm}
+        WHERE userNm = #{userNm}
           AND state = #{state,typeHandler=org.apache.ibatis.type.EnumTypeHandler}
     </select>
 

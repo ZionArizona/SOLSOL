@@ -1,6 +1,7 @@
 package com.solsol.heycalendar.dto.response;
 
 import com.solsol.heycalendar.entity.ApplicationState;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,19 +12,28 @@ import java.time.LocalDateTime;
 /**
  * Response DTO for application list and basic application information
  */
+@Schema(description = "장학금 신청 응답")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicationResponse {
     
+    @Schema(description = "신청자명", example = "홍길동")
     private String userNm;
-    private String scholarshipNm;
+    
+    @Schema(description = "장학금 ID", example = "1")
+    private Long scholarshipNm;
+    
+    @Schema(description = "장학금명", example = "성적우수장학금")
+    private String scholarshipName;
+    
+    @Schema(description = "신청 상태", example = "PENDING")
     private ApplicationState state;
+    
+    @Schema(description = "신청일시", example = "2024-01-01T10:00:00")
     private LocalDateTime appliedAt;
     
-    // Additional fields for UI display
-    private String userDisplayName;
-    private String scholarshipDisplayName;
-    private int documentCount; // Number of documents uploaded
+    @Schema(description = "신청 사유", example = "학업 성취도가 우수함")
+    private String reason;
 }

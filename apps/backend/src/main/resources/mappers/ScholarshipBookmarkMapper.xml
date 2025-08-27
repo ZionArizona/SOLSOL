@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.ScholarshipBookmarkMapper">
+
+    <!-- ScholarshipBookmark 결과 매핑 -->
+    <resultMap id="scholarshipBookmarkResultMap" type="com.solsol.heycalendar.domain.ScholarshipBookmark">
+        <id property="id" column="id"/>
+        <result property="userNm" column="user_nm"/>
+        <result property="scholarshipId" column="scholarship_id"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- Scholarship 결과 매핑 (찜목록 조회용) -->
+    <resultMap id="scholarshipResultMap" type="com.solsol.heycalendar.domain.Scholarship">
+        <id property="id" column="id"/>
+        <result property="scholarshipName" column="scholarship_name"/>
+        <result property="description" column="description"/>
+        <result property="type" column="type" javaType="com.solsol.heycalendar.domain.ScholarshipType" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="amount" column="amount"/>
+        <result property="numberOfRecipients" column="number_of_recipients"/>
+        <result property="paymentMethod" column="payment_method" javaType="com.solsol.heycalendar.domain.PaymentMethod" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="recruitmentStartDate" column="recruitment_start_date"/>
+        <result property="recruitmentEndDate" column="recruitment_end_date"/>
+        <result property="evaluationStartDate" column="evaluation_start_date"/>
+        <result property="interviewDate" column="interview_date"/>
+        <result property="resultAnnouncementDate" column="result_announcement_date"/>
+        <result property="evaluationMethod" column="evaluation_method" javaType="com.solsol.heycalendar.domain.EvaluationMethod" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="recruitmentStatus" column="recruitment_status" javaType="com.solsol.heycalendar.domain.RecruitmentStatus" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="eligibilityCondition" column="eligibility_condition"/>
+        <result property="gradeRestriction" column="grade_restriction"/>
+        <result property="majorRestriction" column="major_restriction"/>
+        <result property="duplicateAllowed" column="duplicate_allowed"/>
+        <result property="minGpa" column="min_gpa"/>
+        <result property="category" column="category"/>
+        <result property="contactPersonName" column="contact_person_name"/>
+        <result property="contactPhone" column="contact_phone"/>
+        <result property="contactEmail" column="contact_email"/>
+        <result property="officeLocation" column="office_location"/>
+        <result property="consultationHours" column="consultation_hours"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 찜하기 추가 -->
+    <insert id="insert" parameterType="com.solsol.heycalendar.domain.ScholarshipBookmark">
+        INSERT INTO scholarship_bookmark (user_nm, scholarship_id, created_at)
+        VALUES (#{userNm}, #{scholarshipId}, NOW())
+    </insert>
+
+    <!-- 찜하기 제거 -->
+    <delete id="delete">
+        DELETE FROM scholarship_bookmark 
+        WHERE user_nm = #{userNm} AND scholarship_id = #{scholarshipId}
+    </delete>
+
+    <!-- 찜 여부 확인 -->
+    <select id="exists" resultType="boolean">
+        SELECT COUNT(*) > 0 
+        FROM scholarship_bookmark 
+        WHERE user_nm = #{userNm} AND scholarship_id = #{scholarshipId}
+    </select>
+
+    <!-- 사용자의 찜목록 조회 (장학금 정보 포함) -->
+    <select id="findBookmarkedScholarshipsByUser" resultMap="scholarshipResultMap">
+        SELECT s.*
+        FROM scholarship s
+        INNER JOIN scholarship_bookmark sb ON s.id = sb.scholarship_id
+        WHERE sb.user_nm = #{userNm}
+        ORDER BY sb.created_at DESC
+    </select>
+
+    <!-- 사용자의 찜목록 개수 -->
+    <select id="countByUser" resultType="int">
+        SELECT COUNT(*) 
+        FROM scholarship_bookmark 
+        WHERE user_nm = #{userNm}
+    </select>
+
+    <!-- 특정 장학금을 찜한 모든 사용자 조회 (스케줄러용) -->
+    <select id="findByScholarshipId" resultMap="scholarshipBookmarkResultMap">
+        SELECT * 
+        FROM scholarship_bookmark 
+        WHERE scholarship_id = #{scholarshipId}
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>

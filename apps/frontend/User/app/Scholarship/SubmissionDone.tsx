@@ -1,14 +1,53 @@
-import React from "react";
-import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, Text } from "react-native";
+import React, { useState, useEffect } from "react";
+import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, Text, ActivityIndicator, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import BG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { ConfirmInfoTable } from "../../components/scholarship/ConfirmInfoTable";
 import { PrimaryButton } from "../../components/scholarship/PrimaryButton";
 import Svg, { Circle, Path } from "react-native-svg";
+import { scholarshipApi, Scholarship } from "../../services/scholarship.api";
 
 export default function SubmissionDone() {
+  const { scholarshipId } = useLocalSearchParams<{ scholarshipId?: string }>();
+  const [scholarship, setScholarship] = useState<Scholarship | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadScholarship = async () => {
+      if (!scholarshipId) return;
+      
+      try {
+        setLoading(true);
+        const scholarshipData = await scholarshipApi.getScholarship(parseInt(scholarshipId));
+        if (scholarshipData) {
+          setScholarship(scholarshipData);
+        }
+      } catch (error) {
+        console.error('장학금 정보 로드 오류:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadScholarship();
+  }, [scholarshipId]);
+
+  const formatDateTime = (date: Date) => {
+    return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
+
+  if (loading) {
+    return (
+      <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+        <StatusBar barStyle="dark-content" />
+        <View style={[{ justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+          <ActivityIndicator size="large" color="#6B86FF" />
+        </View>
+      </ImageBackground>
+    );
+  }
   return (
     <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
       <StatusBar barStyle="dark-content" />
@@ -43,8 +82,8 @@ export default function SubmissionDone() {
             {/* 요약 정보 박스 */}
             <ConfirmInfoTable
               rows={[
-                { label: "장학금", value: "성적우수 장학금" },
-                { label: "신청일시", value: "2025.07.30 15:42" },
+                { label: "장학금", value: scholarship?.scholarshipName || "장학금 정보" },
+                { label: "신청일시", value: formatDateTime(new Date()) },
                 { label: "제출 서류", value: "3개 파일" },
                 { label: "심사 기간", value: "3~5일 예상" },
               ]}
@@ -54,8 +93,14 @@ export default function SubmissionDone() {
             {/* 확인 버튼 */}
             <PrimaryButton
               label="확인"
-              onPress={() => router.back()} // 필요시 router.replace("/") 등으로 변경
-              style={{ marginTop: 16 }}
+              onPress={() => {
+                if (scholarshipId) {
+                  router.push(`/Scholarship/ScholarshipDetail?id=${scholarshipId}`);
+                } else {
+                  router.back();
+                }
+              }}
+              style={{ marginTop: 16, minWidth: 200, paddingHorizontal: 40 }}
             />
           </LinearGradient>
         </View>

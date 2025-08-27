@@ -1,11 +1,13 @@
 package com.solsol.heycalendar.controller;
 
+import com.solsol.heycalendar.common.ApiResponse;
 import com.solsol.heycalendar.dto.request.ApplicationDocumentRequest;
 import com.solsol.heycalendar.dto.request.ApplicationRequest;
 import com.solsol.heycalendar.dto.request.ApplicationReviewRequest;
 import com.solsol.heycalendar.dto.response.ApplicationDetailResponse;
 import com.solsol.heycalendar.dto.response.ApplicationDocumentResponse;
 import com.solsol.heycalendar.dto.response.ApplicationResponse;
+import com.solsol.heycalendar.entity.ApplicationState;
 import com.solsol.heycalendar.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -68,10 +70,10 @@ public class ApplicationController {
     @Operation(summary = "장학금 신청", description = "새로운 장학금 신청을 제출합니다.")
     @PostMapping
     public ResponseEntity<ApplicationResponse> submitApplication(
+            @RequestHeader("user-nm") String userNm,
             @Valid @RequestBody ApplicationRequest request) {
-        log.info("Submitting application for user: {} and scholarship: {}", 
-                request.getUserNm(), request.getScholarshipNm());
-        ApplicationResponse application = applicationService.submitApplication(request);
+        log.info("User {} submitting application for scholarship: {}", userNm, request.getScholarshipId());
+        ApplicationResponse application = applicationService.submitApplicationForUser(userNm, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(application);
     }
 
@@ -134,5 +136,58 @@ public class ApplicationController {
         log.info("Deleting document: {} for user: {} and scholarship: {}", documentNm, userNm, scholarshipNm);
         applicationService.deleteDocument(userNm, scholarshipNm, documentNm);
         return ResponseEntity.noContent().build();
+    }
+
+    /* === New User APIs with header authentication === */
+
+    @Operation(summary = "장학금 신청 (사용자)", description = "사용자가 장학금을 신청합니다.")
+    @PostMapping("/apply")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> applyForScholarship(
+            @RequestHeader("user-nm") String userNm,
+            @Valid @RequestBody ApplicationRequest request) {
+        
+        log.info("User {} applying for scholarship {}", userNm, request.getScholarshipId());
+        ApplicationResponse response = applicationService.submitApplicationForUser(userNm, request);
+        return ResponseEntity.ok(new ApiResponse<>(true, "신청이 완료되었습니다.", "OK", response));
+    }
+
+    @Operation(summary = "내 장학금 신청 목록 조회", description = "내가 신청한 장학금 목록을 조회합니다.")
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getMyApplications(
+            @RequestHeader("user-nm") String userNm) {
+        
+        log.info("Getting applications for user: {}", userNm);
+        List<ApplicationResponse> applications = applicationService.getApplicationsWithScholarshipByUser(userNm);
+        return ResponseEntity.ok(new ApiResponse<>(true, "조회 성공", "OK", applications));
+    }
+
+    @Operation(summary = "내 장학금 신청 상태별 조회", description = "상태별 내 장학금 신청을 조회합니다.")
+    @GetMapping("/my/status/{status}")
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getMyApplicationsByStatus(
+            @RequestHeader("user-nm") String userNm,
+            @PathVariable String status) {
+        
+        log.info("Getting applications for user {} with status: {}", userNm, status);
+        List<ApplicationResponse> applications = applicationService.getApplicationsWithScholarshipByUser(userNm);
+        
+        // 상태별 필터링
+        ApplicationState targetState = ApplicationState.valueOf(status.toUpperCase());
+        List<ApplicationResponse> filteredApplications = applications.stream()
+                .filter(app -> app.getState() == targetState)
+                .toList();
+        
+        return ResponseEntity.ok(new ApiResponse<>(true, "조회 성공", "OK", filteredApplications));
+    }
+
+    @Operation(summary = "장학금 신청 취소", description = "내가 신청한 장학금을 취소합니다.")
+    @DeleteMapping("/cancel/{scholarshipId}")
+    public ResponseEntity<ApiResponse<Void>> cancelMyApplication(
+            @RequestHeader("user-nm") String userNm,
+            @PathVariable Long scholarshipId) {
+        
+        log.info("User {} cancelling application for scholarship: {}", userNm, scholarshipId);
+        applicationService.deleteApplication(userNm, scholarshipId.toString());
+        
+        return ResponseEntity.ok(new ApiResponse<>(true, "신청이 취소되었습니다.", "OK", null));
     }
 }
