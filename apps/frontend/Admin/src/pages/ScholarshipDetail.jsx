@@ -5,15 +5,53 @@ import Sidebar from '../components/Sidebar'
 import ProgressBar from '../components/ProgressBar'
 import Section from '../components/Section'
 import CriteriaList from '../components/CriteriaList'
-import { findScholarship, patchScholarship, deleteScholarship } from '../lib/ScholarshipStore'
+import { scholarshipApi, scholarshipUtils } from '../lib/ScholarshipStore'
 import './scholarship-detail.css'
 
 export default function ScholarshipDetail(){
   const { id } = useParams()
   const nav = useNavigate()
   const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [criteria, setCriteria] = useState([])
+  const [tags, setTags] = useState([])
+  const [notices, setNotices] = useState([])
 
-  useEffect(()=>{ setData(findScholarship(id)) }, [id])
+  useEffect(() => {
+    fetchScholarshipDetail()
+  }, [id])
+
+  const fetchScholarshipDetail = async () => {
+    try {
+      const scholarship = await scholarshipApi.getScholarship(id)
+      setData(scholarshipUtils.transformForFrontend(scholarship))
+      
+      // 추가 정보들도 함께 로드
+      const [criteriaData, tagsData, noticesData] = await Promise.all([
+        scholarshipApi.getCriteria(id),
+        scholarshipApi.getTags(id),
+        scholarshipApi.getNotices(id)
+      ])
+      
+      setCriteria(criteriaData)
+      setTags(tagsData)
+      setNotices(noticesData)
+    } catch (error) {
+      console.error('Failed to fetch scholarship detail:', error)
+      alert('장학금 정보를 불러오는데 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if(loading){
+    return (
+      <>
+        <Navbar/>
+        <div className="admin-layout"><Sidebar/><main className="admin-main"><div className="empty">로딩 중...</div></main></div>
+      </>
+    )
+  }
 
   if(!data){
     return (
@@ -24,11 +62,40 @@ export default function ScholarshipDetail(){
     )
   }
 
-  const tone = data.tag==='모집완료' ? 'gray' : (data.tag==='모집예정' ? 'amber' : 'blue')
-  const del = ()=>{ if(confirm('삭제할까요?')){ deleteScholarship(Number(id)); nav('/admin/scholarships') } }
-  const toggleTag = ()=>{
-    const next = data.tag==='모집중' ? '모집완료' : data.tag==='모집완료' ? '모집예정' : '모집중'
-    setData(patchScholarship(id, { tag: next }))
+  const tone = data.tag==='모집완룼' ? 'gray' : (data.tag==='모집예정' ? 'amber' : 'blue')
+  
+  const handleDelete = async () => {
+    if(confirm('삭제할까요?')) {
+      try {
+        await scholarshipApi.deleteScholarship(id)
+        alert('장학금이 삭제되었습니다.')
+        nav('/admin/scholarships')
+      } catch (error) {
+        console.error('Failed to delete scholarship:', error)
+        alert('삭제에 실패했습니다.')
+      }
+    }
+  }
+  
+  const toggleStatus = async () => {
+    const statusMap = {
+      '모집중': 'CLOSED',
+      '모집완료': 'DRAFT',
+      '임시저장': 'OPEN'
+    }
+    
+    const currentBackendStatus = Object.keys(statusMap).find(k => 
+      scholarshipUtils.getStatusLabel(statusMap[k]) === data.tag
+    )
+    const nextStatus = statusMap[data.tag] || 'OPEN'
+    
+    try {
+      const updated = await scholarshipApi.updateScholarship(id, { recruitmentStatus: nextStatus })
+      setData(scholarshipUtils.transformForFrontend(updated))
+    } catch (error) {
+      console.error('Failed to update status:', error)
+      alert('상태 변경에 실패했습니다.')
+    }
   }
 
   return (
@@ -46,8 +113,8 @@ export default function ScholarshipDetail(){
             <div className="actions">
               <button className="btn ghost" onClick={()=>nav('/admin/scholarships')}>목록</button>
               <button className="btn" onClick={()=>nav(`/admin/scholarships/${id}/edit`)}>수정</button>
-              <button className="btn" onClick={toggleTag}>상태변경</button>
-              <button className="btn danger" onClick={del}>삭제</button>
+              <button className="btn" onClick={toggleStatus}>상태변경</button>
+              <button className="btn danger" onClick={handleDelete}>삭제</button>
             </div>
           </div>
 

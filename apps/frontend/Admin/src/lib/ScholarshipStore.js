@@ -1,67 +1,339 @@
-let DB = [
-  {
-    id: 1,
-    title: '우수학생 학업장려 장학금',
-    tag: '모집중',                // 모집중 | 모집예정 | 모집완료
-    amount: '200만원',
-    picks: 10,
-    applied: 25,
-    progress: 62,
-    method: '서류 심사',
-    chips: ['성적우수','가계곤란','복지','학기'],
+import { api } from '../utils/api'
 
-    // 상세 필드
-    type: '성적우수',
-    payMethod: '일시지급',
-    startDate: '2025-08-01',
-    endDate: '2025-08-31',
-    eligibility: '직전 학기 평점 3.5 이상, 결석 無',
-    desc: '학업 성취가 우수한 학생에게 수여하는 장학금입니다.',
-    categories: ['성적','학기'],
-
-    constraints: { gradeLimit: '제한 없음', majorLimit: '', duplicateAllowed: true, minGpa: '3.0' },
-    criteria: [
-      { name:'성적증명서', std:'평점', weight:60 },
-      { name:'교수추천서', std:'1부', weight:20 },
-      { name:'활동보고서', std:'1부', weight:20 },
-    ],
-    judge: { mode:'서류심사', interviewDate:'', judgeStart:'2025-09-01', resultDate:'2025-09-10' },
-    contact: { manager:'장학담당', phone:'010-0000-0000', email:'scholar@univ.ac.kr', office:'학생회관 201호', hours:'평일 09:00~18:00' },
-    notice: { title:'장학금 신청 안내', content:'필수 서류를 기간 내에 제출하세요.' },
-
-    createdAt: '2025-07-20', updatedAt: '2025-07-28'
+// 장학금 관련 API 함수들
+export const scholarshipApi = {
+  // 전체 장학금 목록 조회
+  getScholarships: async () => {
+    try {
+      const response = await api.get('/scholarships')
+      return response.data || []
+    } catch (error) {
+      console.error('Failed to fetch scholarships:', error)
+      throw error
+    }
   },
-  {
-    id: 2,
-    title: '저소득층 생계비 지원 장학금',
-    tag: '모집중',
-    amount: '150만원',
-    picks: 20,
-    applied: 45,
-    progress: 58,
-    method: '서류 + 면접',
-    chips: ['생활지원','저소득','복지'],
 
-    type: '생활지원', payMethod:'분할지급',
-    startDate:'2025-08-05', endDate:'2025-09-05',
-    eligibility:'기초/차상위 증빙 가능자',
-    desc:'생계 부담 완화를 위한 장학금입니다.',
-    categories:['생활','복지'],
-    constraints:{ gradeLimit:'제한 없음', majorLimit:'', duplicateAllowed:false, minGpa:'' },
-    criteria:[{name:'소득분위 확인서', std:'증빙', weight:100}],
-    judge:{ mode:'서류 + 면접', interviewDate:'2025-09-08', judgeStart:'2025-09-06', resultDate:'2025-09-12'},
-    contact:{ manager:'학생처', phone:'02-000-0000', email:'life@univ.ac.kr', office:'학생처', hours:'평일 09:00~18:00'},
-    notice:{ title:'저소득층 생계비 1차', content:'서류 누락 주의' },
-    createdAt:'2025-07-22', updatedAt:'2025-07-28'
+  // 특정 장학금 상세 조회
+  getScholarship: async (id) => {
+    try {
+      const response = await api.get(`/scholarships/${id}`)
+      return response.data
+    } catch (error) {
+      console.error(`Failed to fetch scholarship ${id}:`, error)
+      throw error
+    }
+  },
+
+  // 장학금 생성
+  createScholarship: async (data) => {
+    try {
+      const response = await api.post('/scholarships', data)
+      return response.data
+    } catch (error) {
+      console.error('Failed to create scholarship:', error)
+      throw error
+    }
+  },
+
+  // 장학금 수정
+  updateScholarship: async (id, data) => {
+    try {
+      const response = await api.put(`/scholarships/${id}`, data)
+      return response.data
+    } catch (error) {
+      console.error(`Failed to update scholarship ${id}:`, error)
+      throw error
+    }
+  },
+
+  // 장학금 삭제
+  deleteScholarship: async (id) => {
+    try {
+      await api.delete(`/scholarships/${id}`)
+      return true
+    } catch (error) {
+      console.error(`Failed to delete scholarship ${id}:`, error)
+      throw error
+    }
+  },
+
+  // Criteria 관련 API
+  getCriteria: async (scholarshipId) => {
+    try {
+      const response = await api.get(`/scholarships/${scholarshipId}/criteria`)
+      return response.data || []
+    } catch (error) {
+      console.error('Failed to fetch criteria:', error)
+      throw error
+    }
+  },
+
+  createCriteria: async (scholarshipId, criteria) => {
+    try {
+      const response = await api.post(`/scholarships/${scholarshipId}/criteria`, criteria)
+      return response.data
+    } catch (error) {
+      console.error('Failed to create criteria:', error)
+      throw error
+    }
+  },
+
+  updateCriteria: async (scholarshipId, criteriaId, criteria) => {
+    try {
+      const response = await api.put(`/scholarships/${scholarshipId}/criteria/${criteriaId}`, criteria)
+      return response.data
+    } catch (error) {
+      console.error('Failed to update criteria:', error)
+      throw error
+    }
+  },
+
+  deleteCriteria: async (scholarshipId, criteriaId) => {
+    try {
+      await api.delete(`/scholarships/${scholarshipId}/criteria/${criteriaId}`)
+      return true
+    } catch (error) {
+      console.error('Failed to delete criteria:', error)
+      throw error
+    }
+  },
+
+  // Tags 관련 API
+  getTags: async (scholarshipId) => {
+    try {
+      const response = await api.get(`/scholarships/${scholarshipId}/tags`)
+      return response.data || []
+    } catch (error) {
+      console.error('Failed to fetch tags:', error)
+      throw error
+    }
+  },
+
+  createTags: async (scholarshipId, tags) => {
+    try {
+      const response = await api.post(`/scholarships/${scholarshipId}/tags`, { tags })
+      return response.data
+    } catch (error) {
+      console.error('Failed to create tags:', error)
+      throw error
+    }
+  },
+
+  deleteTag: async (scholarshipId, tagId) => {
+    try {
+      await api.delete(`/scholarships/${scholarshipId}/tags/${tagId}`)
+      return true
+    } catch (error) {
+      console.error('Failed to delete tag:', error)
+      throw error
+    }
+  },
+
+  // Notices 관련 API
+  getNotices: async (scholarshipId) => {
+    try {
+      const response = await api.get(`/scholarships/${scholarshipId}/notices`)
+      return response.data || []
+    } catch (error) {
+      console.error('Failed to fetch notices:', error)
+      throw error
+    }
+  },
+
+  createNotice: async (scholarshipId, notice) => {
+    try {
+      const response = await api.post(`/scholarships/${scholarshipId}/notices`, notice)
+      return response.data
+    } catch (error) {
+      console.error('Failed to create notice:', error)
+      throw error
+    }
+  },
+
+  updateNotice: async (scholarshipId, noticeId, notice) => {
+    try {
+      const response = await api.put(`/scholarships/${scholarshipId}/notices/${noticeId}`, notice)
+      return response.data
+    } catch (error) {
+      console.error('Failed to update notice:', error)
+      throw error
+    }
+  },
+
+  deleteNotice: async (scholarshipId, noticeId) => {
+    try {
+      await api.delete(`/scholarships/${scholarshipId}/notices/${noticeId}`)
+      return true
+    } catch (error) {
+      console.error('Failed to delete notice:', error)
+      throw error
+    }
   }
-];
+}
 
-export const listScholarships = () => [...DB];
-export const findScholarship = (id) => DB.find(v => v.id === Number(id)) || null;
-export const patchScholarship = (id, patch) => {
-  const i = DB.findIndex(v => v.id === Number(id));
-  if (i < 0) return null;
-  DB[i] = { ...DB[i], ...patch, updatedAt: new Date().toISOString().slice(0,10) };
-  return DB[i];
-};
-export const deleteScholarship = (id) => { DB = DB.filter(v => v.id !== Number(id)); };
+// 유틸리티 함수들
+export const scholarshipUtils = {
+  // 장학금 타입 라벨 변환
+  getTypeLabel: (type) => {
+    const typeMap = {
+      'ACADEMIC': '성적우수',
+      'FINANCIAL_AID': '생활지원',
+      'ACTIVITY': '활동우수',
+      'OTHER': '기타'
+    }
+    return typeMap[type] || '일반'
+  },
+
+  // 모집 상태 라벨 변환
+  getStatusLabel: (status) => {
+    const statusMap = {
+      'DRAFT': '임시저장',
+      'OPEN': '모집중',
+      'CLOSED': '모집완료'
+    }
+    return statusMap[status] || '알 수 없음'
+  },
+
+  // 지급 방식 라벨 변환
+  getPaymentMethodLabel: (method) => {
+    const methodMap = {
+      'LUMP_SUM': '일시지급',
+      'INSTALLMENT': '분할지급'
+    }
+    return methodMap[method] || '일시지급'
+  },
+
+  // 심사 방식 라벨 변환
+  getEvaluationMethodLabel: (method) => {
+    const methodMap = {
+      'DOCUMENT_REVIEW': '서류 심사',
+      'DOCUMENT_INTERVIEW': '서류 + 면접'
+    }
+    return methodMap[method] || '서류 심사'
+  },
+
+  // 날짜 포맷팅
+  formatDate: (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    return date.toLocaleDateString('ko-KR')
+  },
+
+  // 장학금 데이터 변환 (프론트엔드용)
+  transformForFrontend: (scholarship) => ({
+    id: scholarship.id,
+    title: scholarship.scholarshipName,
+    tag: scholarshipUtils.getStatusLabel(scholarship.recruitmentStatus),
+    amount: `${scholarship.amount?.toLocaleString() || 0}원`,
+    picks: `${scholarship.numberOfRecipients || 0}명`,
+    applied: '0명', // TODO: 실제 지원자 수 API 연동 시 수정
+    status: scholarshipUtils.getStatusLabel(scholarship.recruitmentStatus),
+    progress: scholarship.recruitmentStatus === 'OPEN' ? 50 : 0,
+    method: scholarshipUtils.getEvaluationMethodLabel(scholarship.evaluationMethod),
+    chips: [scholarshipUtils.getTypeLabel(scholarship.type)],
+    
+    // 상세 정보
+    type: scholarshipUtils.getTypeLabel(scholarship.type),
+    payMethod: scholarshipUtils.getPaymentMethodLabel(scholarship.paymentMethod),
+    startDate: scholarshipUtils.formatDate(scholarship.recruitmentStartDate),
+    endDate: scholarshipUtils.formatDate(scholarship.recruitmentEndDate),
+    evaluationStartDate: scholarshipUtils.formatDate(scholarship.evaluationStartDate),
+    interviewDate: scholarshipUtils.formatDate(scholarship.interviewDate),
+    resultDate: scholarshipUtils.formatDate(scholarship.resultAnnouncementDate),
+    eligibility: scholarship.eligibilityCondition,
+    desc: scholarship.description,
+    category: scholarship.category,
+    
+    // 제한 사항
+    constraints: {
+      gradeLimit: scholarship.gradeRestriction || '제한 없음',
+      majorLimit: scholarship.majorRestriction || '제한 없음',
+      duplicateAllowed: scholarship.duplicateAllowed,
+      minGpa: scholarship.minGpa || ''
+    },
+    
+    // 문의처
+    contact: {
+      manager: scholarship.contactPersonName,
+      phone: scholarship.contactPhone,
+      email: scholarship.contactEmail,
+      office: scholarship.officeLocation,
+      hours: scholarship.consultationHours
+    },
+    
+    // 메타데이터
+    createdAt: scholarshipUtils.formatDate(scholarship.createdAt),
+    updatedAt: scholarshipUtils.formatDate(scholarship.updatedAt),
+    createdBy: scholarship.createdBy
+  }),
+
+  // 백엔드용 데이터 변환
+  transformForBackend: (formData) => {
+    return {
+      scholarshipName: formData.title || formData.scholarshipName,
+      description: formData.desc || formData.description,
+      type: formData.type,
+      amount: parseInt(formData.amount) || 0,
+      numberOfRecipients: parseInt(formData.picks) || parseInt(formData.numberOfRecipients) || 0,
+      paymentMethod: formData.payMethod || formData.paymentMethod,
+      
+      // 날짜 처리
+      recruitmentStartDate: formData.startDate || formData.recruitmentStartDate,
+      recruitmentEndDate: formData.endDate || formData.recruitmentEndDate,
+      evaluationStartDate: formData.evaluationStartDate,
+      interviewDate: formData.interviewDate,
+      resultAnnouncementDate: formData.resultDate || formData.resultAnnouncementDate,
+      
+      evaluationMethod: formData.method || formData.evaluationMethod,
+      recruitmentStatus: formData.recruitmentStatus || 'DRAFT',
+      
+      // 자격 조건
+      eligibilityCondition: formData.eligibility || formData.eligibilityCondition,
+      gradeRestriction: formData.constraints?.gradeLimit || formData.gradeRestriction,
+      majorRestriction: formData.constraints?.majorLimit || formData.majorRestriction,
+      duplicateAllowed: formData.constraints?.duplicateAllowed ?? formData.duplicateAllowed ?? true,
+      minGpa: parseFloat(formData.constraints?.minGpa) || parseFloat(formData.minGpa) || null,
+      
+      category: formData.category,
+      
+      // 문의처
+      contactPersonName: formData.contact?.manager || formData.contactPersonName,
+      contactPhone: formData.contact?.phone || formData.contactPhone,
+      contactEmail: formData.contact?.email || formData.contactEmail,
+      officeLocation: formData.contact?.office || formData.officeLocation,
+      consultationHours: formData.contact?.hours || formData.consultationHours,
+      
+      // 태그
+      tags: formData.tags || formData.chips || [],
+      
+      // 평가 기준
+      criteria: formData.criteria?.map(c => ({
+        name: c.name,
+        std: parseFloat(c.std) || null,
+        weight: parseInt(c.weight) || 0
+      })) || [],
+      
+      // 공지
+      noticeTitle: formData.notice?.title || formData.noticeTitle,
+      noticeContent: formData.notice?.content || formData.noticeContent,
+      noticeImageUrl: formData.notice?.imageUrl || formData.noticeImageUrl
+    }
+  }
+}
+
+// 기존 함수들 (호환성을 위해 유지, 내부적으로 새 API 사용)
+export const listScholarships = async () => {
+  return await scholarshipApi.getScholarships()
+}
+
+export const findScholarship = async (id) => {
+  return await scholarshipApi.getScholarship(id)
+}
+
+export const patchScholarship = async (id, patch) => {
+  return await scholarshipApi.updateScholarship(id, patch)
+}
+
+export const deleteScholarship = async (id) => {
+  return await scholarshipApi.deleteScholarship(id)
+}

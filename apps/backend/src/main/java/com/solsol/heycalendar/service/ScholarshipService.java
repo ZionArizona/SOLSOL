@@ -1,273 +1,395 @@
 package com.solsol.heycalendar.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.solsol.heycalendar.domain.Document;
-import com.solsol.heycalendar.domain.Eligibility;
-import com.solsol.heycalendar.domain.Scholarship;
-import com.solsol.heycalendar.dto.request.EligibilityRequest;
+import com.solsol.heycalendar.domain.*;
 import com.solsol.heycalendar.dto.request.ScholarshipRequest;
-import com.solsol.heycalendar.dto.response.DocumentResponse;
-import com.solsol.heycalendar.dto.response.EligibilityResponse;
-import com.solsol.heycalendar.dto.response.ScholarshipListResponse;
 import com.solsol.heycalendar.dto.response.ScholarshipResponse;
-import com.solsol.heycalendar.mapper.DocumentMapper;
-import com.solsol.heycalendar.mapper.EligibilityMapper;
 import com.solsol.heycalendar.mapper.ScholarshipMapper;
 
 import lombok.RequiredArgsConstructor;
+import com.solsol.heycalendar.dto.request.*;
+import com.solsol.heycalendar.dto.response.*;
 
-/**
- * 장학금 관리 비즈니스 로직을 처리하는 서비스
- */
 @Service
 @RequiredArgsConstructor
 public class ScholarshipService {
 
-	private final ScholarshipMapper scholarshipMapper;
-	private final EligibilityMapper eligibilityMapper;
-	private final DocumentMapper documentMapper;
+	private final ScholarshipMapper mapper;
 
-	/**
-	 * 모든 장학금 목록을 조회합니다.
-	 *
-	 * @return 장학금 목록
-	 */
+	/* 목록 */
 	@Transactional(readOnly = true)
-	public List<ScholarshipListResponse> getAllScholarships() {
-		List<Scholarship> scholarships = scholarshipMapper.findAll();
-		return scholarships.stream()
-				.map(this::convertToListResponse)
+	public List<ScholarshipResponse> getAllScholarships() {
+		return mapper.findAll().stream()
+				.map(this::toSummaryResponse)
 				.collect(Collectors.toList());
 	}
 
-	/**
-	 * 특정 장학금의 상세 정보를 조회합니다.
-	 *
-	 * @param id 장학금 ID
-	 * @return 장학금 상세 정보
-	 * @throws RuntimeException 장학금을 찾을 수 없는 경우
-	 */
+	/* 상세 */
 	@Transactional(readOnly = true)
 	public ScholarshipResponse getScholarshipById(Long id) {
-		Scholarship scholarship = scholarshipMapper.findById(id);
-		if (scholarship == null) {
-			throw new RuntimeException("장학금을 찾을 수 없습니다. ID: " + id);
-		}
+		Scholarship s = mapper.findById(id);
+		if (s == null) throw new RuntimeException("장학금을 찾을 수 없습니다. ID: " + id);
 
-		List<Eligibility> eligibilities = eligibilityMapper.findByScholarshipNm(id);
-		List<Document> documents = documentMapper.findByScholarshipNm(id);
+		List<ScholarshipCriteria> criteria = mapper.findCriteriaByScholarshipId(id);
+		List<String> tags = mapper.findTagsByScholarshipId(id);
+		ScholarshipNotice notice = mapper.findNoticeByScholarshipId(id);
 
-		return convertToResponse(scholarship, eligibilities, documents);
+		return toDetailResponse(s, criteria, tags, notice);
 	}
 
-	/**
-	 * 새로운 장학금을 생성합니다.
-	 *
-	 * @param request 장학금 생성 요청 정보
-	 * @return 생성된 장학금 정보
-	 */
+	/* 생성 */
 	@Transactional
-	public ScholarshipResponse createScholarship(ScholarshipRequest request) {
-		validateScholarshipDates(request);
+	public ScholarshipResponse createScholarship(ScholarshipRequest req) {
+		validateDates(req);
 
-		Scholarship scholarship = Scholarship.builder()
-				.title(request.getTitle())
-				.description(request.getDescription())
-				.startDate(request.getStartDate())
-				.endDate(request.getEndDate())
-				.reviewDuration(request.getReviewDuration())
-				.amount(request.getAmount())
-				.createdBy(getCurrentUserId()) // TODO: 현재 사용자 ID 가져오기
+		Scholarship s = Scholarship.builder()
+				.scholarshipName(req.getScholarshipName())
+				.description(req.getDescription())
+				.type(req.getType())
+				.amount(req.getAmount())
+				.numberOfRecipients(req.getNumberOfRecipients())
+				.paymentMethod(req.getPaymentMethod())
+				.recruitmentStartDate(req.getRecruitmentStartDate())
+				.recruitmentEndDate(req.getRecruitmentEndDate())
+				.evaluationStartDate(req.getEvaluationStartDate())
+				.interviewDate(req.getInterviewDate())
+				.resultAnnouncementDate(req.getResultAnnouncementDate())
+				.evaluationMethod(req.getEvaluationMethod())
+				.recruitmentStatus(Optional.ofNullable(req.getRecruitmentStatus()).orElse(RecruitmentStatus.OPEN))
+				.eligibilityCondition(req.getEligibilityCondition())
+				.gradeRestriction(req.getGradeRestriction())
+				.majorRestriction(req.getMajorRestriction())
+				.duplicateAllowed(req.getDuplicateAllowed())
+				.minGpa(req.getMinGpa())
+				.category(req.getCategory())
+				.contactPersonName(req.getContactPersonName())
+				.contactPhone(req.getContactPhone())
+				.contactEmail(req.getContactEmail())
+				.officeLocation(req.getOfficeLocation())
+				.consultationHours(req.getConsultationHours())
+				.createdBy(getCurrentUser())
 				.createdAt(LocalDateTime.now())
 				.build();
 
-		scholarshipMapper.insert(scholarship);
-		return getScholarshipById(scholarship.getScholarshipNm());
-	}
+		mapper.insert(s); // id 생성
 
-	/**
-	 * 기존 장학금 정보를 수정합니다.
-	 *
-	 * @param id      장학금 ID
-	 * @param request 장학금 수정 요청 정보
-	 * @return 수정된 장학금 정보
-	 * @throws RuntimeException 장학금을 찾을 수 없는 경우
-	 */
-	@Transactional
-	public ScholarshipResponse updateScholarship(Long id, ScholarshipRequest request) {
-		Scholarship existingScholarship = scholarshipMapper.findById(id);
-		if (existingScholarship == null) {
-			throw new RuntimeException("장학금을 찾을 수 없습니다. ID: " + id);
+		// criteria
+		if (req.getCriteria() != null && !req.getCriteria().isEmpty()) {
+			List<ScholarshipCriteria> list = req.getCriteria().stream()
+					.map(c -> ScholarshipCriteria.builder()
+							.scholarshipId(s.getId())
+							.name(c.getName())
+							.stdPoint(c.getStd())
+							.weightPercent(c.getWeight())
+							.build())
+					.collect(Collectors.toList());
+			mapper.insertCriteria(list);
 		}
 
-		validateScholarshipDates(request);
+		// tags
+		if (req.getTags() != null && !req.getTags().isEmpty()) {
+			List<ScholarshipTag> tags = req.getTags().stream()
+					.map(t -> ScholarshipTag.builder().scholarshipId(s.getId()).tag(t).build())
+					.collect(Collectors.toList());
+			mapper.insertTags(tags);
+		}
 
-		Scholarship scholarship = Scholarship.builder()
-				.scholarshipNm(id)
-				.title(request.getTitle())
-				.description(request.getDescription())
-				.startDate(request.getStartDate())
-				.endDate(request.getEndDate())
-				.reviewDuration(request.getReviewDuration())
-				.amount(request.getAmount())
-				.createdBy(existingScholarship.getCreatedBy())
-				.createdAt(existingScholarship.getCreatedAt())
+		// notice (옵션)
+		if (req.getNoticeTitle() != null || req.getNoticeContent() != null || req.getNoticeImageUrl() != null) {
+			ScholarshipNotice n = ScholarshipNotice.builder()
+					.scholarshipId(s.getId())
+					.title(req.getNoticeTitle())
+					.content(req.getNoticeContent())
+					.imageUrl(req.getNoticeImageUrl())
+					.build();
+			mapper.upsertNotice(n);
+		}
+
+		return getScholarshipById(s.getId());
+	}
+
+	/* 수정 */
+	@Transactional
+	public ScholarshipResponse updateScholarship(Long id, ScholarshipRequest req) {
+		Scholarship existing = mapper.findById(id);
+		if (existing == null) throw new RuntimeException("장학금을 찾을 수 없습니다. ID: " + id);
+
+		validateDates(req);
+
+		Scholarship s = Scholarship.builder()
+				.id(id)
+				.scholarshipName(req.getScholarshipName())
+				.description(req.getDescription())
+				.type(req.getType())
+				.amount(req.getAmount())
+				.numberOfRecipients(req.getNumberOfRecipients())
+				.paymentMethod(req.getPaymentMethod())
+				.recruitmentStartDate(req.getRecruitmentStartDate())
+				.recruitmentEndDate(req.getRecruitmentEndDate())
+				.evaluationStartDate(req.getEvaluationStartDate())
+				.interviewDate(req.getInterviewDate())
+				.resultAnnouncementDate(req.getResultAnnouncementDate())
+				.evaluationMethod(req.getEvaluationMethod())
+				.recruitmentStatus(Optional.ofNullable(req.getRecruitmentStatus()).orElse(RecruitmentStatus.OPEN))
+				.eligibilityCondition(req.getEligibilityCondition())
+				.gradeRestriction(req.getGradeRestriction())
+				.majorRestriction(req.getMajorRestriction())
+				.duplicateAllowed(req.getDuplicateAllowed())
+				.minGpa(req.getMinGpa())
+				.category(req.getCategory())
+				.contactPersonName(req.getContactPersonName())
+				.contactPhone(req.getContactPhone())
+				.contactEmail(req.getContactEmail())
+				.officeLocation(req.getOfficeLocation())
+				.consultationHours(req.getConsultationHours())
+				.createdBy(existing.getCreatedBy())
+				.createdAt(existing.getCreatedAt())
 				.build();
 
-		scholarshipMapper.update(scholarship);
+		mapper.update(s);
+
+		// 재설정(간단/안전): 기존 criteria, tags 싹 지우고 다시 삽입
+		mapper.deleteCriteriaByScholarshipId(id);
+		if (req.getCriteria() != null && !req.getCriteria().isEmpty()) {
+			List<ScholarshipCriteria> list = req.getCriteria().stream()
+					.map(c -> ScholarshipCriteria.builder()
+							.scholarshipId(id)
+							.name(c.getName())
+							.stdPoint(c.getStd())
+							.weightPercent(c.getWeight())
+							.build())
+					.collect(Collectors.toList());
+			mapper.insertCriteria(list);
+		}
+
+		mapper.deleteTagsByScholarshipId(id);
+		if (req.getTags() != null && !req.getTags().isEmpty()) {
+			List<ScholarshipTag> tags = req.getTags().stream()
+					.map(t -> ScholarshipTag.builder().scholarshipId(id).tag(t).build())
+					.collect(Collectors.toList());
+			mapper.insertTags(tags);
+		}
+
+		if (req.getNoticeTitle() != null || req.getNoticeContent() != null || req.getNoticeImageUrl() != null) {
+			ScholarshipNotice n = ScholarshipNotice.builder()
+					.scholarshipId(id)
+					.title(req.getNoticeTitle())
+					.content(req.getNoticeContent())
+					.imageUrl(req.getNoticeImageUrl())
+					.build();
+			mapper.upsertNotice(n);
+		} else {
+			mapper.deleteNoticeByScholarshipId(id);
+		}
+
 		return getScholarshipById(id);
 	}
 
-	/**
-	 * 장학금을 삭제합니다.
-	 *
-	 * @param id 장학금 ID
-	 * @throws RuntimeException 장학금을 찾을 수 없는 경우
-	 */
+	/* 삭제 */
 	@Transactional
 	public void deleteScholarship(Long id) {
-		Scholarship scholarship = scholarshipMapper.findById(id);
-		if (scholarship == null) {
-			throw new RuntimeException("장학금을 찾을 수 없습니다. ID: " + id);
+		Scholarship s = mapper.findById(id);
+		if (s == null) throw new RuntimeException("장학금을 찾을 수 없습니다. ID: " + id);
+
+		mapper.deleteCriteriaByScholarshipId(id);
+		mapper.deleteTagsByScholarshipId(id);
+		mapper.deleteNoticeByScholarshipId(id);
+		mapper.delete(id);
+	}
+
+	/* 유효성 */
+	private void validateDates(ScholarshipRequest r) {
+		LocalDate rs = r.getRecruitmentStartDate();
+		LocalDate re = r.getRecruitmentEndDate();
+		LocalDate es = r.getEvaluationStartDate();
+		LocalDate ra = r.getResultAnnouncementDate();
+
+		if (re.isBefore(Optional.ofNullable(rs).orElse(re))) {
+			throw new RuntimeException("모집 종료일은 시작일 이후여야 합니다.");
 		}
-
-		// 관련된 자격요건과 서류도 함께 삭제
-		eligibilityMapper.deleteByScholarshipNm(id);
-		documentMapper.deleteByScholarshipNm(id);
-		scholarshipMapper.delete(id);
-	}
-
-	/**
-	 * 특정 장학금의 자격요건 목록을 조회합니다.
-	 *
-	 * @param scholarshipId 장학금 ID
-	 * @return 자격요건 목록
-	 */
-	@Transactional(readOnly = true)
-	public List<EligibilityResponse> getEligibilities(Long scholarshipId) {
-		List<Eligibility> eligibilities = eligibilityMapper.findByScholarshipNm(scholarshipId);
-		return eligibilities.stream()
-				.map(this::convertToEligibilityResponse)
-				.collect(Collectors.toList());
-	}
-
-	/**
-	 * 장학금에 새로운 자격요건을 추가합니다.
-	 *
-	 * @param scholarshipId 장학금 ID
-	 * @param request       자격요건 생성 요청 정보
-	 * @return 생성된 자격요건 정보
-	 * @throws RuntimeException 장학금을 찾을 수 없는 경우
-	 */
-	@Transactional
-	public EligibilityResponse addEligibility(Long scholarshipId, EligibilityRequest request) {
-		Scholarship scholarship = scholarshipMapper.findById(scholarshipId);
-		if (scholarship == null) {
-			throw new RuntimeException("장학금을 찾을 수 없습니다. ID: " + scholarshipId);
-		}
-
-		Eligibility eligibility = Eligibility.builder()
-				.scholarshipNm(scholarshipId)
-				.field(request.getField())
-				.operator(request.getOperator())
-				.value(request.getValue())
-				.content(request.getContent())
-				.build();
-
-		eligibilityMapper.insert(eligibility);
-		return convertToEligibilityResponse(eligibility);
-	}
-
-	/**
-	 * 장학금 날짜 유효성을 검증합니다.
-	 *
-	 * @param request 장학금 요청 정보
-	 * @throws RuntimeException 시작일이 종료일보다 늦은 경우
-	 */
-	private void validateScholarshipDates(ScholarshipRequest request) {
-		if (request.getStartDate().isAfter(request.getEndDate())) {
-			throw new RuntimeException("시작일은 종료일보다 이전이어야 합니다.");
+		if (ra.isBefore(es)) {
+			throw new RuntimeException("결과 발표일은 심사 시작일 이후여야 합니다.");
 		}
 	}
 
-	/**
-	 * 현재 로그인한 사용자의 ID를 가져옵니다.
-	 * TODO: Spring Security에서 현재 사용자 정보 가져오기
-	 *
-	 * @return 사용자 ID
-	 */
-	private Long getCurrentUserId() {
-		// TODO: SecurityContextHolder에서 현재 사용자 정보 가져오기
-		return 1L; // 임시로 1L 반환
-	}
+	private String getCurrentUser() { return "system"; }
 
-	/**
-	 * Scholarship 엔티티를 ScholarshipListResponse로 변환합니다.
-	 */
-	private ScholarshipListResponse convertToListResponse(Scholarship scholarship) {
-		return ScholarshipListResponse.builder()
-				.scholarshipNm(scholarship.getScholarshipNm())
-				.title(scholarship.getTitle())
-				.description(scholarship.getDescription())
-				.startDate(scholarship.getStartDate())
-				.endDate(scholarship.getEndDate())
-				.createdAt(scholarship.getCreatedAt())
-				.amount(scholarship.getAmount())
-				.build();
-	}
-
-	/**
-	 * Scholarship 엔티티를 ScholarshipResponse로 변환합니다.
-	 */
-	private ScholarshipResponse convertToResponse(Scholarship scholarship, List<Eligibility> eligibilities, List<Document> documents) {
+	private ScholarshipResponse toSummaryResponse(Scholarship s) {
 		return ScholarshipResponse.builder()
-				.scholarshipNm(scholarship.getScholarshipNm())
-				.title(scholarship.getTitle())
-				.description(scholarship.getDescription())
-				.startDate(scholarship.getStartDate())
-				.endDate(scholarship.getEndDate())
-				.createdBy(scholarship.getCreatedBy())
-				.createdAt(scholarship.getCreatedAt())
-				.reviewDuration(scholarship.getReviewDuration())
-				.amount(scholarship.getAmount())
-				.eligibilities(eligibilities.stream()
-						.map(this::convertToEligibilityResponse)
-						.collect(Collectors.toList()))
-				.documents(documents.stream()
-						.map(this::convertToDocumentResponse)
-						.collect(Collectors.toList()))
+				.id(s.getId())
+				.scholarshipName(s.getScholarshipName())
+				.description(s.getDescription())
+				.type(s.getType())
+				.amount(s.getAmount())
+				.numberOfRecipients(s.getNumberOfRecipients())
+				.paymentMethod(s.getPaymentMethod())
+				.recruitmentStartDate(s.getRecruitmentStartDate())
+				.recruitmentEndDate(s.getRecruitmentEndDate())
+				.createdBy(s.getCreatedBy())
+				.createdAt(s.getCreatedAt())
+				.updatedAt(s.getUpdatedAt())
 				.build();
 	}
 
-	/**
-	 * Eligibility 엔티티를 EligibilityResponse로 변환합니다.
-	 */
-	private EligibilityResponse convertToEligibilityResponse(Eligibility eligibility) {
-		return EligibilityResponse.builder()
-				.eligibilityNm(eligibility.getEligibilityNm())
-				.scholarshipNm(eligibility.getScholarshipNm())
-				.field(eligibility.getField())
-				.operator(eligibility.getOperator())
-				.value(eligibility.getValue())
-				.content(eligibility.getContent())
+	private ScholarshipResponse toDetailResponse(Scholarship s, List<ScholarshipCriteria> cs, List<String> tags, ScholarshipNotice n) {
+		return ScholarshipResponse.builder()
+				.id(s.getId())
+				.scholarshipName(s.getScholarshipName())
+				.description(s.getDescription())
+				.type(s.getType())
+				.amount(s.getAmount())
+				.numberOfRecipients(s.getNumberOfRecipients())
+				.paymentMethod(s.getPaymentMethod())
+				.recruitmentStartDate(s.getRecruitmentStartDate())
+				.recruitmentEndDate(s.getRecruitmentEndDate())
+				.evaluationStartDate(s.getEvaluationStartDate())
+				.interviewDate(s.getInterviewDate())
+				.resultAnnouncementDate(s.getResultAnnouncementDate())
+				.evaluationMethod(s.getEvaluationMethod())
+				.recruitmentStatus(s.getRecruitmentStatus())
+				.eligibilityCondition(s.getEligibilityCondition())
+				.gradeRestriction(s.getGradeRestriction())
+				.majorRestriction(s.getMajorRestriction())
+				.duplicateAllowed(s.getDuplicateAllowed())
+				.minGpa(s.getMinGpa())
+				.category(s.getCategory())
+				.tags(tags)
+				.contactPersonName(s.getContactPersonName())
+				.contactPhone(s.getContactPhone())
+				.contactEmail(s.getContactEmail())
+				.officeLocation(s.getOfficeLocation())
+				.consultationHours(s.getConsultationHours())
+				.notice(n == null ? null : ScholarshipResponse.ScholarshipNoticeDto.builder()
+						.id(n.getId()).title(n.getTitle()).content(n.getContent())
+						.imageUrl(n.getImageUrl()).createdAt(n.getCreatedAt()).build())
+				.criteria(cs.stream().map(c ->
+						ScholarshipResponse.CriteriaDto.builder()
+								.id(c.getId())
+								.name(c.getName())
+								.stdPoint(c.getStdPoint())
+								.weightPercent(c.getWeightPercent())
+								.build()
+				).collect(Collectors.toList()))
+				.createdBy(s.getCreatedBy())
+				.createdAt(s.getCreatedAt())
+				.updatedAt(s.getUpdatedAt())
 				.build();
 	}
 
-	/**
-	 * Document 엔티티를 DocumentResponse로 변환합니다.
-	 */
-	private DocumentResponse convertToDocumentResponse(Document document) {
-		return DocumentResponse.builder()
-				.documentNm(document.getDocumentNm())
-				.scholarshipNm(document.getScholarshipNm())
-				.name(document.getName())
-				.description(document.getDescription())
+	// com.solsol.heycalendar.service.ScholarshipService (기존 클래스에 아래 메서드들 추가)
+
+
+
+	@Transactional(readOnly = true)
+	public java.util.List<CriteriaResponse> listCriteria(Long scholarshipId){
+		return mapper.findCriteriaByScholarshipId(scholarshipId).stream().map(c ->
+				CriteriaResponse.builder()
+						.id(c.getId()).name(c.getName()).stdPoint(c.getStdPoint())
+						.weightPercent(c.getWeightPercent()).build()
+		).collect(Collectors.toList());
+	}
+
+	@Transactional
+	public CriteriaResponse addCriteria(Long scholarshipId, CriteriaCreateRequest req){
+		ScholarshipCriteria c = ScholarshipCriteria.builder()
+				.scholarshipId(scholarshipId)
+				.name(req.getName())
+				.stdPoint(req.getStd())
+				.weightPercent(req.getWeight())
+				.build();
+		mapper.insertSingleCriteria(c);
+		return CriteriaResponse.builder()
+				.id(c.getId()).name(c.getName()).stdPoint(c.getStdPoint())
+				.weightPercent(c.getWeightPercent()).build();
+	}
+
+	@Transactional
+	public CriteriaResponse updateCriteria(Long criteriaId, CriteriaUpdateRequest req){
+		ScholarshipCriteria curr = mapper.findCriteriaById(criteriaId);
+		if(curr==null) throw new RuntimeException("Criteria not found: "+criteriaId);
+		curr.setName(req.getName());
+		curr.setStdPoint(req.getStd());
+		curr.setWeightPercent(req.getWeight());
+		mapper.updateCriteria(curr);
+		return CriteriaResponse.builder()
+				.id(curr.getId()).name(curr.getName()).stdPoint(curr.getStdPoint())
+				.weightPercent(curr.getWeightPercent()).build();
+	}
+
+	@Transactional
+	public void deleteCriteria(Long criteriaId){
+		mapper.deleteCriteria(criteriaId);
+	}
+
+
+	/* Tags */
+	@Transactional(readOnly = true)
+	public java.util.List<TagResponse> listTags(Long scholarshipId){
+		return mapper.findTagsByScholarshipIdFull(scholarshipId).stream().map(t ->
+				TagResponse.builder().id(t.getId()).tag(t.getTag()).build()
+		).collect(Collectors.toList());
+	}
+
+	@Transactional
+	public java.util.List<TagResponse> addTags(Long scholarshipId, TagCreateRequest req){
+		java.util.List<TagResponse> out = new java.util.ArrayList<>();
+		for(String tg : req.getTags()){
+			ScholarshipTag t = ScholarshipTag.builder()
+					.scholarshipId(scholarshipId).tag(tg).build();
+			mapper.insertTag(t);
+			out.add(TagResponse.builder().id(t.getId()).tag(t.getTag()).build());
+		}
+		return out;
+	}
+
+	@Transactional
+	public void deleteTag(Long tagId){ mapper.deleteTag(tagId); }
+
+
+	/* Notice */
+	@Transactional(readOnly = true)
+	public java.util.List<NoticeResponse> listNotices(Long scholarshipId){
+		return mapper.findNoticesByScholarshipId(scholarshipId).stream().map(n ->
+				NoticeResponse.builder()
+						.id(n.getId()).title(n.getTitle()).content(n.getContent())
+						.imageUrl(n.getImageUrl()).createdAt(n.getCreatedAt())
+						.build()
+		).collect(Collectors.toList());
+	}
+
+	@Transactional
+	public NoticeResponse createNotice(Long scholarshipId, NoticeCreateRequest req){
+		ScholarshipNotice n = ScholarshipNotice.builder()
+				.scholarshipId(scholarshipId).title(req.getTitle())
+				.content(req.getContent()).imageUrl(req.getImageUrl())
+				.build();
+		mapper.insertNotice(n);
+		return NoticeResponse.builder()
+				.id(n.getId()).title(n.getTitle()).content(n.getContent())
+				.imageUrl(n.getImageUrl()).createdAt(n.getCreatedAt()).build();
+	}
+
+	@Transactional
+	public NoticeResponse updateNotice(Long noticeId, NoticeUpdateRequest req){
+		ScholarshipNotice n = mapper.findNoticeById(noticeId);
+		if(n==null) throw new RuntimeException("Notice not found: "+noticeId);
+		n.setTitle(req.getTitle()); n.setContent(req.getContent()); n.setImageUrl(req.getImageUrl());
+		mapper.updateNotice(n);
+		return NoticeResponse.builder()
+				.id(n.getId()).title(n.getTitle()).content(n.getContent())
+				.imageUrl(n.getImageUrl()).createdAt(n.getCreatedAt())
 				.build();
 	}
+
+	@Transactional
+	public void deleteNotice(Long noticeId){ mapper.deleteNotice(noticeId); }
+
+
 }
