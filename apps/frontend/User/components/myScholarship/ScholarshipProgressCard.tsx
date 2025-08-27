@@ -1,14 +1,17 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 export const ScholarshipProgressCard = ({
   scholarship,
+  onPress,
 }: {
   scholarship: { title: string; amount: string; date: string; steps: string[]; currentStep: number; status: string };
+  onPress?: () => void;
 }) => {
   return (
-    <LinearGradient colors={["#F2F5FF", "#FFFFFF"]} style={styles.card}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <LinearGradient colors={["#F2F5FF", "#FFFFFF"]} style={styles.card}>
       <View style={styles.row}>
         <Text style={styles.title}>{scholarship.title}</Text>
         <Text style={styles.status}>{scholarship.status}</Text>
@@ -35,7 +38,8 @@ export const ScholarshipProgressCard = ({
       {scholarship.status === "합격" && (
         <Text style={styles.success}>🎉 선발 완료! 장학금은 다음 학기 등록금에서 자동 차감됩니다.</Text>
       )}
-    </LinearGradient>
+      </LinearGradient>
+    </TouchableOpacity>
   );
 };
 
