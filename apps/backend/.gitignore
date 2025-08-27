@@ -58,6 +58,12 @@ jacoco.exec
 application-*.yml
 application-*.properties
 
+### Security files ###
+*.pem
+*.key
+*.p12
+*.jks
+
 ### Node (혹시 프론트 빌드 산출물 들어올 경우) ###
 node_modules/
 npm-debug.log

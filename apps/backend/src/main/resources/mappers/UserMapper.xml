@@ -13,7 +13,7 @@
         `password`,
         `userKey`,
         `userName`,
-        `status`,
+        `state`,
         `grade`,
         `gpa`,
         `createdAt`,
@@ -32,7 +32,7 @@
         <result property="password"    column="password"/>
         <result property="userKey"     column="userKey"/>
         <result property="userName"    column="userName"/>
-        <result property="status"      column="status"    javaType="com.solsol.heycalendar.domain.Status"/>
+        <result property="status"      column="state"    javaType="com.solsol.heycalendar.domain.Status"/>
         <result property="grade"       column="grade"/>
         <result property="gpa"         column="gpa"      javaType="java.math.BigDecimal"/>
         <result property="createdAt"   column="createdAt" javaType="java.time.LocalDateTime"/>
