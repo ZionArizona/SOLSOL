@@ -19,7 +19,26 @@ export default function ScholarshipEdit(){
   const fetchScholarshipData = async () => {
     try {
       const scholarship = await scholarshipApi.getScholarship(id)
-      setData(scholarshipUtils.transformForFrontend(scholarship))
+      
+      // 추가 정보들도 함께 로드 (criteria, tags, notices)
+      const [criteriaData, tagsData, noticesData] = await Promise.all([
+        scholarshipApi.getCriteria(id),
+        scholarshipApi.getTags(id),
+        scholarshipApi.getNotices(id)
+      ])
+      
+      const transformedData = scholarshipUtils.transformForFrontend(scholarship)
+      
+      // 추가 정보들을 transformedData에 포함
+      transformedData.criteria = criteriaData.map(c => ({
+        name: c.name,
+        std: c.stdPoint,
+        weight: c.weightPercent
+      }))
+      transformedData.tags = tagsData
+      transformedData.notices = noticesData
+      
+      setData(transformedData)
     } catch (error) {
       console.error('Failed to fetch scholarship:', error)
       alert('장학금 정보를 불러오는데 실패했습니다.')

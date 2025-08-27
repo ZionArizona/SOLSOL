@@ -91,9 +91,7 @@ public class ApplicationService {
                 .scholarshipNm(application.getScholarshipNm())
                 .state(application.getState())
                 .appliedAt(application.getAppliedAt())
-                .updatedAt(application.getUpdatedAt())
                 .reason(application.getReason())
-                .reviewedBy(application.getReviewedBy())
                 .userDisplayName(application.getUserNm()) // Could be enhanced with actual user names
                 .scholarshipDisplayName(application.getScholarshipNm()) // Could be enhanced with actual scholarship titles
                 .documents(documentResponses)
@@ -122,7 +120,6 @@ public class ApplicationService {
                 .scholarshipNm(request.getScholarshipNm())
                 .state(ApplicationState.PENDING)
                 .appliedAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .reason(request.getReason())
                 .build();
 
@@ -146,9 +143,7 @@ public class ApplicationService {
         }
 
         application.setState(ApplicationState.APPROVED);
-        application.setUpdatedAt(LocalDateTime.now());
         application.setReason(request.getReason());
-        application.setReviewedBy(request.getReviewedBy());
 
         applicationMapper.updateApplication(application);
         log.info("Application approved successfully for user: {} and scholarship: {}", userNm, scholarshipNm);
@@ -169,9 +164,7 @@ public class ApplicationService {
         }
 
         application.setState(ApplicationState.REJECTED);
-        application.setUpdatedAt(LocalDateTime.now());
         application.setReason(request.getReason());
-        application.setReviewedBy(request.getReviewedBy());
 
         applicationMapper.updateApplication(application);
         log.info("Application rejected successfully for user: {} and scholarship: {}", userNm, scholarshipNm);
@@ -298,8 +291,6 @@ public class ApplicationService {
                 .scholarshipNm(application.getScholarshipNm())
                 .state(application.getState())
                 .appliedAt(application.getAppliedAt())
-                .updatedAt(application.getUpdatedAt())
-                .reviewedBy(application.getReviewedBy())
                 .userDisplayName(application.getUserNm()) // Could be enhanced with actual user names
                 .scholarshipDisplayName(application.getScholarshipNm()) // Could be enhanced with actual scholarship titles
                 .documentCount(documentCount)

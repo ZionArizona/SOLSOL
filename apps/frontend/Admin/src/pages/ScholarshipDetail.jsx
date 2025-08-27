@@ -108,12 +108,11 @@ export default function ScholarshipDetail(){
             <div>
               <div className={`mini-badge ${tone}`}>{data.tag}</div>
               <h1 className="schd-title">{data.title}</h1>
-              <div className="meta">지급금액 {data.amount} · 선발 {data.picks}명 · 지원 {data.applied}명</div>
+              <div className="meta">지급금액 {data.amount} · 선발 {data.picks} · 지원 {data.applied}</div>
             </div>
             <div className="actions">
               <button className="btn ghost" onClick={()=>nav('/admin/scholarships')}>목록</button>
               <button className="btn" onClick={()=>nav(`/admin/scholarships/${id}/edit`)}>수정</button>
-              <button className="btn" onClick={toggleStatus}>상태변경</button>
               <button className="btn danger" onClick={handleDelete}>삭제</button>
             </div>
           </div>
@@ -159,8 +158,8 @@ export default function ScholarshipDetail(){
 
           {/* 제출 서류 및 평가 기준 */}
           <Section title="제출 서류 및 평가 기준">
-            <CriteriaList items={data.criteria}/>
-            <div className="note">가중치 합계: <b>{(data.criteria||[]).reduce((s,c)=>s+Number(c.weight||0),0)}%</b></div>
+            <CriteriaList items={criteria}/>
+            <div className="note">가중치 합계: <b>{(criteria||[]).reduce((s,c)=>s+Number(c.weightPercent||0),0)}%</b></div>
           </Section>
 
           {/* 심사 관련 */}

@@ -85,7 +85,8 @@
 							   contact_phone = #{contactPhone},
 							   contact_email = #{contactEmail},
 							   office_location = #{officeLocation},
-							   consultation_hours = #{consultationHours}
+							   consultation_hours = #{consultationHours},
+							   updated_at = NOW()
 		WHERE id = #{id}
 	</update>
 

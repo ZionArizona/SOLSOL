@@ -5,7 +5,7 @@ export default function CriteriaList({items=[]}) {
       {items.map((c,i)=>(
         <div className="cri" key={i}>
           <div className="name">{c.name}</div>
-          <div className="meta">기준 {c.std} / 가중치 {c.weight}%</div>
+          <div className="meta">기준 {c.stdPoint || c.std} / 가중치 {c.weightPercent || c.weight}%</div>
         </div>
       ))}
     </div>
