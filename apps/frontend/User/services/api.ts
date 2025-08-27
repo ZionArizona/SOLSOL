@@ -62,10 +62,45 @@ class ApiClient {
 
   private async getAuthHeaders(): Promise<HeadersInit> {
     const token = await tokenManager.getAccessToken();
-    return {
+    const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
     };
+
+    // JWT 토큰에서 사용자명 추출하여 user-nm 헤더 추가
+    if (token) {
+      try {
+        const userNm = this.extractUserFromToken(token);
+        if (userNm) {
+          headers['user-nm'] = userNm;
+        }
+      } catch (error) {
+        console.warn('JWT 토큰에서 사용자명 추출 실패:', error);
+      }
+    }
+
+    return headers;
+  }
+
+  private extractUserFromToken(token: string): string | null {
+    try {
+      // JWT는 헤더.페이로드.서명으로 구성되어 있음
+      const payload = token.split('.')[1];
+      if (!payload) return null;
+
+      // Base64 URL 디코딩
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+      
+      const jsonPayload = atob(paddedBase64);
+      const decoded = JSON.parse(jsonPayload);
+      
+      // 토큰에서 사용자명 추출 (sub 또는 userNm 필드를 확인)
+      return decoded.sub || decoded.userNm || decoded.userId || null;
+    } catch (error) {
+      console.error('JWT 토큰 디코딩 오류:', error);
+      return null;
+    }
   }
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {

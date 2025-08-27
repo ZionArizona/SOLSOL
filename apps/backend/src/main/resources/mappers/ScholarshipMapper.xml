@@ -236,4 +236,21 @@
 		DELETE FROM scholarship_notice WHERE scholarship_id = #{scholarshipId}
 	</delete>
 
+	<!-- === Scheduler Queries === -->
+	<!-- 마감임박 장학금 조회 (3일 이내 마감) -->
+	<select id="findScholarshipsEndingBetween" resultMap="ScholarshipMap">
+		SELECT * FROM scholarship 
+		WHERE recruitment_status = 'OPEN' 
+		  AND recruitment_end_date BETWEEN #{startDate} AND #{endDate}
+		ORDER BY recruitment_end_date ASC
+	</select>
+
+	<!-- 새로 등록된 장학금 조회 (어제 ~ 오늘) -->
+	<select id="findScholarshipsCreatedBetween" resultMap="ScholarshipMap">
+		SELECT * FROM scholarship 
+		WHERE DATE(created_at) BETWEEN #{startDate} AND #{endDate}
+		  AND recruitment_status = 'OPEN'
+		ORDER BY created_at DESC
+	</select>
+
 </mapper>

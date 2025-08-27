@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, ImageBackground, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:8080';
+const API_BASE = 'http://localhost:8080';
 
 // 115개 대학교 목록 (value는 백엔드로 전송될 정수 ID)
 const universities = [ { label: 'ICT폴리텍대학', value: 1 }, { label: '강동대학교', value: 2 }, { label: '강서대학교', value: 3 }, { label: '강원도립대학교', value: 4 }, { label: '경기과학기술대학교', value: 5 }, { label: '경기대학교', value: 6 },{ label: '경남정보대학교', value: 7 }, { label: '경안대학원대학교', value: 8 }, { label: '광주대학교', value: 9 }, { label: '광주보건대학교', value: 10 }, { label: '국립목포대학교', value: 11 }, { label: '국제뇌교육대학원대학교', value: 12 }, { label: '김천대학교', value: 13 }, { label: '남서울대학교', value: 14 },
