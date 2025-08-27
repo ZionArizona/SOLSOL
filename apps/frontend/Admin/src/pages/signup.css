@@ -55,6 +55,13 @@
   height:36px; padding:0 14px;
   border:1px solid #9aa4c9; border-radius:4px; background:#fff;
   font-weight:700; color:#3d4b8f; cursor:pointer;
+  transition: all 0.2s ease;
+}
+
+.row .btn-outline.active{
+  background:var(--blue); color:#fff;
+  border-color:var(--blue);
+  box-shadow:0 4px 8px rgba(111,132,230,.3);
 }
 
 .agree{

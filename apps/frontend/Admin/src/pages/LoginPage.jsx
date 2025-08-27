@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { decodeToken } from '../utils/auth'
 import './login.css'
 
 export default function LoginPage(){
@@ -33,12 +34,21 @@ export default function LoginPage(){
         // JWT 토큰을 헤더에서도 확인
         const authHeader = response.headers.get('Authorization')
         const tokenFromHeader = authHeader ? authHeader.replace('Bearer ', '') : result.data.accessToken
+        const accessToken = tokenFromHeader || result.data.accessToken
         
-        localStorage.setItem('accessToken', tokenFromHeader || result.data.accessToken)
+        // 토큰에서 role 확인
+        const decoded = decodeToken(accessToken)
+        if (!decoded || (decoded.role !== 'ADMIN' && decoded.role !== 'STAFF')) {
+          alert('관리자 권한이 필요합니다. 학생은 일반 사용자 페이지를 이용해주세요.')
+          return
+        }
+        
+        localStorage.setItem('accessToken', accessToken)
         localStorage.setItem('refreshToken', result.data.refreshToken)
         localStorage.setItem('user', JSON.stringify({
           userId: formData.userId,
-          userName: result.data.userName || formData.userId
+          userName: result.data.userName || formData.userId,
+          role: decoded.role
         }))
         navigate('/')
       } else {
