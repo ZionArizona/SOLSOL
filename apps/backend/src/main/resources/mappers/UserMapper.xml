@@ -32,7 +32,7 @@
         <result property="password"    column="password"/>
         <result property="userKey"     column="userKey"/>
         <result property="userName"    column="userName"/>
-        <result property="status"      column="state"    javaType="com.solsol.heycalendar.domain.Status"/>
+        <result property="state"      column="state"    javaType="com.solsol.heycalendar.domain.State"/>
         <result property="grade"       column="grade"/>
         <result property="gpa"         column="gpa"      javaType="java.math.BigDecimal"/>
         <result property="createdAt"   column="createdAt" javaType="java.time.LocalDateTime"/>
@@ -123,7 +123,7 @@
             `userId`,
             `password`,
             `userName`,
-            `status`,
+            `state`,
             `grade`,
             `deptNm`,
             `collegeNm`,
@@ -136,7 +136,7 @@
             #{userId},
             #{password},
             #{userName},
-            #{status},
+            #{state},
             #{grade},
             #{deptNm},
             #{collegeNm},
