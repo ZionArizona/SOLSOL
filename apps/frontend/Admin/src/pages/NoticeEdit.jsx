@@ -3,26 +3,60 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
-import { findNotice, patchNotice, deleteNotice } from '../lib/noticeStore'
+import { noticeApi } from '../lib/noticeStore'
 import './notice-detail.css'
 
 export default function NoticeEdit(){
   const { id } = useParams()
   const nav = useNavigate()
-  const initial = useLocation().state?.notice || findNotice(id)
-
+  const passed = useLocation().state?.notice
+  
   const [form, setForm] = useState(null)
+  const [loading, setLoading] = useState(!passed)
+
   useEffect(()=>{
-    if(initial){
-      setForm({
-        title:initial.title, content:initial.content,
-        priority:initial.priority, category:initial.category,
-        tags:(initial.tags||[]).join(', '),
-        publishDate: toLocal(initial.publishDate), expireDate: toLocal(initial.expireDate),
-        pin: !!initial.pin, allowComments: !!initial.allowComments,
-      })
+    if(passed){
+      initializeForm(passed)
+      setLoading(false)
+    } else {
+      fetchNotice()
     }
   }, [id])
+
+  const fetchNotice = async () => {
+    try {
+      const notice = await noticeApi.getNotice(id)
+      if(notice) {
+        initializeForm(notice)
+      }
+    } catch (error) {
+      console.error('Failed to fetch notice:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const initializeForm = (initial) => {
+    setForm({
+      title:initial.title, content:initial.content,
+      priority:initial.priority, category:initial.category,
+      tags:(initial.tags||[]).join(', '),
+      publishDate: toLocal(initial.publishDate), expireDate: toLocal(initial.expireDate),
+      allowComments: !!initial.allowComments,
+    })
+  }
+
+  if(loading){
+    return (
+      <>
+        <Navbar/>
+        <div className="admin-layout">
+          <Sidebar/>
+          <main className="admin-main"><div className="empty">로딩 중...</div></main>
+        </div>
+      </>
+    )
+  }
 
   if(!form){
     return (
@@ -45,22 +79,41 @@ export default function NoticeEdit(){
     tags: form.tags.split(',').map(s=>s.trim()).filter(Boolean),
     publishDate: form.publishDate || null,
     expireDate: form.expireDate || null,
-    pin: form.pin,
     allowComments: form.allowComments,
   }
 
-  const save = ()=>{
-    patchNotice(id, payload)
-    alert('저장되었습니다.')
-    nav(`/admin/notices/${id}`, { state:{ notice: findNotice(id) } })
+  const save = async ()=>{
+    try {
+      const updated = await noticeApi.updateNotice(id, { ...payload, status: 'published' })
+      alert('저장되었습니다.')
+      nav(`/admin/notices/${id}`, { state:{ notice: updated } })
+    } catch (error) {
+      console.error('Failed to save notice:', error)
+      alert('저장에 실패했습니다.')
+    }
   }
-  const draft = ()=>{
-    patchNotice(id, { ...payload, status:'draft' })
-    alert('임시저장되었습니다.')
-    nav(`/admin/notices/${id}`, { state:{ notice: findNotice(id) } })
+
+  const draft = async ()=>{
+    try {
+      const updated = await noticeApi.updateNotice(id, { ...payload, status:'draft' })
+      alert('임시저장되었습니다.')
+      nav(`/admin/notices/${id}`, { state:{ notice: updated } })
+    } catch (error) {
+      console.error('Failed to save draft:', error)
+      alert('임시저장에 실패했습니다.')
+    }
   }
-  const remove = ()=>{
-    if(confirm('정말 삭제할까요?')){ deleteNotice(Number(id)); nav('/admin/notices') }
+
+  const remove = async ()=>{
+    if(confirm('정말 삭제할까요?')){
+      try {
+        await noticeApi.deleteNotice(id)
+        nav('/admin/notices')
+      } catch (error) {
+        console.error('Failed to delete notice:', error)
+        alert('삭제에 실패했습니다.')
+      }
+    }
   }
 
   return (
@@ -130,7 +183,6 @@ export default function NoticeEdit(){
               </div>
 
               <div className="checks">
-                <label><input type="checkbox" checked={form.pin} onChange={e=>set('pin', e.target.checked)}/> 상단 고정</label>
                 <label><input type="checkbox" checked={form.allowComments} onChange={e=>set('allowComments', e.target.checked)}/> 댓글 허용</label>
               </div>
             </div>

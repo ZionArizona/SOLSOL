@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 export default function NoticeModal({initial, onClose, onSave, onDraft}){
   const [form, setForm] = useState({
     title:'', content:'', priority:'medium', category:'general',
-    tags:'', publishDate:'', expireDate:'', pin:false, allowComments:true,
+    tags:'', publishDate:'', expireDate:'', allowComments:true,
   })
   useEffect(()=>{
     if(initial){
@@ -12,7 +12,7 @@ export default function NoticeModal({initial, onClose, onSave, onDraft}){
         tags:(initial.tags||[]).join(', '),
         publishDate: initial.publishDate ? toLocalDatetime(initial.publishDate) : '',
         expireDate: initial.expireDate ? toLocalDatetime(initial.expireDate) : '',
-        pin: initial.pin, allowComments: initial.allowComments
+        allowComments: initial.allowComments
       })
     }else{
       const now = new Date()
@@ -28,7 +28,7 @@ export default function NoticeModal({initial, onClose, onSave, onDraft}){
     tags: form.tags.split(',').map(s=>s.trim()).filter(Boolean),
     publishDate: form.publishDate || null,
     expireDate: form.expireDate || null,
-    pin: form.pin, allowComments: form.allowComments
+    allowComments: form.allowComments
   }
 
   return (
@@ -88,7 +88,6 @@ export default function NoticeModal({initial, onClose, onSave, onDraft}){
           </div>
 
           <div className="checks">
-            <label><input type="checkbox" checked={form.pin} onChange={e=>set('pin',e.target.checked)}/> 상단 고정</label>
             <label><input type="checkbox" checked={form.allowComments} onChange={e=>set('allowComments',e.target.checked)}/> 댓글 허용</label>
           </div>
         </div>
