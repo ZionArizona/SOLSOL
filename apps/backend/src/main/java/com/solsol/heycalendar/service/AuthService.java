@@ -356,7 +356,7 @@ public class AuthService {
 				.deptNm(request.getDeptNm())
 				.collegeNm(collegeNm)
 				.univNm(request.getUnivNm())
-				.role(Role.student)
+				.role(Role.STUDENT)
 				.build();
 
 		int inserted = userMapper.insertUser(user);
