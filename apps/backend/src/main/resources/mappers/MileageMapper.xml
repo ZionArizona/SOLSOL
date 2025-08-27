@@ -6,25 +6,19 @@
     <!-- Result map for Mileage entity -->
     <resultMap id="MileageResultMap" type="com.solsol.heycalendar.domain.Mileage">
         <id property="key" column="key"/>
-        <result property="userNm" column="user_nm"/>
+        <result property="userNm" column="userNm"/>
         <result property="amount" column="amount"/>
-        <result property="createdAt" column="created_at"/>
-        <result property="description" column="description"/>
     </resultMap>
 
     <!-- Insert new mileage record -->
     <insert id="insert" parameterType="com.solsol.heycalendar.domain.Mileage" 
             useGeneratedKeys="true" keyProperty="key">
         INSERT INTO mileage (
-            user_nm,
-            amount,
-            created_at,
-            description
+            userNm,
+            amount
         ) VALUES (
             #{userNm},
-            #{amount},
-            #{createdAt},
-            #{description}
+            #{amount}
         )
     </insert>
 
@@ -32,23 +26,19 @@
     <select id="findByUserNm" resultMap="MileageResultMap">
         SELECT 
             `key`,
-            user_nm,
-            amount,
-            created_at,
-            description
+            userNm,
+            amount
         FROM mileage
-        WHERE user_nm = #{userNm}
-        ORDER BY created_at DESC
+        WHERE userNm = #{userNm}
+        ORDER BY `key` DESC
     </select>
 
     <!-- Find mileage record by primary key -->
     <select id="findById" resultMap="MileageResultMap">
         SELECT 
             `key`,
-            user_nm,
-            amount,
-            created_at,
-            description
+            userNm,
+            amount
         FROM mileage
         WHERE `key` = #{key}
     </select>
@@ -57,19 +47,17 @@
     <select id="findAll" resultMap="MileageResultMap">
         SELECT 
             `key`,
-            user_nm,
-            amount,
-            created_at,
-            description
+            userNm,
+            amount
         FROM mileage
-        ORDER BY created_at DESC
+        ORDER BY `key` DESC
     </select>
 
     <!-- Calculate total mileage for a user -->
     <select id="calculateTotalByUserNm" resultType="java.lang.Integer">
         SELECT COALESCE(SUM(amount), 0)
         FROM mileage
-        WHERE user_nm = #{userNm}
+        WHERE userNm = #{userNm}
     </select>
 
 </mapper>

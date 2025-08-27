@@ -1,6 +1,7 @@
 package com.solsol.heycalendar.mapper;
 
 import com.solsol.heycalendar.entity.Application;
+import com.solsol.heycalendar.dto.response.ApplicationResponse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -117,4 +118,26 @@ public interface ApplicationMapper {
      * @return Number of applications for the scholarship
      */
     int countApplicationsByScholarship(@Param("scholarshipNm") String scholarshipNm);
+
+    // === New methods for ApplicationResponse with scholarship info ===
+
+    /**
+     * Find applications by user with scholarship information
+     * @param userNm User name
+     * @return List of ApplicationResponse with scholarship details
+     */
+    List<ApplicationResponse> findApplicationsWithScholarshipByUser(@Param("userNm") String userNm);
+
+    /**
+     * Find all applications with scholarship information (Admin)
+     * @return List of ApplicationResponse with scholarship details
+     */
+    List<ApplicationResponse> findAllApplicationsWithScholarship();
+
+    /**
+     * Find applications by scholarship with user information
+     * @param scholarshipNm Scholarship ID
+     * @return List of ApplicationResponse for the scholarship
+     */
+    List<ApplicationResponse> findApplicationsWithUserByScholarship(@Param("scholarshipNm") Long scholarshipNm);
 }

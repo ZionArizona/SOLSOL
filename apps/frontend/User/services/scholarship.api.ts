@@ -1,17 +1,38 @@
 import { apiClient, handleApiError } from './api';
 
-// 장학금 관련 타입 정의
+// 장학금 관련 타입 정의 (백엔드 ScholarshipResponse에 맞게 수정)
 export interface Scholarship {
-  scholarshipNm: number;
-  title: string;
+  id: number;
+  scholarshipName: string;
   description: string;
+  type: string;
   amount: number;
-  startDate: string;
-  endDate: string;
-  status: 'OPEN' | 'CLOSED' | 'DRAFT';
-  reviewDuration: number;
-  eligibilities?: Eligibility[];
-  documents?: RequiredDocument[];
+  numberOfRecipients: number;
+  paymentMethod: string;
+  recruitmentStartDate: string;
+  recruitmentEndDate: string;
+  evaluationStartDate: string;
+  interviewDate: string;
+  resultAnnouncementDate: string;
+  evaluationMethod: string;
+  recruitmentStatus: 'OPEN' | 'CLOSED' | 'DRAFT';
+  eligibilityCondition: string;
+  gradeRestriction: string;
+  majorRestriction: string;
+  duplicateAllowed: boolean;
+  minGpa: number;
+  category: string;
+  tags: string[];
+  contactPersonName: string;
+  contactPhone: string;
+  contactEmail: string;
+  officeLocation: string;
+  consultationHours: string;
+  notice: any;
+  criteria: any[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Eligibility {
@@ -70,11 +91,48 @@ export const scholarshipApi = {
       if (params?.status) queryParams.append('status', params.status);
 
       const endpoint = `/scholarships${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      console.log('🎓 Fetching scholarships from:', endpoint);
       const response = await apiClient.get<ScholarshipListResponse>(endpoint);
       
-      if (response.success) {
+      console.log('🎓 Scholarship API Response:', response);
+      console.log('🎓 Response data:', response.data);
+      console.log('🎓 Response success:', response.success);
+      console.log('🎓 Response keys:', Object.keys(response || {}));
+      
+      if (response.success && response.data) {
+        console.log('✅ Using success response structure');
+        // response.data가 배열인지 확인
+        if (Array.isArray(response.data)) {
+          console.log('✅ Data is array, converting to ScholarshipListResponse');
+          console.log('📋 First scholarship structure:', response.data[0]);
+          console.log('📋 First scholarship keys:', Object.keys(response.data[0] || {}));
+          return {
+            scholarships: response.data,
+            totalElements: response.data.length,
+            totalPages: 1,
+            currentPage: 0,
+            pageSize: response.data.length
+          };
+        } else {
+          console.log('✅ Data is already ScholarshipListResponse');
+          return response.data;
+        }
+      } else if (Array.isArray(response.data)) {
+        console.log('✅ Using direct array response');
+        // 직접 배열인 경우 ScholarshipListResponse 형태로 변환
+        return {
+          scholarships: response.data,
+          totalElements: response.data.length,
+          totalPages: 1,
+          currentPage: 0,
+          pageSize: response.data.length
+        };
+      } else if (response.data) {
+        console.log('✅ Using response.data directly');
         return response.data;
       }
+      
+      console.log('❌ No valid response structure found');
       return null;
     } catch (error) {
       handleApiError(error, '장학금 목록을 불러오는데 실패했습니다.');

@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, ImageBackground, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:8080';
+const API_BASE = 'http://localhost:8080';
 
 // 10개 대학교 목록 (value는 백엔드로 전송될 정수 ID)
 const universities = [ 

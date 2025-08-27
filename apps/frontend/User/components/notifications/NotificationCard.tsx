@@ -16,7 +16,13 @@ export type NotificationItem = {
   actionRoute: string;
 };
 
-export const NotificationCard = ({ notification }: { notification: NotificationItem }) => {
+export const NotificationCard = ({ 
+  notification, 
+  onMarkAsRead 
+}: { 
+  notification: NotificationItem;
+  onMarkAsRead?: (id: string) => void;
+}) => {
   const getIcon = () => {
     switch (notification.type) {
       case "scholarship":
@@ -62,6 +68,10 @@ export const NotificationCard = ({ notification }: { notification: NotificationI
   };
 
   const handlePress = () => {
+    // 읽지 않은 알림인 경우 읽음 처리
+    if (!notification.isRead && onMarkAsRead) {
+      onMarkAsRead(notification.id);
+    }
     router.push(notification.actionRoute);
   };
 

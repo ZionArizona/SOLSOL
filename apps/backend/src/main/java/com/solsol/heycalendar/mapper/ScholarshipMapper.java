@@ -47,4 +47,8 @@ public interface ScholarshipMapper {
 	void updateNotice(ScholarshipNotice notice);
 	void deleteNotice(@Param("id") Long id);
 	void deleteNoticeByScholarshipId(@Param("scholarshipId") Long scholarshipId);
+
+	// --- scheduler ---
+	List<Scholarship> findScholarshipsEndingBetween(@Param("startDate") String startDate, @Param("endDate") String endDate);
+	List<Scholarship> findScholarshipsCreatedBetween(@Param("startDate") String startDate, @Param("endDate") String endDate);
 }

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.solsol.heycalendar.mapper.NotificationMapper">
+
+    <!-- Notification 결과 매핑 -->
+    <resultMap id="notificationResultMap" type="com.solsol.heycalendar.domain.Notification">
+        <id property="id" column="id"/>
+        <result property="userNm" column="user_nm"/>
+        <result property="type" column="type" javaType="com.solsol.heycalendar.domain.NotificationType" typeHandler="com.solsol.heycalendar.config.NotificationTypeHandler"/>
+        <result property="title" column="title"/>
+        <result property="message" column="message"/>
+        <result property="relatedId" column="related_id"/>
+        <result property="isRead" column="is_read"/>
+        <result property="actionRoute" column="action_route"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 알림 생성 -->
+    <insert id="insert" parameterType="com.solsol.heycalendar.domain.Notification">
+        INSERT INTO notification (user_nm, type, title, message, related_id, is_read, action_route, created_at, updated_at)
+        VALUES (#{userNm}, #{type,typeHandler=com.solsol.heycalendar.config.NotificationTypeHandler}, #{title}, #{message}, #{relatedId}, #{isRead}, #{actionRoute}, NOW(), NOW())
+    </insert>
+
+    <!-- 사용자별 알림 조회 -->
+    <select id="findByUser" resultMap="notificationResultMap">
+        SELECT * FROM notification 
+        WHERE user_nm = #{userNm}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 사용자별 타입별 알림 조회 -->
+    <select id="findByUserAndType" resultMap="notificationResultMap">
+        SELECT * FROM notification 
+        WHERE user_nm = #{userNm} AND type = #{type,typeHandler=com.solsol.heycalendar.config.NotificationTypeHandler}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 읽지 않은 알림 조회 -->
+    <select id="findUnreadByUser" resultMap="notificationResultMap">
+        SELECT * FROM notification 
+        WHERE user_nm = #{userNm} AND is_read = FALSE
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 알림 읽음 처리 -->
+    <update id="markAsRead">
+        UPDATE notification 
+        SET is_read = TRUE, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 모든 알림 읽음 처리 -->
+    <update id="markAllAsReadByUser">
+        UPDATE notification 
+        SET is_read = TRUE, updated_at = NOW()
+        WHERE user_nm = #{userNm}
+    </update>
+
+    <!-- 읽지 않은 알림 개수 -->
+    <select id="countUnreadByUser" resultType="int">
+        SELECT COUNT(*) 
+        FROM notification 
+        WHERE user_nm = #{userNm} AND is_read = FALSE
+    </select>
+
+    <!-- 알림 삭제 -->
+    <delete id="delete">
+        DELETE FROM notification 
+        WHERE id = #{id}
+    </delete>
+
+</mapper>
