@@ -27,7 +27,7 @@ public class AesGcmCryptoService implements CryptoService {
 
 	/**
 	 * AesGcmCryptoService 생성자.
-	 * application.yml 또는 환경 변수로부터 32바이트(256비트)의 암호화 키를 주입받습니다.
+	 * 환경 변수로부터 32바이트(256비트)의 암호화 키를 주입받습니다.
 	 *
 	 * @param secretKeyBase64 Base64로 인코딩된 32바이트 암호화 키
 	 */

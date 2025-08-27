@@ -334,7 +334,7 @@ public class AuthService {
 	 * 기본 회원 정보 저장 (트랜잭션)
 	 */
 	@Transactional
-	private String createBasicUser(SignupRequest request) {
+	public String createBasicUser(SignupRequest request) {
 		// 1) 계좌생성 동의 체크
 		if (!request.isAccountCreationConsent()) {
 			throw new IllegalArgumentException("Account creation consent is required");
@@ -365,7 +365,7 @@ public class AuthService {
 				.deptNm(request.getDeptNm())
 				.collegeNm(collegeNm)
 				.univNm(request.getUnivNm())
-				.role(Role.student)
+				.role(Role.STUDENT)
 				.build();
 
 		int inserted = userMapper.insertUser(user);
