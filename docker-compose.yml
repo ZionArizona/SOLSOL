@@ -6,13 +6,20 @@ services:
     build:
       context: ./apps/backend
       dockerfile: Dockerfile
+    env_file:
+      - ./apps/backend/.env
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      SPRING_DATASOURCE_URL: jdbc:mysql://${RDS_HOST}:${RDS_PORT}/${RDS_DB}?useSSL=true&serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=utf8
+      # 포트/프로필/SQL init
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_SQL_INIT_MODE: ${SPRING_SQL_INIT_MODE:-never}
+
+      # RDS 접속
+      SPRING_DATASOURCE_URL: jdbc:mysql://${RDS_HOST}:${RDS_PORT}/${RDS_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=utf8
       SPRING_DATASOURCE_USERNAME: ${RDS_USER}
       SPRING_DATASOURCE_PASSWORD: ${RDS_PASSWORD}
     expose: ["8080"]
-    networks: [ solsol-net ]
+    networks: [solsol-net]
 
   user-web:
     image: inttype/solsol:user-web-latest
@@ -20,7 +27,7 @@ services:
       context: ./apps/frontend/User
       dockerfile: Dockerfile
     expose: ["80"]
-    networks: [ solsol-net ]
+    networks: [solsol-net]
 
   admin-web:
     image: inttype/solsol:admin-web-latest
@@ -28,15 +35,15 @@ services:
       context: ./apps/frontend/Admin
       dockerfile: Dockerfile
     expose: ["80"]
-    networks: [ solsol-net ]
+    networks: [solsol-net]
 
   gateway:
     image: nginx:alpine
-    depends_on: [ backend, user-web, admin-web ]
-    ports: [ "80:80" ]
+    depends_on: [backend, user-web, admin-web]
+    ports: ["80:80"]
     volumes:
       - ./nginx/gateway.conf:/etc/nginx/conf.d/default.conf:ro
-    networks: [ solsol-net ]
+    networks: [solsol-net]
 
 networks:
   solsol-net:
