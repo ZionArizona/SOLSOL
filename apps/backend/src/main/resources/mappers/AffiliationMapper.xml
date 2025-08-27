@@ -11,14 +11,14 @@
     </select>
 
     <select id="findCollegeName" resultType="string">
-        SELECT name
+        SELECT collegeNm
         FROM College
         WHERE collegeNm = #{collegeNm}
         AND univNm = #{univNm}
     </select>
 
     <select id="findDepartmentName" resultType="string">
-        SELECT name
+        SELECT deptNm
         FROM Department
         WHERE deptNm = #{deptNm}
         AND collegeNm = #{collegeNm}
