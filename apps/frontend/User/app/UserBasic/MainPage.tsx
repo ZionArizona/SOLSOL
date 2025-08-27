@@ -14,8 +14,10 @@ import { PromoBanner } from "../../components/home/PromoBanner";
 import { MileageCard } from "../../components/home/MileageCard";
 import { ThisWeekList } from "../../components/home/ThisWeekList";
 import { UserCircleIcon, MenuIcon, BellIcon } from "../../components/shared/icons";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function MainPage() {
+  const { user } = useAuth();
   const points = useMemo(() => 4000, []);
 
   const handleScholarshipPress = () => {
@@ -60,7 +62,7 @@ export default function MainPage() {
 
           <View style={styles.block}>
             <StudentCard
-              name="김소연"
+              name={user?.userName || "사용자"}
               studentNo="(1312967)"
               dept="컴퓨터공학과, 재학 4학년"
             />
