@@ -102,6 +102,7 @@ public class AuthController {
 	})
 	public ResponseEntity<ApiResponse<SignupResponse>> signup(@RequestBody SignupRequest signupRequest) {
 		SignupResponse signupResponse = authService.signup(signupRequest);
+
 		return ResponseEntity.ok(new ApiResponse<>(true, "Signup successful.", "OK", signupResponse));
 	}
 }

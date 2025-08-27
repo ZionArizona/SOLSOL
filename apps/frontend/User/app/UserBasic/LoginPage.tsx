@@ -1,13 +1,14 @@
-import React, {useState, useRef} from 'react';
-import { View, StyleSheet, StatusBar, ImageBackground, Platform, TouchableOpacity, Image, Text, TextInput, Pressable, KeyboardAvoidingView, ScrollView, Alert} from 'react-native';
-import {router} from 'expo-router';
+import { router } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import { Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthTokens } from '../../utils/tokenManager';
+import tokenManager from '../../utils/tokenManager';
 
 
 interface LoginPageProps {
-  onLoginSuccess: () => void;
-  onBack: () => void;
+  onLoginSuccess?: () => void;
+  onBack?: () => void;
 }
 
 
@@ -16,7 +17,7 @@ const goBackOrHome = () => {
   else router.replace('/');                          // 없으면 메인으로 (index.tsx 기준)
 };
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = 'http://10.0.2.2:8080';
 
 const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
     const emailInputRef = useRef<TextInput>(null);
@@ -45,24 +46,39 @@ const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
         });
 
         // 응답 파싱
-        const data: AuthTokens = await res.json().catch(() => ({}));
+        const response = await res.json().catch(() => ({}));
         
-        console.log('🔍 백엔드 응답 데이터:', JSON.stringify(data, null, 2));
+        console.log('🔍 백엔드 응답 데이터:', JSON.stringify(response, null, 2));
         console.log('📊 응답 상태:', res.status);
         console.log('📋 응답 헤더:', Object.fromEntries(res.headers.entries()));
 
         if (!res.ok) {
-            const msg = (data && (data as any).message || (data as any).error) || `HTTP ${res.status}`;
+            const msg = (response && (response as any).message || (response as any).error) || `HTTP ${res.status}`;
             throw new Error(msg);
         }
 
-        console.log('✅ 로그인 성공:', data);
+        // 백엔드 응답에서 토큰 데이터 추출
+        const tokens: AuthTokens = {
+            accessToken: response.data.accessToken,
+            refreshToken: response.data.refreshToken
+        };
+
+        console.log('✅ 로그인 성공:', response);
+        console.log('🔑 추출된 토큰:', tokens);
         
         // 토큰 저장 및 인증 상태 업데이트
-        await login(data);
+        await login(tokens);
+        
+        // 저장된 토큰들 디버깅 출력
+        await tokenManager.debugPrintAllTokens();
         
         // 로그인 성공 콜백
-        onLoginSuccess();
+        if (typeof onLoginSuccess === 'function') {
+          onLoginSuccess();
+        } else {
+          console.warn('⚠️ onLoginSuccess가 함수가 아닙니다. 메인 페이지로 이동합니다.');
+          router.replace('/');
+        }
         } catch (err: any) {
             console.error('❌ 로그인 실패:', err?.message || err);
         Alert.alert('로그인 실패', err?.message || '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');

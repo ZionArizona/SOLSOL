@@ -150,6 +150,57 @@ class TokenManager {
     if (!token) return null;
     return this.decodeAccessToken(token);
   }
+
+  // 디버깅용: SecureStore에 저장된 모든 토큰 값들 출력
+  async debugPrintAllTokens(): Promise<void> {
+    try {
+      console.log('🔍 === SecureStore 저장된 값들 확인 ===');
+      
+      const accessToken = await this.getAccessToken();
+      const refreshToken = await this.getRefreshToken();
+      
+      console.log('🔑 Access Token 존재:', accessToken ? 'YES' : 'NO');
+      if (accessToken) {
+        console.log('📄 Access Token (앞 50자):', accessToken.substring(0, 50) + '...');
+        
+        // Access Token 디코딩해서 내용 확인
+        const payload = this.decodeAccessToken(accessToken);
+        if (payload) {
+          console.log('👤 사용자 정보 (전체):', {
+            iss: payload.iss,
+            sub: payload.sub,
+            iat: payload.iat,
+            exp: payload.exp,
+            typ: payload.typ,
+            userId: payload.userId,
+            userName: payload.userName,
+            role: payload.role,
+            grade: payload.grade,
+            univName: payload.univName,
+            collegeName: payload.collegeName,
+            deptName: payload.deptName,
+            발급시간: new Date(payload.iat * 1000).toLocaleString(),
+            만료시간: new Date(payload.exp * 1000).toLocaleString()
+          });
+        }
+      }
+      
+      console.log('🔄 Refresh Token 존재:', refreshToken ? 'YES' : 'NO');
+      if (refreshToken) {
+        console.log('📄 Refresh Token (앞 50자):', refreshToken.substring(0, 50) + '...');
+        
+        // Refresh Token 디코딩해서 만료시간 확인
+        const refreshPayload = this.decodeRefreshToken(refreshToken);
+        if (refreshPayload) {
+          console.log('⏰ Refresh Token 만료시간:', new Date(refreshPayload.exp * 1000).toLocaleString());
+        }
+      }
+      
+      console.log('🔍 === SecureStore 확인 완료 ===');
+    } catch (error) {
+      console.error('❌ SecureStore 확인 실패:', error);
+    }
+  }
 }
 
 export default new TokenManager();
