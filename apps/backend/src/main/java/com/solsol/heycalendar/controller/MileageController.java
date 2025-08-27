@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -26,6 +27,15 @@ import java.util.List;
 public class MileageController {
 
     private final MileageService mileageService;
+
+    @Operation(summary = "현재 사용자 마일리지 내역 조회", description = "로그인한 사용자의 마일리지 적립/사용 내역과 현재 잔액을 조회합니다.")
+    @GetMapping("/mileages/my")
+    public ResponseEntity<UserMileageResponse> getMyMileage(Authentication authentication) {
+        String userNm = authentication.getName();
+        log.info("Getting mileage for current user: {}", userNm);
+        UserMileageResponse response = mileageService.getUserMileage(userNm);
+        return ResponseEntity.ok(response);
+    }
 
     @Operation(summary = "사용자 마일리지 내역 조회", description = "특정 사용자의 마일리지 적립/사용 내역과 잘러 잔액을 조회합니다.")
     @GetMapping("/mileages/user/{userNm}")

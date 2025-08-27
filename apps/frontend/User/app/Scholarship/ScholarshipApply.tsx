@@ -18,8 +18,12 @@ export default function ScholarshipApply() {
 
   // 날짜 포맷팅 함수
   const formatDateRange = (startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return "날짜 정보 없음";
     const start = new Date(startDate);
     const end = new Date(endDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "날짜 정보 오류";
+    
     const startStr = `${start.getMonth() + 1}/${start.getDate()}`;
     const endStr = `${end.getMonth() + 1}/${end.getDate()}`;
     return `${startStr} ~ ${endStr}`;
@@ -27,7 +31,10 @@ export default function ScholarshipApply() {
 
   // 마감일 상태 계산
   const getDeadlineStatus = (endDate: string) => {
+    if (!endDate) return "날짜 정보 없음";
     const end = new Date(endDate);
+    if (isNaN(end.getTime())) return "날짜 정보 오류";
+    
     const today = new Date();
     const diffTime = end.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -50,14 +57,27 @@ export default function ScholarshipApply() {
         mileageApi.getUserMileage()
       ]);
 
+      console.log('📚 Scholarship data received:', scholarshipData);
+      console.log('💰 Mileage data received:', mileageData);
+
       if (scholarshipData) {
-        setScholarships(scholarshipData.scholarships);
+        console.log('📚 Setting scholarships:', scholarshipData.scholarships?.length || 0);
+        if (scholarshipData.scholarships && scholarshipData.scholarships.length > 0) {
+          console.log('📚 First scholarship details:', scholarshipData.scholarships[0]);
+          console.log('📚 First scholarship keys:', Object.keys(scholarshipData.scholarships[0]));
+        }
+        setScholarships(scholarshipData.scholarships || []);
+      } else {
+        console.log('❌ No scholarship data received');
+        setScholarships([]);
       }
 
       if (mileageData) {
+        console.log('💰 Setting current mileage:', mileageData.currentMileage);
         setCurrentMileage(mileageData.currentMileage);
       }
     } catch (error) {
+      console.error('📚 Error loading scholarship data:', error);
       Alert.alert('오류', '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -82,8 +102,13 @@ export default function ScholarshipApply() {
 
   // 마감 임박 장학금 필터링 (10일 이내)
   const urgentScholarships = useMemo(() => {
+    if (!scholarships || !Array.isArray(scholarships)) {
+      return [];
+    }
     return scholarships.filter(scholarship => {
-      const end = new Date(scholarship.endDate);
+      if (!scholarship.recruitmentEndDate) return false;
+      const end = new Date(scholarship.recruitmentEndDate);
+      if (isNaN(end.getTime())) return false;
       const today = new Date();
       const diffTime = end.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -120,15 +145,15 @@ export default function ScholarshipApply() {
           <FilterPanel />
 
           <SectionBox>
-            {scholarships.length > 0 ? (
+            {scholarships && scholarships.length > 0 ? (
               scholarships.map((scholarship) => (
-                <View key={scholarship.scholarshipNm} style={{ marginBottom: 12 }}>
+                <View key={scholarship.id} style={{ marginBottom: 12 }}>
                   <ScholarshipItemCard
-                    title={scholarship.title}
+                    title={scholarship.scholarshipName}
                     amount={scholarship.amount.toLocaleString()}
-                    period={formatDateRange(scholarship.startDate, scholarship.endDate)}
-                    status={getDeadlineStatus(scholarship.endDate)}
-                    onPress={() => handleScholarshipPress(scholarship.scholarshipNm)}
+                    period={formatDateRange(scholarship.recruitmentStartDate, scholarship.recruitmentEndDate)}
+                    status={getDeadlineStatus(scholarship.recruitmentEndDate)}
+                    onPress={() => handleScholarshipPress(scholarship.id)}
                   />
                 </View>
               ))
@@ -142,13 +167,13 @@ export default function ScholarshipApply() {
           <SectionBox caption="10일 이내 신청 마감하는 장학금">
             {urgentScholarships.length > 0 ? (
               urgentScholarships.map((scholarship) => (
-                <View key={`urgent-${scholarship.scholarshipNm}`} style={{ marginBottom: 12 }}>
+                <View key={`urgent-${scholarship.id}`} style={{ marginBottom: 12 }}>
                   <ScholarshipItemCard
-                    title={scholarship.title}
+                    title={scholarship.scholarshipName}
                     amount={scholarship.amount.toLocaleString()}
-                    period={formatDateRange(scholarship.startDate, scholarship.endDate)}
-                    status={getDeadlineStatus(scholarship.endDate)}
-                    onPress={() => handleScholarshipPress(scholarship.scholarshipNm)}
+                    period={formatDateRange(scholarship.recruitmentStartDate, scholarship.recruitmentEndDate)}
+                    status={getDeadlineStatus(scholarship.recruitmentEndDate)}
+                    onPress={() => handleScholarshipPress(scholarship.id)}
                   />
                 </View>
               ))

@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { jwtDecode } from 'jwt-decode';
+import { Platform } from 'react-native';
 
 // 토큰 저장 키
 const ACCESS_TOKEN_KEY = 'accessToken';
@@ -36,11 +37,38 @@ export interface AuthTokens {
 }
 
 class TokenManager {
-  // 토큰 저장 (SecureStore 사용 - iOS: Keychain, Android: SharedPreferences 암호화)
+  // 플랫폼별 토큰 저장
+  private async setItem(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+  }
+
+  // 플랫폼별 토큰 조회
+  private async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    } else {
+      return await SecureStore.getItemAsync(key);
+    }
+  }
+
+  // 플랫폼별 토큰 삭제
+  private async removeItem(key: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+  }
+
+  // 토큰 저장
   async saveTokens(tokens: AuthTokens): Promise<void> {
     try {
-      await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, tokens.accessToken);
-      await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, tokens.refreshToken);
+      await this.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+      await this.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
       console.log('✅ 토큰 저장 완료');
     } catch (error) {
       console.error('❌ 토큰 저장 실패:', error);
@@ -51,7 +79,7 @@ class TokenManager {
   // Access Token 가져오기
   async getAccessToken(): Promise<string | null> {
     try {
-      return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+      return await this.getItem(ACCESS_TOKEN_KEY);
     } catch (error) {
       console.error('❌ Access Token 조회 실패:', error);
       return null;
@@ -61,7 +89,7 @@ class TokenManager {
   // Refresh Token 가져오기
   async getRefreshToken(): Promise<string | null> {
     try {
-      return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+      return await this.getItem(REFRESH_TOKEN_KEY);
     } catch (error) {
       console.error('❌ Refresh Token 조회 실패:', error);
       return null;
@@ -88,8 +116,8 @@ class TokenManager {
   // 토큰 삭제 (로그아웃)
   async clearTokens(): Promise<void> {
     try {
-      await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
-      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      await this.removeItem(ACCESS_TOKEN_KEY);
+      await this.removeItem(REFRESH_TOKEN_KEY);
       console.log('✅ 토큰 삭제 완료');
     } catch (error) {
       console.error('❌ 토큰 삭제 실패:', error);

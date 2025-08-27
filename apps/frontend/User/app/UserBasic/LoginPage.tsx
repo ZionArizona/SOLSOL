@@ -17,7 +17,7 @@ const goBackOrHome = () => {
   else router.replace('/');                          // 없으면 메인으로 (index.tsx 기준)
 };
 
-const API_BASE = 'http://10.0.2.2:8080';
+const API_BASE = 'http://localhost:8080';
 
 const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
     const emailInputRef = useRef<TextInput>(null);

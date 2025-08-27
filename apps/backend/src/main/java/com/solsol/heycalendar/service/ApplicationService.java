@@ -58,6 +58,44 @@ public class ApplicationService {
     }
 
     /**
+     * Get applications by user with scholarship information (new method)
+     */
+    @Transactional(readOnly = true)
+    public List<ApplicationResponse> getApplicationsWithScholarshipByUser(String userNm) {
+        log.debug("Fetching applications with scholarship info for user: {}", userNm);
+        return applicationMapper.findApplicationsWithScholarshipByUser(userNm);
+    }
+
+    /**
+     * Get applications by scholarship with user information (Admin)
+     */
+    @Transactional(readOnly = true)
+    public List<ApplicationResponse> getApplicationsWithUserByScholarship(Long scholarshipId) {
+        log.debug("Fetching applications for scholarship: {}", scholarshipId);
+        return applicationMapper.findApplicationsWithUserByScholarship(scholarshipId);
+    }
+
+    /**
+     * Delete application (Cancel application)
+     */
+    @Transactional
+    public void deleteApplication(String userNm, String scholarshipNm) {
+        log.info("Deleting application for user: {} and scholarship: {}", userNm, scholarshipNm);
+        
+        Application existingApplication = applicationMapper.findApplicationByUserAndScholarship(userNm, scholarshipNm);
+        if (existingApplication == null) {
+            throw new IllegalArgumentException("신청 내역을 찾을 수 없습니다.");
+        }
+
+        if (existingApplication.getState() != ApplicationState.PENDING) {
+            throw new IllegalStateException("심사가 완료된 신청은 취소할 수 없습니다.");
+        }
+
+        applicationMapper.deleteApplication(userNm, scholarshipNm);
+        log.info("Application deleted successfully for user: {} and scholarship: {}", userNm, scholarshipNm);
+    }
+
+    /**
      * Get applications by scholarship
      */
     @Transactional(readOnly = true)
@@ -99,25 +137,34 @@ public class ApplicationService {
     }
 
     /**
-     * Submit a new application
+     * Submit a new application (deprecated - use submitApplicationForUser instead)
      */
+    @Deprecated
     public ApplicationResponse submitApplication(ApplicationRequest request) {
-        log.info("Submitting application for user: {} and scholarship: {}", request.getUserNm(), request.getScholarshipNm());
+        throw new UnsupportedOperationException("This method is deprecated. Use submitApplicationForUser instead.");
+    }
+
+    /**
+     * Simple application submission for user (new method)
+     */
+    public ApplicationResponse submitApplicationForUser(String userNm, ApplicationRequest request) {
+        log.info("User {} submitting application for scholarship: {}", userNm, request.getScholarshipId());
 
         // Check if application already exists
         Application existingApplication = applicationMapper.findApplicationByUserAndScholarship(
-                request.getUserNm(), request.getScholarshipNm());
+                userNm, request.getScholarshipId().toString());
         if (existingApplication != null) {
-            throw new IllegalStateException("Application already exists for user: " + request.getUserNm() + 
-                    " and scholarship: " + request.getScholarshipNm());
+            throw new IllegalStateException("이미 신청한 장학금입니다.");
         }
 
-        // Validate eligibility (placeholder - implement based on business rules)
-        validateEligibility(request.getUserNm(), request.getScholarshipNm());
+        // Basic validation - check if scholarship exists would be good here
+        if (request.getScholarshipId() == null || request.getScholarshipId() <= 0) {
+            throw new IllegalArgumentException("유효하지 않은 장학금 ID입니다.");
+        }
 
         Application application = Application.builder()
-                .userNm(request.getUserNm())
-                .scholarshipNm(request.getScholarshipNm())
+                .userNm(userNm)
+                .scholarshipNm(request.getScholarshipId().toString())
                 .state(ApplicationState.PENDING)
                 .appliedAt(LocalDateTime.now())
                 .reason(request.getReason())
@@ -125,9 +172,14 @@ public class ApplicationService {
 
         applicationMapper.insertApplication(application);
         log.info("Application submitted successfully for user: {} and scholarship: {}", 
-                request.getUserNm(), request.getScholarshipNm());
+                userNm, request.getScholarshipId());
 
-        return convertToApplicationResponse(application);
+        // Return response with scholarship information
+        List<ApplicationResponse> responses = applicationMapper.findApplicationsWithScholarshipByUser(userNm);
+        return responses.stream()
+                .filter(resp -> resp.getScholarshipNm().equals(request.getScholarshipId()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("신청 처리 중 오류가 발생했습니다."));
     }
 
     /**
@@ -288,12 +340,10 @@ public class ApplicationService {
 
         return ApplicationResponse.builder()
                 .userNm(application.getUserNm())
-                .scholarshipNm(application.getScholarshipNm())
+                .scholarshipNm(Long.valueOf(application.getScholarshipNm()))
                 .state(application.getState())
                 .appliedAt(application.getAppliedAt())
-                .userDisplayName(application.getUserNm()) // Could be enhanced with actual user names
-                .scholarshipDisplayName(application.getScholarshipNm()) // Could be enhanced with actual scholarship titles
-                .documentCount(documentCount)
+                .reason(application.getReason())
                 .build();
     }
 
