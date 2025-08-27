@@ -1,26 +1,53 @@
-import React, { useState } from 'react';
-import { View, Text, ImageBackground, Image, TouchableOpacity, KeyboardAvoidingView, StyleSheet, StatusBar, Platform, TextInput, ScrollView, Keyboard, TouchableWithoutFeedback, Alert, Pressable, Modal } from 'react-native';
 import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, Image, ImageBackground, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = 'http://10.0.2.2:8080';
 
-// 10개 대학교 목록
-const universities = [ { label: '경기대학교', value: '경기대학교' }, { label: '광주대학교', value: '광주대학교' }, { label: '동국대학교', value: '동국대학교' }, { label: '용인대학교', value: '용인대학교' }, { label: '숙명여자대학교', value: '숙명여자대학교' }, { label: '이화여자대학교', value: '이화여자대학교' }, { label: '전북과학대학교', value: '전북과학대학교' }, { label: '청주대학교', value: '청주대학교' }, { label: '한양대학교', value: '한양대학교' }, { label: '홍익대학교', value: '홍익대학교' }];
+// 10개 대학교 목록 (value는 백엔드로 전송될 정수 ID)
+const universities = [ 
+  { label: '경기대학교', value: 1 },  
+  { label: '광주대학교', value: 2 }, 
+  { label: '동국대학교', value: 3 }, 
+  { label: '용인대학교', value: 4 }, 
+  { label: '숙명여자대학교', value: 5 },  
+  { label: '이화여자대학교', value: 6 }, 
+  { label: '전북과학대학교', value: 7 }, 
+  { label: '청주대학교', value: 8 }, 
+  { label: '한양대학교', value: 9 }, 
+  { label: '홍익대학교', value: 10 }
+];
+
+// 10개 학과 목록 (value는 백엔드로 전송될 정수 ID)
+const departments = [
+  { label: '경제학과', value: 1 },
+  { label: '간호학과', value: 2 },
+  { label: '디자인학과', value: 3 },
+  { label: '빅데이터융합학과', value: 4 },
+  { label: '소프트웨어공학과', value: 5 },
+  { label: '식품공학과', value: 6 },
+  { label: '인공지능학과', value: 7 },
+  { label: '영어교육과', value: 8 },
+  { label: '컴퓨터공학과', value: 9 },
+  { label: '화학과', value: 10 }
+];
 
 export default function RegistPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [univName, setUnivName] = useState('');   // 화면 표시용
-  const [univValue, setUnivValue] = useState(''); // 서버 전송용
-  const [dept, setDept] = useState('');
+  const [univValue, setUnivValue] = useState<number | null>(null); // 서버 전송용
+  const [deptName, setDeptName] = useState('');   // 화면 표시용
+  const [deptValue, setDeptValue] = useState<number | null>(null); // 서버 전송용
   const [studentId, setStudentId] = useState('');
   const [agreeAll, setAgreeAll] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showUnivDropdown, setShowUnivDropdown] = useState(false);
+  const [showDeptDropdown, setShowDeptDropdown] = useState(false);
 
     const handleRegister = async () => {
-    if ( !name.trim() || !email.trim() || !pw.trim() || !univValue.trim() || !dept.trim() || !studentId.trim() ) {
+    if ( !name.trim() || !email.trim() || !pw.trim() || univValue === null || deptValue === null || !studentId.trim() ) {
       Alert.alert('입력 필요', '모두 입력해 주세요.');
       return;
     }
@@ -32,17 +59,29 @@ export default function RegistPage() {
 
     try {
       setSubmitting(true);
-      const res = await fetch(`${API_BASE}/auth/register`, {
+      
+      console.log('🔍 전송 전 값 확인:');
+      console.log('univName (화면표시):', univName);
+      console.log('univValue (전송값):', univValue);
+      console.log('deptName (화면표시):', deptName);
+      console.log('deptValue (전송값):', deptValue);
+      
+      const requestData = {
+        userName: name.trim(),
+        userId: email.trim(),
+        password: pw,
+        univNm: univValue,
+        deptNm : deptValue,
+        userNm: studentId.trim(),
+        accountCreationConsent: true
+      };
+      
+      console.log('📤 최종 전송 데이터:', JSON.stringify(requestData, null, 2));
+      
+      const res = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userName: name.trim(),
-          userId: email.trim(),
-          password: pw,
-          univName: univValue.trim(),
-          deptName: dept.trim(),
-          userNm: studentId.trim(),
-        }),
+        body: JSON.stringify(requestData),
       });
 
       const raw = await res.text();
@@ -56,7 +95,8 @@ export default function RegistPage() {
       try {
         const json = JSON.parse(raw);
         console.log('📋 파싱된 JSON:', JSON.stringify(json, null, 2));
-        ok = ok && (json.ok === true || json.status === 'ok');
+        // 백엔드에서 success: true로 응답하므로 이를 체크
+        ok = ok && json.success === true;
       } catch {
         console.log('⚠️ JSON 파싱 실패, 텍스트 응답:', raw);
         if (raw.trim().toLowerCase() === 'ok') ok = true;
@@ -152,7 +192,7 @@ export default function RegistPage() {
               {/* 학교 선택 드롭다운 버튼 */}
               <TouchableOpacity
                 style={[styles.dropdownButton, { marginTop: 12 }]}
-                onPress={() => setShowDropdown(true)}
+                onPress={() => setShowUnivDropdown(true)}
                 activeOpacity={0.7}
               >
                 <Text style={univName ? styles.dropdownText : styles.dropdownPlaceholder}>
@@ -163,22 +203,21 @@ export default function RegistPage() {
 
               {/* 모달: 대학교 선택 */}
               <Modal
-                visible={showDropdown}
+                visible={showUnivDropdown}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setShowDropdown(false)}
+                onRequestClose={() => setShowUnivDropdown(false)}
                 presentationStyle="overFullScreen"
               >
                 <View style={styles.modalOverlay}>
                   {/* 배경 터치 시 닫힘 */}
-                  <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
+                  <TouchableWithoutFeedback onPress={() => setShowUnivDropdown(false)}>
                     <View style={styles.modalBackground} />
                   </TouchableWithoutFeedback>
 
                   <View style={styles.modalContent}>
                     <Text style={styles.modalTitle}>학교 선택</Text>
 
-                    {/* ⬇️ 스크롤 시 모달이 닫히지 않도록 제스처 캡처 추가 */}
                     <ScrollView
                       style={styles.modalScroll}
                       showsVerticalScrollIndicator
@@ -195,9 +234,10 @@ export default function RegistPage() {
                             univName === uni.label && styles.modalItemSelected,
                           ]}
                           onPress={() => {
+                            console.log('🏫 대학교 선택:', uni.label, '→ ID:', uni.value);
                             setUnivName(uni.label);   // 화면 표시용
                             setUnivValue(uni.value);  // 서버 전송용
-                            setShowDropdown(false);
+                            setShowUnivDropdown(false);
                           }}
                           activeOpacity={0.7}
                         >
@@ -216,7 +256,7 @@ export default function RegistPage() {
 
                     <TouchableOpacity
                       style={styles.modalCloseButton}
-                      onPress={() => setShowDropdown(false)}
+                      onPress={() => setShowUnivDropdown(false)}
                     >
                       <Text style={styles.modalCloseText}>닫기</Text>
                     </TouchableOpacity>
@@ -224,13 +264,80 @@ export default function RegistPage() {
                 </View>
               </Modal>
 
-              <TextInput
-                style={[styles.inputBox, { marginTop: 12 }]}
-                placeholder="학과 *"
-                placeholderTextColor="#888"
-                value={dept}
-                onChangeText={setDept}
-              />
+              {/* 학과 선택 드롭다운 버튼 */}
+              <TouchableOpacity
+                style={[styles.dropdownButton, { marginTop: 12 }]}
+                onPress={() => setShowDeptDropdown(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={deptName ? styles.dropdownText : styles.dropdownPlaceholder}>
+                  {deptName || '학과 선택하기 *'}
+                </Text>
+                <Text style={styles.dropdownArrow}>▼</Text>
+              </TouchableOpacity>
+
+              {/* 모달: 학과 선택 */}
+              <Modal
+                visible={showDeptDropdown}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowDeptDropdown(false)}
+                presentationStyle="overFullScreen"
+              >
+                <View style={styles.modalOverlay}>
+                  {/* 배경 터치 시 닫힘 */}
+                  <TouchableWithoutFeedback onPress={() => setShowDeptDropdown(false)}>
+                    <View style={styles.modalBackground} />
+                  </TouchableWithoutFeedback>
+
+                  <View style={styles.modalContent}>
+                    <Text style={styles.modalTitle}>학과 선택</Text>
+
+                    <ScrollView
+                      style={styles.modalScroll}
+                      showsVerticalScrollIndicator
+                      bounces={false}
+                      keyboardShouldPersistTaps="handled"
+                      onStartShouldSetResponderCapture={() => true}
+                      onMoveShouldSetResponderCapture={() => true}
+                    >
+                      {departments.map((dept) => (
+                        <TouchableOpacity
+                          key={dept.value}
+                          style={[
+                            styles.modalItem,
+                            deptName === dept.label && styles.modalItemSelected,
+                          ]}
+                          onPress={() => {
+                            console.log('🎓 학과 선택:', dept.label, '→ ID:', dept.value);
+                            setDeptName(dept.label);   // 화면 표시용
+                            setDeptValue(dept.value);  // 서버 전송용
+                            setShowDeptDropdown(false);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.modalItemText,
+                              deptName === dept.label && styles.modalItemTextSelected,
+                            ]}
+                          >
+                            {dept.label}
+                          </Text>
+                          {deptName === dept.label && <Text style={styles.checkMark}>✓</Text>}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+
+                    <TouchableOpacity
+                      style={styles.modalCloseButton}
+                      onPress={() => setShowDeptDropdown(false)}
+                    >
+                      <Text style={styles.modalCloseText}>닫기</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
 
               <TextInput
                 style={[styles.inputBox, { marginTop: 12 }]}
