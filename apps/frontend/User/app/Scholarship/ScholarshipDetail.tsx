@@ -17,7 +17,9 @@ export default function ScholarshipDetail() {
   const [loading, setLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
   const [applicationLoading, setApplicationLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString: string) => {
@@ -68,28 +70,11 @@ export default function ScholarshipDetail() {
     }
   };
 
-  // 장학금 신청 함수
-  const handleApply = async () => {
+  // 장학금 신청 페이지로 이동
+  const handleApply = () => {
     if (!id) return;
-    
-    setApplicationLoading(true);
-    try {
-      const success = await applicationApi.submitApplication({
-        scholarshipId: parseInt(id),
-        reason: '장학금 신청'
-      });
-      
-      if (success) {
-        Alert.alert('성공', '장학금 신청이 완료되었습니다.');
-      } else {
-        Alert.alert('실패', '장학금 신청에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('장학금 신청 오류:', error);
-      Alert.alert('오류', '장학금 신청 중 오류가 발생했습니다.');
-    } finally {
-      setApplicationLoading(false);
-    }
+    const editMode = hasApplied ? '&edit=true' : '';
+    router.push(`/Scholarship/ScholarshipApplyForm?scholarshipId=${id}${editMode}`);
   };
 
   // 장학금 데이터 로드
@@ -104,18 +89,21 @@ export default function ScholarshipDetail() {
       try {
         setLoading(true);
         
-        // 장학금 정보와 북마크 상태를 병렬로 로드
-        const [scholarshipData, bookmarkStatus] = await Promise.all([
+        // 장학금 정보, 북마크 상태, 신청 상태를 병렬로 로드
+        const [scholarshipData, bookmarkStatus, applicationData] = await Promise.all([
           scholarshipApi.getScholarship(parseInt(id)),
-          bookmarkApi.isBookmarked(parseInt(id))
+          bookmarkApi.isBookmarked(parseInt(id)),
+          applicationApi.getApplicationByScholarship(parseInt(id))
         ]);
         
         console.log('🎓 Scholarship detail data:', scholarshipData);
         console.log('🔖 Bookmark status:', bookmarkStatus);
+        console.log('📋 Application data:', applicationData);
         
         if (scholarshipData) {
           setScholarship(scholarshipData);
           setIsBookmarked(bookmarkStatus);
+          setHasApplied(!!applicationData);
         } else {
           Alert.alert('오류', '장학금 정보를 찾을 수 없습니다.');
           router.back();
@@ -255,10 +243,9 @@ export default function ScholarshipDetail() {
             </TouchableOpacity>
 
             <PrimaryButton
-              label={applicationLoading ? "신청중..." : "지원하기"}
+              label={hasApplied ? "수정하기" : "지원하기"}
               onPress={handleApply}
               style={{ flex: 1 }}
-              disabled={applicationLoading}
             />
           </View>
 
