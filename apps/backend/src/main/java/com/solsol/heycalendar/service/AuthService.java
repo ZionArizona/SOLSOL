@@ -296,13 +296,15 @@ public class AuthService {
 		// 1단계: 기본 회원가입 처리 (트랜잭션)
 		String userId = createBasicUser(request);
 		
-		// 2단계: 신한은행 연동 (별도 처리)
-		try {
-			shinhanBankService.createMemberAndAccount(userId, request.getUserNm());
-			log.info("Shinhan Bank integration completed for userId: {}", userId);
-		} catch (Exception e) {
-			log.warn("Shinhan Bank integration failed for userId: {}, but signup continues. Error: {}", 
-				userId, e.getMessage());
+		// 2단계: 신한은행 연동 (STUDENT일 때만)
+		if ("STUDENT".equals(request.getRole()) && request.isAccountCreationConsent()) {
+			try {
+				shinhanBankService.createMemberAndAccount(userId, request.getUserNm());
+				log.info("Shinhan Bank integration completed for userId: {}", userId);
+			} catch (Exception e) {
+				log.warn("Shinhan Bank integration failed for userId: {}, but signup continues. Error: {}", 
+					userId, e.getMessage());
+			}
 		}
 
 		// 3단계: 최종 사용자 정보 조회
@@ -326,9 +328,9 @@ public class AuthService {
 	 */
 	@Transactional
 	private String createBasicUser(SignupRequest request) {
-		// 1) 계좌생성 동의 체크
-		if (!request.isAccountCreationConsent()) {
-			throw new IllegalArgumentException("Account creation consent is required");
+		// 1) STUDENT일 경우만 계좌생성 동의 체크
+		if ("STUDENT".equals(request.getRole()) && !request.isAccountCreationConsent()) {
+			throw new IllegalArgumentException("Account creation consent is required for students");
 		}
 
 		// 2) 중복 사용자 체크
@@ -342,21 +344,35 @@ public class AuthService {
 		// 3) 비밀번호 해시화
 		String encodedPassword = passwordEncoder.encode(request.getPassword());
 
-		// 4) 대학에 따른 단과대학 자동 매핑 (하드코딩)
-		Long collegeNm = mapUniversityToCollege(request.getUnivNm());
+		// 4) 역할별 설정
+		Role userRole = Role.valueOf(request.getRole());
+		Long deptNmValue, collegeNmValue;
+		int gradeValue;
+		
+		if (userRole == Role.ADMIN || userRole == Role.STAFF) {
+			// 관리자/교직원은 미지정 학과/단과대학, 학년 0
+			deptNmValue = 999L;
+			collegeNmValue = 999L;
+			gradeValue = 0;
+		} else {
+			// 학생은 입력받은 학과 정보 사용
+			deptNmValue = request.getDeptNm() != null ? request.getDeptNm() : 999L;
+			collegeNmValue = mapUniversityToCollege(request.getUnivNm());
+			gradeValue = request.getGrade();
+		}
 
-		// 5) 사용자 정보 DB 저장 (신한은행 정보는 나중에 업데이트)
+		// 5) 사용자 정보 DB 저장
 		User user = User.builder()
 				.userNm(request.getUserNm())
 				.userId(request.getUserId())
 				.password(encodedPassword)
 				.userName(request.getUserName())
 				.state(State.ENROLLED)
-				.grade(request.getGrade())
-				.deptNm(request.getDeptNm())
-				.collegeNm(collegeNm)
+				.grade(gradeValue)
+				.deptNm(deptNmValue)
+				.collegeNm(collegeNmValue)
 				.univNm(request.getUnivNm())
-				.role(Role.STUDENT)
+				.role(userRole)
 				.build();
 
 		int inserted = userMapper.insertUser(user);

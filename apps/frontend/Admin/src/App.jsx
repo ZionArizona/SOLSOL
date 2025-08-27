@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
+import AdminRoute from "./components/AdminRoute"
 import MainPage from "./pages/MainPage"
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -17,19 +18,22 @@ export default function App(){
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainPage/>}/>
+        {/* 인증 불필요 페이지 */}
         <Route path="/login" element={<LoginPage/>}/>
         <Route path="/signup" element={<SignupPage/>}/>
-        <Route path="/admin/submissions" element={<SubmissionManage/>}/>
-        <Route path="/admin/scholarships/regist" element={<ScholarshipCreate/>}/>
-        <Route path="/admin/scholarships" element={<ScholarshipManage/>}/>
-        <Route path="/admin/notices" element={<NoticeManage/>}/>
-        <Route path="/admin/notices/:id" element={<NoticeDetail/>}/>
-        <Route path="/admin/notices/:id/edit" element={<NoticeEdit/>}/>
-        <Route path="/admin/scholarships/:id" element={<ScholarshipDetail/>}/>
-        <Route path="/admin/scholarships/:id/edit" element={<ScholarshipEdit/>}/>
-        <Route path="/notices" element={<PublicNoticeList/>}/>
-        <Route path="/mypage" element={<MyPage/>}/>
+        
+        {/* 관리자 권한 필요 페이지 */}
+        <Route path="/" element={<AdminRoute><MainPage/></AdminRoute>}/>
+        <Route path="/admin/submissions" element={<AdminRoute><SubmissionManage/></AdminRoute>}/>
+        <Route path="/admin/scholarships/regist" element={<AdminRoute><ScholarshipCreate/></AdminRoute>}/>
+        <Route path="/admin/scholarships" element={<AdminRoute><ScholarshipManage/></AdminRoute>}/>
+        <Route path="/admin/notices" element={<AdminRoute><NoticeManage/></AdminRoute>}/>
+        <Route path="/admin/notices/:id" element={<AdminRoute><NoticeDetail/></AdminRoute>}/>
+        <Route path="/admin/notices/:id/edit" element={<AdminRoute><NoticeEdit/></AdminRoute>}/>
+        <Route path="/admin/scholarships/:id" element={<AdminRoute><ScholarshipDetail/></AdminRoute>}/>
+        <Route path="/admin/scholarships/:id/edit" element={<AdminRoute><ScholarshipEdit/></AdminRoute>}/>
+        <Route path="/notices" element={<AdminRoute><PublicNoticeList/></AdminRoute>}/>
+        <Route path="/mypage" element={<AdminRoute><MyPage/></AdminRoute>}/>
       </Routes>
     </BrowserRouter>
   )
