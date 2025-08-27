@@ -29,6 +29,7 @@ public class ScholarshipController {
 	@Operation(summary = "장학금 전체 목록")
 	@GetMapping
 	public ResponseEntity<ApiResponse<List<ScholarshipResponse>>> getAll() {
+		System.out.println("getAll");
 		return ResponseEntity.ok(new ApiResponse<>(true, "OK", "OK", service.getAllScholarships()));
 	}
 
