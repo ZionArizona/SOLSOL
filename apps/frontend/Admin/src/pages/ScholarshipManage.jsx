@@ -20,6 +20,16 @@ export default function ScholarshipManage(){
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
+  const getScholarshipTypeLabel = (type) => {
+    const typeMap = {
+      'ACADEMIC': '성적우수',
+      'FINANCIAL_AID': '생활지원',
+      'ACTIVITY': '활동우수',
+      'OTHER': '기타'
+    }
+    return typeMap[type] || '일반'
+  }
+
   useEffect(() => {
     fetchScholarships()
   }, [])
@@ -69,7 +79,7 @@ export default function ScholarshipManage(){
   }
 
   const transformScholarshipData = (scholarship) => ({
-    id: scholarship.scholarshipNm,
+    id: scholarship.id,
     title: scholarship.scholarshipName,
     tag: scholarship.recruitmentStatus === 'OPEN' ? '모집중' : 
          scholarship.recruitmentStatus === 'CLOSED' ? '모집완료' : '모집예정',
@@ -78,10 +88,10 @@ export default function ScholarshipManage(){
     applied: '0명',
     status: scholarship.recruitmentStatus === 'OPEN' ? '모집중' : '대기',
     progress: scholarship.recruitmentStatus === 'OPEN' ? 50 : 0,
-    method: '서류 심사',
-    chips: [scholarship.type || '일반'],
-    onEdit: () => navigate(`/admin/scholarships/${scholarship.scholarshipNm}/edit`),
-    onDelete: () => handleDeleteScholarship(scholarship.scholarshipNm)
+    method: scholarship.evaluationMethod === 'DOCUMENT_INTERVIEW' ? '서류 + 면접' : '서류 심사',
+    chips: [getScholarshipTypeLabel(scholarship.type)],
+    onEdit: () => navigate(`/admin/scholarships/${scholarship.id}/edit`),
+    onDelete: () => handleDeleteScholarship(scholarship.id)
   })
 
   if (loading) {
@@ -140,7 +150,7 @@ export default function ScholarshipManage(){
             ) : (
               scholarships.map(scholarship => 
                 <ScholarshipCard 
-                  key={scholarship.scholarshipNm} 
+                  key={scholarship.id} 
                   data={transformScholarshipData(scholarship)} 
                 />
               )

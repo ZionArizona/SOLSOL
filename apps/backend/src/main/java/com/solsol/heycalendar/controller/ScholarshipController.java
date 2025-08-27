@@ -3,86 +3,143 @@ package com.solsol.heycalendar.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.solsol.heycalendar.common.ApiResponse;
-import com.solsol.heycalendar.dto.request.EligibilityRequest;
 import com.solsol.heycalendar.dto.request.ScholarshipRequest;
-import com.solsol.heycalendar.dto.response.EligibilityResponse;
-import com.solsol.heycalendar.dto.response.ScholarshipListResponse;
 import com.solsol.heycalendar.dto.response.ScholarshipResponse;
 import com.solsol.heycalendar.service.ScholarshipService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.solsol.heycalendar.dto.request.*;
+import com.solsol.heycalendar.dto.response.*;
 
-@Tag(name = "장학금 관리", description = "장학금 정보 관리 및 자격요건 설정 API")
+
+@Tag(name = "장학금 관리", description = "장학금 정보 관리 API")
 @RestController
 @RequestMapping("/api/scholarships")
 @RequiredArgsConstructor
 public class ScholarshipController {
 
-	private final ScholarshipService scholarshipService;
+	private final ScholarshipService service;
 
-	@Operation(summary = "장학금 전체 목록 조회", description = "등록된 모든 장학금 목록을 조회합니다.")
+	@Operation(summary = "장학금 전체 목록")
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<ScholarshipListResponse>>> getAllScholarships() {
-		List<ScholarshipListResponse> scholarships = scholarshipService.getAllScholarships();
-		return ResponseEntity.ok(new ApiResponse<>(true, "장학금 목록 조회 성공", "OK", scholarships));
+	public ResponseEntity<ApiResponse<List<ScholarshipResponse>>> getAll() {
+		return ResponseEntity.ok(new ApiResponse<>(true, "OK", "OK", service.getAllScholarships()));
 	}
 
-	@Operation(summary = "장학금 상세 정보 조회", description = "특정 ID의 장학금 상세 정보를 조회합니다.")
+	@Operation(summary = "장학금 상세")
 	@GetMapping("/{id}")
-	public ResponseEntity<ApiResponse<ScholarshipResponse>> getScholarshipById(@PathVariable Long id) {
-		ScholarshipResponse scholarship = scholarshipService.getScholarshipById(id);
-		return ResponseEntity.ok(new ApiResponse<>(true, "장학금 조회 성공", "OK", scholarship));
+	public ResponseEntity<ApiResponse<ScholarshipResponse>> get(@PathVariable Long id) {
+		return ResponseEntity.ok(new ApiResponse<>(true, "OK", "OK", service.getScholarshipById(id)));
 	}
 
-	@Operation(summary = "장학금 새로 등록", description = "새로운 장학금 정보를 등록합니다.")
+	@Operation(summary = "장학금 생성")
 	@PostMapping
-	public ResponseEntity<ApiResponse<ScholarshipResponse>> createScholarship(@Valid @RequestBody ScholarshipRequest request) {
-		ScholarshipResponse scholarship = scholarshipService.createScholarship(request);
-		return ResponseEntity.ok(new ApiResponse<>(true, "장학금 생성 성공", "OK", scholarship));
+	public ResponseEntity<ApiResponse<ScholarshipResponse>> create(@Valid @RequestBody ScholarshipRequest request) {
+		return ResponseEntity.ok(new ApiResponse<>(true, "생성 성공", "OK", service.createScholarship(request)));
 	}
 
-	@Operation(summary = "장학금 정보 수정", description = "기존 장학금의 정보를 수정합니다.")
+	@Operation(summary = "장학금 수정")
 	@PutMapping("/{id}")
-	public ResponseEntity<ApiResponse<ScholarshipResponse>> updateScholarship(
-			@PathVariable Long id,
-			@Valid @RequestBody ScholarshipRequest request) {
-		ScholarshipResponse scholarship = scholarshipService.updateScholarship(id, request);
-		return ResponseEntity.ok(new ApiResponse<>(true, "장학금 수정 성공", "OK", scholarship));
+	public ResponseEntity<ApiResponse<ScholarshipResponse>> update(@PathVariable Long id,
+																   @Valid @RequestBody ScholarshipRequest request) {
+		return ResponseEntity.ok(new ApiResponse<>(true, "수정 성공", "OK", service.updateScholarship(id, request)));
 	}
 
-	@Operation(summary = "장학금 삭제", description = "등록된 장학금을 삭제합니다.")
+	@Operation(summary = "장학금 삭제")
 	@DeleteMapping("/{id}")
-	public ResponseEntity<ApiResponse<Void>> deleteScholarship(@PathVariable Long id) {
-		scholarshipService.deleteScholarship(id);
-		return ResponseEntity.ok(new ApiResponse<>(true, "장학금 삭제 성공", "OK", null));
+	public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+		service.deleteScholarship(id);
+		return ResponseEntity.ok(new ApiResponse<>(true, "삭제 성공", "OK", null));
 	}
 
-	@Operation(summary = "장학금 자격요건 조회", description = "특정 장학금에 대한 자격요건 목록을 조회합니다.")
-	@GetMapping("/{id}/eligibilities")
-	public ResponseEntity<ApiResponse<List<EligibilityResponse>>> getEligibilities(@PathVariable Long id) {
-		List<EligibilityResponse> eligibilities = scholarshipService.getEligibilities(id);
-		return ResponseEntity.ok(new ApiResponse<>(true, "자격요건 조회 성공", "OK", eligibilities));
+	/* === Criteria === */
+	@Operation(summary="평가기준 목록")
+	@GetMapping("/{scholarshipId}/criteria")
+	public ResponseEntity<ApiResponse<List<CriteriaResponse>>> listCriteria(@PathVariable Long scholarshipId){
+		return ResponseEntity.ok(new ApiResponse<>(true,"OK","OK", service.listCriteria(scholarshipId)));
 	}
 
-	@Operation(summary = "장학금 자격요건 추가", description = "특정 장학금에 새로운 자격요건을 추가합니다.")
-	@PostMapping("/{id}/eligibilities")
-	public ResponseEntity<ApiResponse<EligibilityResponse>> addEligibility(
-			@PathVariable Long id,
-			@Valid @RequestBody EligibilityRequest request) {
-		EligibilityResponse eligibility = scholarshipService.addEligibility(id, request);
-		return ResponseEntity.ok(new ApiResponse<>(true, "자격요건 추가 성공", "OK", eligibility));
+	@Operation(summary="평가기준 추가")
+	@PostMapping("/{scholarshipId}/criteria")
+	public ResponseEntity<ApiResponse<CriteriaResponse>> addCriteria(@PathVariable Long scholarshipId,
+																	 @Valid @RequestBody CriteriaCreateRequest req){
+		return ResponseEntity.ok(new ApiResponse<>(true,"CREATED","OK", service.addCriteria(scholarshipId, req)));
 	}
+
+	@Operation(summary="평가기준 수정")
+	@PutMapping("/{scholarshipId}/criteria/{criteriaId}")
+	public ResponseEntity<ApiResponse<CriteriaResponse>> updateCriteria(@PathVariable Long scholarshipId,
+																		@PathVariable Long criteriaId,
+																		@Valid @RequestBody CriteriaUpdateRequest req){
+		return ResponseEntity.ok(new ApiResponse<>(true,"UPDATED","OK", service.updateCriteria(criteriaId, req)));
+	}
+
+	@Operation(summary="평가기준 삭제")
+	@DeleteMapping("/{scholarshipId}/criteria/{criteriaId}")
+	public ResponseEntity<ApiResponse<Void>> deleteCriteria(@PathVariable Long scholarshipId,
+															@PathVariable Long criteriaId){
+		service.deleteCriteria(criteriaId);
+		return ResponseEntity.ok(new ApiResponse<>(true,"DELETED","OK", null));
+	}
+
+
+	/* === Tags === */
+	@Operation(summary="태그 목록")
+	@GetMapping("/{scholarshipId}/tags")
+	public ResponseEntity<ApiResponse<List<TagResponse>>> listTags(@PathVariable Long scholarshipId){
+		return ResponseEntity.ok(new ApiResponse<>(true,"OK","OK", service.listTags(scholarshipId)));
+	}
+
+	@Operation(summary="태그 추가(배열)")
+	@PostMapping("/{scholarshipId}/tags")
+	public ResponseEntity<ApiResponse<List<TagResponse>>> addTags(@PathVariable Long scholarshipId,
+																  @Valid @RequestBody TagCreateRequest req){
+		return ResponseEntity.ok(new ApiResponse<>(true,"CREATED","OK", service.addTags(scholarshipId, req)));
+	}
+
+	@Operation(summary="태그 삭제")
+	@DeleteMapping("/{scholarshipId}/tags/{tagId}")
+	public ResponseEntity<ApiResponse<Void>> deleteTag(@PathVariable Long scholarshipId,
+													   @PathVariable Long tagId){
+		service.deleteTag(tagId);
+		return ResponseEntity.ok(new ApiResponse<>(true,"DELETED","OK", null));
+	}
+
+
+	/* === Notice === */
+	@Operation(summary="공지 목록")
+	@GetMapping("/{scholarshipId}/notices")
+	public ResponseEntity<ApiResponse<List<NoticeResponse>>> listNotices(@PathVariable Long scholarshipId){
+		return ResponseEntity.ok(new ApiResponse<>(true,"OK","OK", service.listNotices(scholarshipId)));
+	}
+
+	@Operation(summary="공지 생성")
+	@PostMapping("/{scholarshipId}/notices")
+	public ResponseEntity<ApiResponse<NoticeResponse>> createNotice(@PathVariable Long scholarshipId,
+																	@Valid @RequestBody NoticeCreateRequest req){
+		return ResponseEntity.ok(new ApiResponse<>(true,"CREATED","OK", service.createNotice(scholarshipId, req)));
+	}
+
+	@Operation(summary="공지 수정")
+	@PutMapping("/{scholarshipId}/notices/{noticeId}")
+	public ResponseEntity<ApiResponse<NoticeResponse>> updateNotice(@PathVariable Long scholarshipId,
+																	@PathVariable Long noticeId,
+																	@Valid @RequestBody NoticeUpdateRequest req){
+		return ResponseEntity.ok(new ApiResponse<>(true,"UPDATED","OK", service.updateNotice(noticeId, req)));
+	}
+
+	@Operation(summary="공지 삭제")
+	@DeleteMapping("/{scholarshipId}/notices/{noticeId}")
+	public ResponseEntity<ApiResponse<Void>> deleteNotice(@PathVariable Long scholarshipId,
+														  @PathVariable Long noticeId){
+		service.deleteNotice(noticeId);
+		return ResponseEntity.ok(new ApiResponse<>(true,"DELETED","OK", null));
+	}
+
 }

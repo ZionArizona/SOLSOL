@@ -6,43 +6,44 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.solsol.heycalendar.domain.Scholarship;
+import com.solsol.heycalendar.domain.ScholarshipCriteria;
+import com.solsol.heycalendar.domain.ScholarshipNotice;
+import com.solsol.heycalendar.domain.ScholarshipTag;
 
 @Mapper
 public interface ScholarshipMapper {
-	
-	/**
-	 * 모든 장학금 목록을 조회합니다.
-	 *
-	 * @return 장학금 목록
-	 */
+
+	// --- scholarship ---
 	List<Scholarship> findAll();
-	
-	/**
-	 * ID로 장학금을 조회합니다.
-	 *
-	 * @param scholarshipNm 장학금 ID
-	 * @return 장학금 정보
-	 */
-	Scholarship findById(@Param("scholarshipNm") Long scholarshipNm);
-	
-	/**
-	 * 새로운 장학금을 생성합니다.
-	 *
-	 * @param scholarship 장학금 정보
-	 */
-	void insert(Scholarship scholarship);
-	
-	/**
-	 * 장학금 정보를 수정합니다.
-	 *
-	 * @param scholarship 수정할 장학금 정보
-	 */
+	Scholarship findById(@Param("id") Long id);
+	void insert(Scholarship scholarship);                   // useGeneratedKeys
 	void update(Scholarship scholarship);
-	
-	/**
-	 * 장학금을 삭제합니다.
-	 *
-	 * @param scholarshipNm 장학금 ID
-	 */
-	void delete(@Param("scholarshipNm") Long scholarshipNm);
+	void delete(@Param("id") Long id);
+
+	// --- criteria ---
+	void insertCriteria(@Param("list") List<ScholarshipCriteria> list);
+	void insertSingleCriteria(ScholarshipCriteria criteria);
+	List<ScholarshipCriteria> findCriteriaByScholarshipId(@Param("scholarshipId") Long scholarshipId);
+	ScholarshipCriteria findCriteriaById(@Param("id") Long id);
+	void updateCriteria(ScholarshipCriteria criteria);
+	void deleteCriteria(@Param("id") Long id);
+	void deleteCriteriaByScholarshipId(@Param("scholarshipId") Long scholarshipId);
+
+	// --- tags ---
+	void insertTags(@Param("list") List<ScholarshipTag> list);
+	void insertTag(ScholarshipTag tag);
+	List<String> findTagsByScholarshipId(@Param("scholarshipId") Long scholarshipId);
+	List<ScholarshipTag> findTagsByScholarshipIdFull(@Param("scholarshipId") Long scholarshipId);
+	void deleteTag(@Param("id") Long id);
+	void deleteTagsByScholarshipId(@Param("scholarshipId") Long scholarshipId);
+
+	// --- notice ---
+	ScholarshipNotice findNoticeByScholarshipId(@Param("scholarshipId") Long scholarshipId);
+	void upsertNotice(ScholarshipNotice notice);            // MERGE-like (XML에서 INSERT ON DUPLICATE KEY UPDATE)
+	void insertNotice(ScholarshipNotice notice);
+	List<ScholarshipNotice> findNoticesByScholarshipId(@Param("scholarshipId") Long scholarshipId);
+	ScholarshipNotice findNoticeById(@Param("id") Long id);
+	void updateNotice(ScholarshipNotice notice);
+	void deleteNotice(@Param("id") Long id);
+	void deleteNoticeByScholarshipId(@Param("scholarshipId") Long scholarshipId);
 }
