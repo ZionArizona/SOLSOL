@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "../../theme/colors";
-import { BannerArt } from "../shared/icons";
+
+import Character from "../../assets/images/character3.png";
 
 type Props = {
   title: string;
@@ -33,7 +34,8 @@ export const PromoBanner = ({ title, ctaLabel, onPressCTA, page, total }: Props)
         </View>
       </View>
 
-      <BannerArt size={96} style={{ marginRight: 6 }} />
+      {/* 🔄 캐릭터 PNG로 교체 */}
+      <Image source={Character} style={styles.character} resizeMode="contain" />
     </LinearGradient>
   );
 };
@@ -64,4 +66,11 @@ const styles = StyleSheet.create({
   dots: { flexDirection: "row", gap: 6, marginTop: 12 },
   dot: { width: 6, height: 6, borderRadius: 6, backgroundColor: "#C6D5FF" },
   dotActive: { backgroundColor: "#5D87FF" },
+
+  // 🔄 캐릭터 이미지 스타일
+  character: {
+    width: 96,
+    height: 96,
+    marginRight: 6,
+  },
 });

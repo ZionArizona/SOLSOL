@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "../../theme/colors";
-import MascotImage from "../../assets/images/LoginPageCharacter.png";
+import MascotImage from "../../assets/images/StudentImg.png";
 
 type Props = {
   name: string;

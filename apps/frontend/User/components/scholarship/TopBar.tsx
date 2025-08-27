@@ -21,10 +21,10 @@ export const TopBar = ({ title }: { title: string }) => {
         <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/")}>
           <HomeIcon size={20} />
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/Menu")}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/Menu/Menu")}>
           <MenuIcon size={20} />
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/Notifications")}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/Notifications/Notifications")}>
           <BellIcon size={20} />
         </TouchableOpacity>
       </View>

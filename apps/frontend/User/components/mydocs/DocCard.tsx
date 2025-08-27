@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Path } from "react-native-svg";
 
 export type DocItem = {
   id: string;
@@ -14,7 +15,19 @@ export type DocItem = {
   colorKey?: "grade" | "license" | "lang" | "etc";
 };
 
-export const DocCard = ({ item }: { item: DocItem }) => {
+export const DocCard = ({ 
+  item, 
+  onDelete, 
+  bulkMode, 
+  selected, 
+  onToggleSelect 
+}: { 
+  item: DocItem; 
+  onDelete?: (id: string) => void;
+  bulkMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
+}) => {
   const color = {
     grade: "#6B86FF",
     license: "#5EC3A2",
@@ -22,10 +35,54 @@ export const DocCard = ({ item }: { item: DocItem }) => {
     etc: "#9AA7C8",
   }[item.colorKey || "etc"];
 
+  const handleDelete = () => {
+    if (onDelete) {
+      Alert.alert(
+        "서류 삭제",
+        `'${item.fileName}' 파일을 삭제하시겠습니까?`,
+        [
+          { text: "취소", style: "cancel" },
+          { 
+            text: "삭제", 
+            style: "destructive",
+            onPress: () => onDelete(item.id)
+          }
+        ]
+      );
+    }
+  };
+
   return (
-    <LinearGradient colors={["#EEF3FF", "#FFFFFF"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.card}>
-      {/* 파일명 */}
-      <Text style={styles.fileName} numberOfLines={1}>{item.fileName}</Text>
+    <TouchableOpacity 
+      style={[styles.cardContainer, selected && styles.selectedCard]}
+      onPress={bulkMode ? onToggleSelect : undefined}
+      activeOpacity={bulkMode ? 0.7 : 1}
+    >
+      <LinearGradient colors={["#EEF3FF", "#FFFFFF"]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.card}>
+        {/* 파일명과 액션 버튼들 */}
+        <View style={styles.headerRow}>
+          <Text style={styles.fileName} numberOfLines={1}>{item.fileName}</Text>
+          <View style={styles.actions}>
+            {bulkMode ? (
+              <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+                {selected && (
+                  <Svg width={12} height={12} viewBox="0 0 24 24">
+                    <Path d="M20 6L9 17L4 12" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+                  </Svg>
+                )}
+              </View>
+            ) : (
+              onDelete && (
+                <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
+                  <Svg width={16} height={16} viewBox="0 0 24 24">
+                    <Path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#E36464" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
+                    <Path d="M10 11v6M14 11v6" stroke="#E36464" strokeWidth={1.5} strokeLinecap="round"/>
+                  </Svg>
+                </TouchableOpacity>
+              )
+            )}
+          </View>
+        </View>
 
       {/* 상단 라벨 줄 */}
       <View style={styles.metaRow}>
@@ -48,16 +105,67 @@ export const DocCard = ({ item }: { item: DocItem }) => {
           <Text key={idx} style={[styles.tag, { borderColor: color, color }]}>{t}</Text>
         ))}
       </View>
-    </LinearGradient>
+      </LinearGradient>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16, padding: 14, marginBottom: 10,
-    shadowColor: "#B2C4FF", shadowOpacity: 0.18, shadowRadius: 10, shadowOffset:{width:0,height:6}, elevation:2
+  cardContainer: {
+    borderRadius: 16,
+    marginBottom: 10,
   },
-  fileName: { color: "#2C3E66", fontWeight: "900", marginBottom: 6 },
+  selectedCard: {
+    borderWidth: 2,
+    borderColor: "#6B86FF",
+  },
+  card: {
+    borderRadius: 16, 
+    padding: 14,
+    shadowColor: "#B2C4FF", 
+    shadowOpacity: 0.18, 
+    shadowRadius: 10, 
+    shadowOffset:{width:0,height:6}, 
+    elevation:2
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  fileName: { 
+    color: "#2C3E66", 
+    fontWeight: "900", 
+    flex: 1,
+    marginRight: 8,
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  deleteBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#FCE9E9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#D0D7E6",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  checkboxSelected: {
+    backgroundColor: "#6B86FF",
+    borderColor: "#6B86FF",
+  },
   metaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, fontSize: 12, fontWeight: "900" },
   dim: { color: "#7C89A6", fontWeight: "700", flex: 1, marginLeft: 8 },
