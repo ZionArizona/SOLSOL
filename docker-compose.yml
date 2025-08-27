@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    image: solsol-backend:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_DATASOURCE_URL: jdbc:mysql://${RDS_HOST}:${RDS_PORT}/${RDS_DB}?useSSL=true&serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=utf8
+      SPRING_DATASOURCE_USERNAME: ${RDS_USER}
+      SPRING_DATASOURCE_PASSWORD: ${RDS_PASSWORD}
+      # 필요시: Hikari 옵션들
+      # SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
+      # SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 5
+    networks:
+      - solsol-net
+    expose:
+      - "8080"
+
+  user-web:
+    build:
+      context: ./apps/frontend/User
+      dockerfile: Dockerfile
+    image: solsol-user-web:latest
+    networks:
+      - solsol-net
+    expose:
+      - "80"
+
+  admin-web:
+    build:
+      context: ./apps/frontend/Admin
+      dockerfile: Dockerfile
+    image: solsol-admin-web:latest
+    networks:
+      - solsol-net
+    expose:
+      - "80"
+
+  gateway:
+    image: nginx:alpine
+    depends_on:
+      - backend
+      - user-web
+      - admin-web
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - solsol-net
+
+networks:
+  solsol-net:
+    driver: bridge
