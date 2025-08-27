@@ -27,8 +27,8 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
         ...form,
         ...initial,
         picks: String(initial.picks ?? ''),
-        categories: (initial.categories||[]).join(', '),
-        chips: (initial.chips||[]).join(', ')
+        categories: Array.isArray(initial.categories) ? initial.categories.join(', ') : (initial.categories || ''),
+        chips: Array.isArray(initial.chips) ? initial.chips.join(', ') : (initial.chips || '')
       })
     }
     // eslint-disable-next-line
@@ -45,7 +45,7 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
     e.preventDefault()
     const payload = {
       ...form,
-      picks: Number(form.picks||0),
+      picks: parseInt(typeof form.picks === 'string' ? form.picks.replace(/[^0-9]/g, '') : form.picks) || 1,
       categories: form.categories.split(',').map(s=>s.trim()).filter(Boolean),
       chips: form.chips.split(',').map(s=>s.trim()).filter(Boolean),
       progress: initial?.progress ?? 0,

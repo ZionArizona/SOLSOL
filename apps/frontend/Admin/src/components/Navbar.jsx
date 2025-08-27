@@ -59,7 +59,7 @@ export default function Navbar(){
             <>
               <Link to="/admin/submissions" style={{textDecoration:'none',color:'#4b5563'}}>서류관리</Link>
               <Link to="/admin/scholarships" style={{textDecoration:'none',color:'#4b5563'}}>장학금관리</Link>
-              <span style={{color:'#666'}}>{user.userName}님</span>
+              <span style={{color:'#666'}}>{user.userNm || user.userName}님</span>
               <button 
                 onClick={handleLogout}
                 style={{

@@ -42,6 +42,7 @@ public interface ScholarshipMapper {
 	void upsertNotice(ScholarshipNotice notice);            // MERGE-like (XML에서 INSERT ON DUPLICATE KEY UPDATE)
 	void insertNotice(ScholarshipNotice notice);
 	List<ScholarshipNotice> findNoticesByScholarshipId(@Param("scholarshipId") Long scholarshipId);
+	List<ScholarshipNotice> findAllNotices(); // 전체 공지사항 조회
 	ScholarshipNotice findNoticeById(@Param("id") Long id);
 	void updateNotice(ScholarshipNotice notice);
 	void deleteNotice(@Param("id") Long id);

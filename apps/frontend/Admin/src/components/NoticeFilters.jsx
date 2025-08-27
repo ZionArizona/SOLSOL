@@ -13,15 +13,6 @@ export default function NoticeFilters({value, onChange}){
           </select>
         </label>
 
-        <label className="fg">
-          <span>우선순위</span>
-          <select value={value.priority} onChange={e=>set('priority', e.target.value)}>
-            <option value="all">전체</option>
-            <option value="high">높음</option>
-            <option value="medium">보통</option>
-            <option value="low">낮음</option>
-          </select>
-        </label>
 
         <label className="fg">
           <span>작성자</span>
@@ -40,18 +31,6 @@ export default function NoticeFilters({value, onChange}){
           value={value.q}
           onChange={e=>set('q', e.target.value)}
         />
-        <div className="view-toggle">
-          <button
-            className={value.view==='card'?'active':''}
-            onClick={()=>set('view','card')}
-            type="button"
-          >카드뷰</button>
-          <button
-            className={value.view==='list'?'active':''}
-            onClick={()=>set('view','list')}
-            type="button"
-          >리스트뷰</button>
-        </div>
       </div>
     </div>
   )

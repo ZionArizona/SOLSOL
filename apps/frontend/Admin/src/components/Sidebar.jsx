@@ -15,18 +15,13 @@ export default function Sidebar(){
             <span className="side-dot"/> 제출 서류 관리
           </div>
         </Link>
-        <Link to="/admin/applicants" style={{textDecoration: 'none'}}>
-          <div className={`side-item ${isActive('/admin/applicants') ? 'active' : ''}`}>
-            <span className="side-dot"/> 신청자 관리
-          </div>
-        </Link>
         <Link to="/admin/scholarships" style={{textDecoration: 'none'}}>
           <div className={`side-item ${isActive('/admin/scholarships') ? 'active' : ''}`}>
             <span className="side-dot"/> 장학금 관리
           </div>
         </Link>
-        <Link to="/admin/announcements" style={{textDecoration: 'none'}}>
-          <div className={`side-item ${isActive('/admin/announcements') ? 'active' : ''}`}>
+        <Link to="/admin/notices" style={{textDecoration: 'none'}}>
+          <div className={`side-item ${isActive('/admin/notices') ? 'active' : ''}`}>
             <span className="side-dot"/> 공지글
           </div>
         </Link>

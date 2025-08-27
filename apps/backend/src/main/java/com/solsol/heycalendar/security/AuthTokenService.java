@@ -52,6 +52,7 @@ public class AuthTokenService {
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("userId", userId);
 		claims.put("userName", userName);
+		claims.put("userNm", userNm); // 실명 추가
 		claims.put("role", role);
 		claims.put("typ", "access");
 		if (grade != null) claims.put("grade", grade);

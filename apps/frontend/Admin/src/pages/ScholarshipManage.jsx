@@ -158,24 +158,50 @@ export default function ScholarshipManage(){
     }
   }
 
-  const transformScholarshipData = (scholarship) => ({
-    id: scholarship.id,
-    title: scholarship.scholarshipName,
-    tag: scholarship.recruitmentStatus === 'OPEN' ? '모집중' : 
-         scholarship.recruitmentStatus === 'CLOSED' ? '모집완료' : '모집예정',
-    amount: `${scholarship.amount?.toLocaleString() || 0}원`,
-    picks: `${scholarship.numberOfRecipients || 0}명`,
-    applied: '0명',
-    status: scholarship.recruitmentStatus === 'OPEN' ? '모집중' : '대기',
-    progress: scholarship.recruitmentStatus === 'OPEN' ? 50 : 0,
-    method: scholarship.evaluationMethod === 'DOCUMENT_INTERVIEW' ? '서류 + 면접' : '서류 심사',
-    chips: [getScholarshipTypeLabel(scholarship.type)],
-    onDetail: () => navigate(`/admin/scholarships/${scholarship.id}`),
-    onApplicants: () => navigate(`/admin/submissions?scholarship=${scholarship.id}`),
-    onCopy: () => handleCopyScholarship(scholarship.id),
-    onEdit: () => navigate(`/admin/scholarships/${scholarship.id}/edit`),
-    onDelete: () => handleDeleteScholarship(scholarship.id)
-  })
+  const transformScholarshipData = (scholarship) => {
+    // 날짜 기반 실제 모집상태 계산
+    const now = new Date()
+    const startDate = scholarship.recruitmentStartDate ? new Date(scholarship.recruitmentStartDate) : null
+    const endDate = scholarship.recruitmentEndDate ? new Date(scholarship.recruitmentEndDate) : null
+    
+    let actualStatus = '모집예정'
+    let actualTag = '모집예정'
+    
+    if (startDate && endDate) {
+      if (now >= startDate && now <= endDate) {
+        actualStatus = '모집중'
+        actualTag = '모집중'
+      } else if (now > endDate) {
+        actualStatus = '모집완료'
+        actualTag = '모집완료'
+      }
+      // else는 모집예정 유지
+    } else if (scholarship.recruitmentStatus === 'OPEN') {
+      actualStatus = '모집중'
+      actualTag = '모집중'
+    } else if (scholarship.recruitmentStatus === 'CLOSED') {
+      actualStatus = '모집완료'
+      actualTag = '모집완료'
+    }
+    
+    return {
+      id: scholarship.id,
+      title: scholarship.scholarshipName,
+      tag: actualTag,
+      amount: `${scholarship.amount?.toLocaleString() || 0}원`,
+      picks: `${scholarship.numberOfRecipients || 0}명`,
+      applied: '0명',
+      status: actualStatus,
+      progress: actualStatus === '모집중' ? 50 : 0,
+      method: scholarship.evaluationMethod === 'DOCUMENT_INTERVIEW' ? '서류 + 면접' : '서류 심사',
+      chips: [getScholarshipTypeLabel(scholarship.type)],
+      onDetail: () => navigate(`/admin/scholarships/${scholarship.id}`),
+      onApplicants: () => navigate(`/admin/submissions?scholarship=${scholarship.id}`),
+      onCopy: () => handleCopyScholarship(scholarship.id),
+      onEdit: () => navigate(`/admin/scholarships/${scholarship.id}/edit`),
+      onDelete: () => handleDeleteScholarship(scholarship.id)
+    }
+  }
 
   if (loading) {
     return (
@@ -203,8 +229,7 @@ export default function ScholarshipManage(){
           {/* 상단 액션 툴바 */}
           <Toolbar
             buttons={[
-              { label:'일괄', onClick:()=>alert('일괄 작업 기능 준비 중') },
-              { label:'마이리스트 필터링', onClick:()=>alert('내가 등록한 장학금만 보기') },
+              { label:'내가 등록한 장학금만 보기', onClick:()=>alert('내가 등록한 장학금만 보기') },
               { label:'장학금 추가하기', tone:'primary', onClick:handleCreateScholarship },
             ]}
           />
@@ -216,9 +241,10 @@ export default function ScholarshipManage(){
           <FilterBar
             onSearch={handleSearch}
             onReset={handleReset}
+            onCategoryChange={setSelectedCategory}
+            onStatusChange={setSelectedStatus}
             filters={[
               {label:'선발 여부', type:'checkbox', value:false},
-              {label:'전체', type:'radio', name:'status', value:true},
               {label:'카테고리', type:'select', options:['전체','성적','생활','활동','기타']},
               {label:'상태', type:'select', options:['전체','모집중','모집예정','모집완료']},
             ]}

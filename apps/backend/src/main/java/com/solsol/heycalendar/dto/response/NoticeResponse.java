@@ -10,4 +10,6 @@ public class NoticeResponse {
     private String content;
     private String imageUrl;
     private LocalDateTime createdAt;
+    private Long scholarshipId;
+    private String scholarshipName;
 }
