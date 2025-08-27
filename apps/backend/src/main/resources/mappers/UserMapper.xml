@@ -123,7 +123,7 @@
             `userId`,
             `password`,
             `userName`,
-            `state`,
+            `status`,
             `grade`,
             `deptNm`,
             `collegeNm`,

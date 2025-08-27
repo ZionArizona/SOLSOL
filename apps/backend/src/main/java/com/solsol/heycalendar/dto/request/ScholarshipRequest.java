@@ -2,44 +2,69 @@ package com.solsol.heycalendar.dto.request;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+
+import com.solsol.heycalendar.domain.EvaluationMethod;
+import com.solsol.heycalendar.domain.PaymentMethod;
+import com.solsol.heycalendar.domain.RecruitmentStatus;
+import com.solsol.heycalendar.domain.ScholarshipType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-@Schema(description = "장학금 등록/수정 요청 정보")
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Schema(description = "장학금 등록/수정 요청")
+@Getter @Setter
+@Builder @NoArgsConstructor @AllArgsConstructor
 public class ScholarshipRequest {
-	@Schema(description = "장학금 제목", example = "성적우수 장학금")
-	@NotBlank(message = "제목은 필수입니다")
-	private String title;
-	
-	@Schema(description = "장학금 상세 설명", example = "학업 성적이 우수한 학생에게 지급하는 장학금")
-	@NotBlank(message = "설명은 필수입니다")
+
+	// 기본 정보
+	@NotBlank private String scholarshipName;
+	@NotNull  private ScholarshipType type;                  // ACADEMIC/FINANCIAL_AID/ACTIVITY/OTHER
+	@NotNull @Positive private Integer amount;              // 원화 정수
+	@NotNull @Positive private Integer numberOfRecipients;
+	@NotNull  private PaymentMethod paymentMethod;          // LUMP_SUM/INSTALLMENT
 	private String description;
-	
-	@Schema(description = "장학금 신청 시작일", example = "2024-03-01")
-	@NotNull(message = "시작일은 필수입니다")
-	private LocalDate startDate;
-	
-	@Schema(description = "장학금 신청 마감일", example = "2024-03-31")
-	@NotNull(message = "종료일은 필수입니다")
-	private LocalDate endDate;
-	
-	@Schema(description = "심사 기간 (일단위)", example = "7")
-	@Positive(message = "심사 기간은 양수여야 합니다")
-	private Integer reviewDuration;
-	
-	@Schema(description = "장학금 지급 금액", example = "1000000")
-	@NotNull(message = "장학금 금액은 필수입니다")
-	@Positive(message = "장학금 금액은 양수여야 합니다")
-	private BigDecimal amount;
+
+	// 모집/심사/일정
+	private LocalDate recruitmentStartDate;                 // nullable
+	@NotNull private LocalDate recruitmentEndDate;
+	@NotNull private LocalDate evaluationStartDate;
+	private LocalDate interviewDate;
+	@NotNull private LocalDate resultAnnouncementDate;
+	@NotNull private EvaluationMethod evaluationMethod;    // DOCUMENT_REVIEW/DOCUMENT_INTERVIEW
+	private RecruitmentStatus recruitmentStatus = RecruitmentStatus.OPEN;
+
+	// 자격/제한
+	@NotBlank private String eligibilityCondition;
+	private String gradeRestriction;
+	private String majorRestriction;
+	@NotNull private Boolean duplicateAllowed;
+	private BigDecimal minGpa;                              // 예: 3.00
+
+	// 카테고리/태그
+	private String category;
+	private List<String> tags;
+
+	// 문의처
+	@NotBlank private String contactPersonName;
+	@NotBlank private String contactPhone;
+	@Email @NotBlank private String contactEmail;
+	private String officeLocation;
+	private String consultationHours;
+
+	// 공지
+	private String noticeTitle;
+	private String noticeContent;
+	private String noticeImageUrl;
+
+	// 제출 서류/평가기준(동적 리스트)
+	private List<CriteriaItem> criteria;                   // name/std/weight
+
+	@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+	public static class CriteriaItem {
+		@NotBlank private String name;
+		private Double std;                                // 기준점수 nullable
+		@NotNull @Min(0) @Max(100) private Integer weight; // 0~100
+	}
 }
