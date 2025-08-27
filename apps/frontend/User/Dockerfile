@@ -5,7 +5,6 @@ WORKDIR /app
 
 # 패키지 설치는 lockfile 기반 권장
 COPY package.json package-lock.json ./
-ENV NODE_ENV=production
 RUN npm ci
 
 # 소스 복사 후 빌드
@@ -16,7 +15,7 @@ RUN npx expo export --platform web
 FROM nginx:alpine
 
 # 커스텀 Nginx 설정 복사 (SPA try_files 처리)
-COPY nginx.user.conf /etc/nginx/conf.d/default.conf
+COPY ./nginx/user.conf /etc/nginx/conf.d/default.conf
 
 # 정적 파일 복사
 COPY --from=builder /app/dist /usr/share/nginx/html
