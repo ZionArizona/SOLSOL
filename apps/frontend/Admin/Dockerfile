@@ -1,5 +1,5 @@
 # 단계 1: Vite 기반 Admin 빌드
-FROM node:18 AS builder
+FROM node:22.12-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json ./
