@@ -31,8 +31,12 @@ public class SignupRequest {
     @Schema(description = "학번", example = "20240001", required = true)
     private String userNm;
     
-    @Schema(description = "계좌생성 동의", example = "true", required = true)
-    private boolean accountCreationConsent;
+    @Schema(description = "계좌생성 동의", example = "true")
+    private boolean accountCreationConsent = false; // 기본값 false
+    
+    @Schema(description = "사용자 역할", example = "STUDENT", 
+            allowableValues = {"ADMIN", "STUDENT", "STAFF"})
+    private String role = "STUDENT"; // 기본값
     
     // 자동 계산되는 필드들
     @Schema(hidden = true)

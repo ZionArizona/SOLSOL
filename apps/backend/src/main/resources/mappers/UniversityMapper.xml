@@ -5,24 +5,24 @@
 
     <!-- Result Map for University -->
     <resultMap id="universityResultMap" type="com.solsol.heycalendar.domain.University">
-        <id property="univNm" column="univ_nm"/>
-        <result property="univName" column="univ_name"/>
-        <result property="field2" column="field2"/>
+        <id property="univNm" column="univNm"/>
+        <result property="univName" column="univName"/>
+        <result property="field2" column="mileageRatio"/>
     </resultMap>
 
     <!-- Result Map for University with Colleges -->
     <resultMap id="universityWithCollegesResultMap" type="com.solsol.heycalendar.domain.University">
-        <id property="univNm" column="univ_nm"/>
-        <result property="univName" column="univ_name"/>
-        <result property="field2" column="field2"/>
+        <id property="univNm" column="univNm"/>
+        <result property="univName" column="univName"/>
+        <result property="field2" column="mileageRatio"/>
         <collection property="colleges" ofType="com.solsol.heycalendar.domain.College">
-            <id property="collegeNm" column="college_nm"/>
-            <result property="univNm" column="univ_nm"/>
+            <id property="collegeNm" column="collegeNm"/>
+            <result property="univNm" column="univNm"/>
             <result property="name" column="college_name"/>
             <collection property="departments" ofType="com.solsol.heycalendar.domain.Department">
-                <id property="deptNm" column="dept_nm"/>
-                <result property="collegeNm" column="college_nm"/>
-                <result property="univNm" column="univ_nm"/>
+                <id property="deptNm" column="deptNm"/>
+                <result property="collegeNm" column="collegeNm"/>
+                <result property="univNm" column="univNm"/>
                 <result property="name" column="dept_name"/>
             </collection>
         </collection>
@@ -30,60 +30,60 @@
 
     <!-- Find all universities -->
     <select id="findAll" resultMap="universityResultMap">
-        SELECT univ_nm, univ_name, field2
+        SELECT univNm, univName, mileageRatio
         FROM University
-        ORDER BY univ_name
+        ORDER BY univName
     </select>
 
     <!-- Find university by ID -->
     <select id="findById" parameterType="string" resultMap="universityResultMap">
-        SELECT univ_nm, univ_name, field2
+        SELECT univNm, univName, mileageRatio
         FROM University
-        WHERE univ_nm = #{univNm}
+        WHERE univNm = #{univNm}
     </select>
 
     <!-- Find university with hierarchy -->
     <select id="findByIdWithHierarchy" parameterType="string" resultMap="universityWithCollegesResultMap">
         SELECT 
-            u.univ_nm,
-            u.univ_name,
-            u.field2,
-            c.college_nm,
+            u.univNm,
+            u.univName,
+            u.mileageRatio,
+            c.collegeNm,
             c.name as college_name,
-            d.dept_nm,
+            d.deptNm,
             d.name as dept_name
         FROM University u
-        LEFT JOIN College c ON u.univ_nm = c.univ_nm
-        LEFT JOIN Department d ON c.college_nm = d.college_nm AND c.univ_nm = d.univ_nm
-        WHERE u.univ_nm = #{univNm}
+        LEFT JOIN College c ON u.univNm = c.univNm
+        LEFT JOIN Department d ON c.collegeNm = d.collegeNm AND c.univNm = d.univNm
+        WHERE u.univNm = #{univNm}
         ORDER BY c.name, d.name
     </select>
 
     <!-- Insert university -->
     <insert id="insert" parameterType="com.solsol.heycalendar.domain.University">
-        INSERT INTO University (univ_nm, univ_name, field2)
+        INSERT INTO University (univNm, univName, mileageRatio)
         VALUES (#{univNm}, #{univName}, #{field2})
     </insert>
 
     <!-- Update university -->
     <update id="update" parameterType="com.solsol.heycalendar.domain.University">
         UPDATE University
-        SET univ_name = #{univName},
-            field2 = #{field2}
-        WHERE univ_nm = #{univNm}
+        SET univName = #{univName},
+            mileageRatio = #{field2}
+        WHERE univNm = #{univNm}
     </update>
 
     <!-- Delete university by ID -->
     <delete id="deleteById" parameterType="string">
         DELETE FROM University
-        WHERE univ_nm = #{univNm}
+        WHERE univNm = #{univNm}
     </delete>
 
     <!-- Check if university exists -->
     <select id="existsById" parameterType="string" resultType="boolean">
         SELECT COUNT(*) > 0
         FROM University
-        WHERE univ_nm = #{univNm}
+        WHERE univNm = #{univNm}
     </select>
 
 </mapper>
