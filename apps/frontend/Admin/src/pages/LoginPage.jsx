@@ -46,9 +46,8 @@ export default function LoginPage(){
         localStorage.setItem('accessToken', accessToken)
         localStorage.setItem('refreshToken', result.data.refreshToken)
         localStorage.setItem('user', JSON.stringify({
-          userId: decoded.userId || formData.userId,
-          userName: decoded.userName || formData.userId,
-          userNm: decoded.userNm, // 실명 추가
+          userId: formData.userId,
+          userName: result.data.userName || formData.userId,
           role: decoded.role
         }))
         navigate('/')

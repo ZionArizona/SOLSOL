@@ -391,45 +391,5 @@ public class ScholarshipService {
 	@Transactional
 	public void deleteNotice(Long noticeId){ mapper.deleteNotice(noticeId); }
 
-	/* 전체 공지사항 조회 */
-	@Transactional(readOnly = true)
-	public java.util.List<NoticeResponse> getAllNotices(){
-		return mapper.findAllNotices().stream().map(n -> {
-			// 장학금 정보도 함께 조회
-			Scholarship scholarship = mapper.findById(n.getScholarshipId());
-			return NoticeResponse.builder()
-					.id(n.getId())
-					.title(n.getTitle())
-					.content(n.getContent())
-					.imageUrl(n.getImageUrl())
-					.createdAt(n.getCreatedAt())
-					.scholarshipId(n.getScholarshipId())
-					.scholarshipName(scholarship != null ? scholarship.getScholarshipName() : "알 수 없음")
-					.build();
-		}).collect(Collectors.toList());
-	}
-
-	/* 개별 공지사항 조회 */
-	@Transactional(readOnly = true)
-	public NoticeResponse getNoticeById(Long noticeId){
-		ScholarshipNotice notice = mapper.findNoticeById(noticeId);
-		if(notice == null) {
-			throw new RuntimeException("Notice not found: " + noticeId);
-		}
-		
-		// 장학금 정보도 함께 조회
-		Scholarship scholarship = mapper.findById(notice.getScholarshipId());
-		
-		return NoticeResponse.builder()
-				.id(notice.getId())
-				.title(notice.getTitle())
-				.content(notice.getContent())
-				.imageUrl(notice.getImageUrl())
-				.createdAt(notice.getCreatedAt())
-				.scholarshipId(notice.getScholarshipId())
-				.scholarshipName(scholarship != null ? scholarship.getScholarshipName() : "알 수 없음")
-				.build();
-	}
-
 
 }

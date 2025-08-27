@@ -85,8 +85,7 @@
 							   contact_phone = #{contactPhone},
 							   contact_email = #{contactEmail},
 							   office_location = #{officeLocation},
-							   consultation_hours = #{consultationHours},
-							   updated_at = NOW()
+							   consultation_hours = #{consultationHours}
 		WHERE id = #{id}
 	</update>
 
@@ -203,10 +202,6 @@
 		SELECT * FROM scholarship_notice WHERE id = #{id}
 	</select>
 
-	<select id="findAllNotices" resultMap="NoticeMap">
-		SELECT * FROM scholarship_notice ORDER BY created_at DESC
-	</select>
-
 	<insert id="upsertNotice" parameterType="com.solsol.heycalendar.domain.ScholarshipNotice">
 		INSERT INTO scholarship_notice (scholarship_id, title, content, image_url)
 		VALUES (#{scholarshipId}, #{title}, #{content}, #{imageUrl})
@@ -235,22 +230,5 @@
 	<delete id="deleteNoticeByScholarshipId" parameterType="long">
 		DELETE FROM scholarship_notice WHERE scholarship_id = #{scholarshipId}
 	</delete>
-
-	<!-- === Scheduler Queries === -->
-	<!-- 마감임박 장학금 조회 (3일 이내 마감) -->
-	<select id="findScholarshipsEndingBetween" resultMap="ScholarshipMap">
-		SELECT * FROM scholarship 
-		WHERE recruitment_status = 'OPEN' 
-		  AND recruitment_end_date BETWEEN #{startDate} AND #{endDate}
-		ORDER BY recruitment_end_date ASC
-	</select>
-
-	<!-- 새로 등록된 장학금 조회 (어제 ~ 오늘) -->
-	<select id="findScholarshipsCreatedBetween" resultMap="ScholarshipMap">
-		SELECT * FROM scholarship 
-		WHERE DATE(created_at) BETWEEN #{startDate} AND #{endDate}
-		  AND recruitment_status = 'OPEN'
-		ORDER BY created_at DESC
-	</select>
 
 </mapper>

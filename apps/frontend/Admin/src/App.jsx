@@ -21,9 +21,9 @@ export default function App(){
         {/* 인증 불필요 페이지 */}
         <Route path="/login" element={<LoginPage/>}/>
         <Route path="/signup" element={<SignupPage/>}/>
-        <Route path="/" element={<MainPage/>}/>
         
         {/* 관리자 권한 필요 페이지 */}
+        <Route path="/" element={<AdminRoute><MainPage/></AdminRoute>}/>
         <Route path="/admin/submissions" element={<AdminRoute><SubmissionManage/></AdminRoute>}/>
         <Route path="/admin/scholarships/regist" element={<AdminRoute><ScholarshipCreate/></AdminRoute>}/>
         <Route path="/admin/scholarships" element={<AdminRoute><ScholarshipManage/></AdminRoute>}/>

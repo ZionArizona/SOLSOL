@@ -142,17 +142,4 @@ public class ScholarshipController {
 		return ResponseEntity.ok(new ApiResponse<>(true,"DELETED","OK", null));
 	}
 
-	/* === 전체 공지사항 === */
-	@Operation(summary="전체 장학금 공지사항 목록")
-	@GetMapping("/notices")
-	public ResponseEntity<ApiResponse<List<NoticeResponse>>> getAllNotices(){
-		return ResponseEntity.ok(new ApiResponse<>(true,"OK","OK", service.getAllNotices()));
-	}
-
-	@Operation(summary="개별 장학금 공지사항 조회")
-	@GetMapping("/notices/{noticeId}")
-	public ResponseEntity<ApiResponse<NoticeResponse>> getNoticeById(@PathVariable Long noticeId){
-		return ResponseEntity.ok(new ApiResponse<>(true,"OK","OK", service.getNoticeById(noticeId)));
-	}
-
 }
