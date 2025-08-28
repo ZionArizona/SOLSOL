@@ -154,7 +154,11 @@ public class ApplicationController {
     @Operation(summary = "내 장학금 신청 목록 조회", description = "내가 신청한 장학금 목록을 조회합니다.")
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getMyApplications(
-            @RequestHeader("user-nm") String userNm) {
+            org.springframework.security.core.Authentication authentication) {
+        
+        com.solsol.heycalendar.security.CustomUserPrincipal principal = 
+            (com.solsol.heycalendar.security.CustomUserPrincipal) authentication.getPrincipal();
+        String userNm = principal.getUserNm();
         
         log.info("Getting applications for user: {}", userNm);
         List<ApplicationResponse> applications = applicationService.getApplicationsWithScholarshipByUser(userNm);

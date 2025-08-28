@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.solsol.heycalendar.domain.User;
+import com.solsol.heycalendar.dto.request.UserInfoUpdateRequest;
 
 /**
  * 사용자 조회/수정용 MyBatis 매퍼.
@@ -28,6 +29,8 @@ public interface UserMapper {
 	int updateUserKeyAndAccountByUserId(@Param("userId") String userId,
 		@Param("userKey") String userKey,
 		@Param("accountNm") String accountNm);
+	
+	int updateUserInfo(@Param("userId") String userId, @Param("request") UserInfoUpdateRequest request);
 	
 	int insertUser(User user);
 }
