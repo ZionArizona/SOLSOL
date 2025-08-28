@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,10 +14,7 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-big-calendar';
 import { useAuth } from '../../contexts/AuthContext';
-
-interface MyCalendarProps {
-  onBack: () => void;
-}
+import { scholarshipApi } from '../../services/scholarship.api';
 
 type MyEvent = {
   id: string;
@@ -28,66 +26,47 @@ type MyEvent = {
 };
 
 const CAT_COLORS: Record<NonNullable<MyEvent['category']>, string> = {
-  notice: '#FDE68A',
-  exam:   '#FCA5A5',
-  club:   '#A7F3D0',
-  mileage:'#BFDBFE',
+  notice: '#FDE68A', exam: '#FCA5A5', club: '#A7F3D0', mileage: '#BFDBFE',
 };
 
-/** 백엔드 응답 타입 (필요 필드만) */
+/** 백엔드 응답(필요 필드만) */
 type ScholarshipResponse = {
   id: number;
   scholarshipName: string;
-  recruitmentEndDate: string; // ISO-8601 "YYYY-MM-DD"
+  recruitmentEndDate: string; // "YYYY-MM-DD"
 };
-
-type ApiResponse<T> = {
-  success?: boolean;
-  code?: string;
-  message?: string;
-  data?: T;
-} | T; // 혹시 바로 배열로 내려오는 경우도 대응
+type ApiResponse<T> = { data?: T } | T;
 
 type ListItem = { id: string; title: string; daysLeft: number };
-
-const API_BASE = 'http://10.0.2.2:8080';
 
 const MS_DAY = 24 * 60 * 60 * 1000;
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const parseLocalDate = (s: string) => {
-  // "YYYY-MM-DD" → Date(YYYY, MM-1, DD, 23:59:59) (그 날 끝까지 유효)
   const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, (m ?? 1) - 1, d ?? 1, 23, 59, 59, 999);
+  return new Date(y, (m ?? 1) - 1, d ?? 1, 0, 0, 0, 0); // 시간을 00:00:00으로 설정
 };
 const diffDaysFromToday = (until: Date) => {
-  const today = startOfToday().getTime();
-  const end = until.getTime();
-  return Math.ceil((end - today) / MS_DAY);
+  const today = startOfToday();
+  const targetDate = new Date(until.getFullYear(), until.getMonth(), until.getDate(), 0, 0, 0, 0);
+  return Math.ceil((targetDate.getTime() - today.getTime()) / MS_DAY) - 1;
 };
+const formatNumber = (n: number) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
-  const { user } = useAuth();
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 7, 10)); // 2025-08
-  const [loading, setLoading] = useState(false);
-  const [errorText, setErrorText] = useState<string | null>(null);
-  const [list, setList] = useState<ListItem[]>([]);
+const MyCalendar = () => {
+const { user } = useAuth() as any;
+const mileage = typeof (user as any)?.userMileage === 'number' ? (user as any).userMileage : 0;
 
-  // 이전/다음 달
-  const goToPreviousMonth = () => {
-    const d = new Date(currentDate);
-    d.setMonth(d.getMonth() - 1);
-    setCurrentDate(d);
-  };
-  const goToNextMonth = () => {
-    const d = new Date(currentDate);
-    d.setMonth(d.getMonth() + 1);
-    setCurrentDate(d);
-  };
+const [currentDate, setCurrentDate] = useState(new Date(2025, 7, 10)); // 2025-08
+const [loading, setLoading] = useState(false);
+const [errorText, setErrorText] = useState<string | null>(null);
+const [list, setList] = useState<ListItem[]>([]);
 
-  // 캘린더 더미 이벤트
-  const events = useMemo<MyEvent[]>(() => {
-    const y = currentDate.getFullYear();
-    const m = currentDate.getMonth();
+const goToPreviousMonth = () => { const d = new Date(currentDate); d.setMonth(d.getMonth() - 1); setCurrentDate(d); };
+const goToNextMonth     = () => { const d = new Date(currentDate); d.setMonth(d.getMonth() + 1); setCurrentDate(d); };
+
+  // 달력 더미
+const events = useMemo<MyEvent[]>(() => {
+    const y = currentDate.getFullYear(); const m = currentDate.getMonth();
     return [
       { id: '1', title: '장학금',       start: new Date(y, m, 1),  end: new Date(y, m, 1),  allDay: true, category: 'notice' },
       { id: '2', title: '동아리 모임',   start: new Date(y, m, 3),  end: new Date(y, m, 3),  allDay: true, category: 'club' },
@@ -97,39 +76,45 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
     ];
   }, [currentDate]);
 
-  /** 마운트 시 장학금 목록 호출 → 오늘 기준 유효(recruitmentEndDate >= today)만 필터 */
+  // 진입시 GET /api/scholarships
   useEffect(() => {
     let alive = true;
     (async () => {
-      setLoading(true);
-      setErrorText(null);
+      setLoading(true); setErrorText(null);
       try {
-        const res = await fetch(`${API_BASE}/api/scholarships`);
-        const json: ApiResponse<ScholarshipResponse[]> = await res.json();
+        console.log('🎓 MyCalendar: 장학금 목록 요청 시작');
+        const response = await scholarshipApi.getScholarships();
+        
+        console.log('🎓 MyCalendar: API 응답:', response);
+        
+        if (response && response.scholarships) {
+          const today = startOfToday();
+          console.log('📅 오늘 날짜:', today.toLocaleDateString('ko-KR'));
+          
+          const items: ListItem[] = response.scholarships
+            .map(s => {
+              const end = parseLocalDate(s.recruitmentEndDate);
+              const daysLeft = diffDaysFromToday(end);
+              
+              console.log(`📅 ${s.scholarshipName}:`);
+              console.log(`   - 원본 날짜: ${s.recruitmentEndDate}`);
+              console.log(`   - 파싱된 날짜: ${end.toLocaleDateString('ko-KR')} ${end.toLocaleTimeString('ko-KR')}`);
+              console.log(`   - D-Day: ${daysLeft}`);
+              console.log(`   - 시간 차이(ms): ${end.getTime() - today.getTime()}`);
+              
+              return { id: String(s.id), title: s.scholarshipName, daysLeft };
+            })
+            .filter(it => it.daysLeft >= 0)
+            .sort((a,b) => a.daysLeft - b.daysLeft);
 
-        const data: ScholarshipResponse[] = Array.isArray(json)
-          ? json
-          : (json as any).data ?? [];
-
-        const items: ListItem[] = data
-          .map((s) => {
-            const end = parseLocalDate(s.recruitmentEndDate);
-            return {
-              id: String(s.id ?? s.scholarshipName),
-              title: s.scholarshipName,
-              endDate: end,
-              daysLeft: diffDaysFromToday(end),
-            };
-          })
-          // 오늘 기준 마감 지난 건 제외
-          .filter((it) => it.daysLeft >= 0)
-          // 마감 임박 순으로 정렬
-          .sort((a, b) => a.daysLeft - b.daysLeft)
-          // 필요하면 상위 N개만: .slice(0, 50)
-          .map(({ id, title, daysLeft }) => ({ id, title, daysLeft }));
-
-        if (alive) setList(items);
+          console.log('🎓 MyCalendar: 처리된 아이템들:', items);
+          if (alive) setList(items);
+        } else {
+          console.log('❌ MyCalendar: 응답 데이터 구조가 예상과 다름');
+          throw new Error('장학금 데이터를 받지 못했습니다.');
+        }
       } catch (e: any) {
+        console.error('❌ MyCalendar: API 호출 실패:', e);
         if (alive) setErrorText(e?.message ?? '장학금 목록을 불러오지 못했습니다.');
       } finally {
         if (alive) setLoading(false);
@@ -141,15 +126,12 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
   return (
     <View style={styles.container}>
       <StatusBar translucent={false} backgroundColor="#ffffff" barStyle="dark-content" />
-      <ImageBackground
-        source={require('../../assets/images/SOLSOLBackground.png')}
-        style={styles.background}
-        resizeMode="cover"
-      >
+      <ImageBackground source={require('../../assets/images/SOLSOLBackground.png')} style={styles.background} resizeMode="cover">
+
         {/* 헤더 */}
         <View style={styles.header}>
           <View style={styles.leftWrap}>
-            <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={styles.backText}>← 뒤로</Text>
             </TouchableOpacity>
           </View>
@@ -167,27 +149,43 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
           </View>
         </View>
 
-        {/* 상단 년월 네비게이션 */}
-        <View style={styles.yearMonthContainer}>
-          <TouchableOpacity onPress={goToPreviousMonth} style={styles.navButton}>
-            <Text style={styles.navButtonText}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.yearMonthText}>
-            {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
-          </Text>
-          <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
-            <Text style={styles.navButtonText}>→</Text>
-          </TouchableOpacity>
+        {/* ✅ 마일리지 카드 */}
+        <View style={styles.mileageCard}>
+          <View style={{ flex: 1 }}>
+            {/* <Text style={styles.mileageLabel}>회원님의 현재 마일리지는</Text> */}
+            {/* <Text style={styles.mileagePoint}>
+              {formatNumber(mileage)} <Text style={styles.mileageUnit}>P</Text>
+            </Text> */}
+
+            <View style={styles.mileageBtnRow}>
+              <TouchableOpacity style={[styles.mileageBtn, styles.mileagePrimary]} onPress={() => { router.push("/Scholarship/ScholarshipApply") }}>
+                <Text style={styles.mileagePrimaryText}>장학금 목록</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.mileageBtn, styles.mileageSecondary]} onPress={() => { /* TODO: navigate */ }}>
+                <Text style={styles.mileageSecondaryText}>마일리지 적립 목록</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 이미지가 없으면 아래 줄을 주석 처리하거나 다른 이미지를 넣어주세요 */}
+          {/* <Image source={require('../../assets/images/MileageBear.png')} style={styles.mileageImage} /> */}
         </View>
 
-        {/* 달력 카드 */}
+        {/* 상단 년월 네비 */}
+        <View style={styles.yearMonthContainer}>
+          <TouchableOpacity onPress={goToPreviousMonth} style={styles.navButton}><Text style={styles.navButtonText}>←</Text></TouchableOpacity>
+          <Text style={styles.yearMonthText}>{currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월</Text>
+          <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}><Text style={styles.navButtonText}>→</Text></TouchableOpacity>
+        </View>
+
+        {/* 달력 */}
         <View style={styles.calendarWrap}>
           <Calendar<MyEvent>
             mode="month"
             locale="ko"
             date={currentDate}
             events={events}
-            height={400}
+            height={380}
             weekStartsOn={0}
             swipeEnabled
             headerContainerStyle={styles.calHeader}
@@ -195,10 +193,7 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
             calendarCellStyle={styles.calCell}
             eventCellStyle={() => ({ backgroundColor: 'transparent', borderWidth: 0 })}
             renderEvent={(event, touchableOpacityProps) => (
-              <TouchableOpacity
-                {...touchableOpacityProps}
-                style={[styles.chip, { backgroundColor: CAT_COLORS[event.category ?? 'notice'] }]}
-              >
+              <TouchableOpacity {...touchableOpacityProps} style={[styles.chip, { backgroundColor: CAT_COLORS[event.category ?? 'notice'] }]}>
                 <Text numberOfLines={1} style={styles.chipText}>{event.title}</Text>
               </TouchableOpacity>
             )}
@@ -206,30 +201,39 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
         </View>
 
         {/* 섹션 타이틀 */}
-        <Text style={styles.sectionTitle}>이번주 장학금 목록</Text>
+        <TouchableOpacity onPress={() => router.push("/Scholarship/ScholarshipApply")}>
+          <Text style={styles.sectionTitle}>이번주 장학금 목록</Text>
+        </TouchableOpacity>
 
-        {/* 흰 박스 (스크롤) */}
+        {/* 흰 박스(스크롤) */}
         <View style={styles.weeklyWrap}>
           {loading ? (
-            <View style={styles.centerBox}>
-              <ActivityIndicator />
-              <Text style={styles.loadingText}>불러오는 중…</Text>
-            </View>
+            <View style={styles.centerBox}><ActivityIndicator /><Text style={styles.loadingText}>불러오는 중…</Text></View>
           ) : errorText ? (
-            <View style={styles.centerBox}>
-              <Text style={styles.errorText}>{errorText}</Text>
-            </View>
+            <View style={styles.centerBox}><Text style={styles.errorText}>{errorText}</Text></View>
           ) : list.length === 0 ? (
-            <View style={styles.centerBox}>
-              <Text style={styles.emptyText}>표시할 장학금이 없어요.</Text>
-            </View>
+            <View style={styles.centerBox}><Text style={styles.emptyText}>표시할 장학금이 없어요.</Text></View>
           ) : (
-            <ScrollView contentContainerStyle={styles.weeklyContent} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+              contentContainerStyle={styles.weeklyContent} 
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               {list.map(item => (
-                <View key={item.id} style={styles.greenRow}>
-                  <Text style={styles.greenTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={styles.greenDays}>{`+${item.daysLeft}일`}</Text>
-                </View>
+                <TouchableOpacity 
+                  key={item.id} 
+                  onPress={() => {
+                    console.log('📱 장학금 아이템 클릭:', item.title);
+                    console.log('📱 이동 경로: /Scholarship/ScholarshipApply');
+                    router.push("/Scholarship/ScholarshipApply");
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.greenRow}>
+                    <Text style={styles.greenTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={styles.greenDays}>{`마감 ${item.daysLeft}일전`}</Text>
+                  </View>
+                </TouchableOpacity>
               ))}
             </ScrollView>
           )}
@@ -243,6 +247,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0 },
   background: { flex: 1 },
 
+  // 헤더
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16 },
   leftWrap: { width: 96, justifyContent: 'center' },
   rightWrap: { width: 96, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
@@ -252,7 +257,31 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 4, marginLeft: 8 },
   icon: { width: 20, height: 20, resizeMode: 'contain' },
 
-  yearMonthContainer: { flexDirection: 'row', marginHorizontal: 12, marginTop: 6, marginBottom: 8, alignItems: 'center', justifyContent: 'center' },
+  // 마일리지 카드
+  mileageCard: {
+    marginHorizontal: 12,
+    marginTop: 4,
+    marginBottom: 10,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mileageLabel: { fontSize: 13, color: '#4B5563', marginBottom: 4, fontWeight: '600' },
+  mileagePoint: { fontSize: 28, fontWeight: '900', color: '#111827', marginBottom: 12 },
+  mileageUnit: { fontSize: 22, fontWeight: '900', color: '#111827' },
+  mileageBtnRow: { flexDirection: 'row', gap: 10 },
+  mileageBtn: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 },
+  mileagePrimary: { backgroundColor: '#8FA1FF' },
+  mileagePrimaryText: { color: '#fff', fontWeight: '800' },
+  mileageSecondary: { backgroundColor: '#6B7280' },
+  mileageSecondaryText: { color: '#fff', fontWeight: '800' },
+  mileageImage: { width: 80, height: 80, resizeMode: 'contain', marginLeft: 8 },
+
+  // 상단 년월
+  yearMonthContainer: { flexDirection: 'row', marginHorizontal: 12, marginBottom: 8, alignItems: 'center', justifyContent: 'center' },
   yearMonthText: { fontSize: 20, fontWeight: '700', color: '#333', marginHorizontal: 20 },
   navButton: {
     padding: 12, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.9)',
@@ -260,9 +289,10 @@ const styles = StyleSheet.create({
   },
   navButtonText: { fontSize: 18, fontWeight: '600', color: '#8FA1FF' },
 
+  // 달력 카드
   calendarWrap: {
     marginHorizontal: 12, marginBottom: 10, borderRadius: 16, backgroundColor: '#FFFFFF',
-    padding: 10, minHeight: 400,
+    padding: 10, minHeight: 360,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5,
   },
   calHeader: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 0, backgroundColor: 'transparent' },
@@ -272,29 +302,25 @@ const styles = StyleSheet.create({
   chip: { borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, marginTop: 3, minHeight: 16 },
   chipText: { fontSize: 8, lineHeight: 12, color: '#111' },
 
+  // 섹션 타이틀
   sectionTitle: { marginTop: 8, marginLeft: 16, marginBottom: 6, fontSize: 14, fontWeight: '700', color: '#333' },
 
+  // 이번주 박스
   weeklyWrap: {
     marginHorizontal: 12, marginBottom: 16, borderRadius: 16, backgroundColor: '#FFFFFF',
     paddingVertical: 10, paddingHorizontal: 10, height: 260, overflow: 'hidden',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 3, elevation: 4,
   },
   weeklyContent: { paddingBottom: 6 },
-
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 6, color: '#6B7280' },
   errorText: { color: '#EF4444' },
   emptyText: { color: '#9CA3AF' },
 
   greenRow: {
-    backgroundColor: '#7ED957',
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#7ED957', borderRadius: 10,
+    paddingVertical: 14, paddingHorizontal: 16, marginBottom: 10,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
   greenTitle: { fontSize: 16, fontWeight: '800', color: '#114411', maxWidth: '75%' },
   greenDays:  { fontSize: 16, fontWeight: '800', color: '#114411' },

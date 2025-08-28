@@ -2,8 +2,8 @@ import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { AuthTokens } from '../../utils/tokenManager';
-import tokenManager from '../../utils/tokenManager';
+import tokenManager, { AuthTokens } from '../../utils/tokenManager';
+
 
 
 interface LoginPageProps {
@@ -17,7 +17,7 @@ const goBackOrHome = () => {
   else router.replace('/');                          // 없으면 메인으로 (index.tsx 기준)
 };
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = 'http://10.0.2.2:8080';
 
 const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
     const emailInputRef = useRef<TextInput>(null);
