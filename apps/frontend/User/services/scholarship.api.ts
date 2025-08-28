@@ -30,6 +30,7 @@ export interface Scholarship {
   consultationHours: string;
   notice: any;
   criteria: any[];
+  requiredDocuments: RequiredDocument[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -43,10 +44,9 @@ export interface Eligibility {
 }
 
 export interface RequiredDocument {
-  documentNm: number;
   name: string;
-  isRequired: boolean;
-  description?: string;
+  keywords: string[];
+  required: boolean;
 }
 
 export interface ScholarshipListResponse {

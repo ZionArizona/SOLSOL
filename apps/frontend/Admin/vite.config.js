@@ -6,7 +6,7 @@ export default defineConfig({
   base: process.env.VITE_BASE || '/admin/',
   plugins: [react()],
   server: {
-    port: 5174,
+    port: 5173,
     host: true
   }
 })

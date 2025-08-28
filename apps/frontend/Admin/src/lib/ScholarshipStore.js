@@ -348,7 +348,11 @@ export const scholarshipUtils = {
       // 공지
       noticeTitle: formData.notice?.title || formData.noticeTitle || null,
       noticeContent: formData.notice?.content || formData.noticeContent || null,
-      noticeImageUrl: formData.notice?.imageUrl || formData.noticeImageUrl || null
+      noticeImageUrl: formData.notice?.imageUrl || formData.noticeImageUrl || null,
+      
+      // 평가 기준 및 제출서류
+      criteria: formData.criteria || [],
+      requiredDocuments: formData.requiredDocuments || []
     };
     
     console.log('🔄 transformForBackend 출력 데이터:', result);

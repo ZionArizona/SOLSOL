@@ -101,7 +101,7 @@ export default function MyScholarshipPage() {
       }
 
       if (mileageData) {
-        setCurrentMileage(mileageData.currentMileage || 0);
+        setCurrentMileage(mileageData.availableMileage || 0);
       }
     } catch (error) {
       console.error('데이터 로드 실패:', error);

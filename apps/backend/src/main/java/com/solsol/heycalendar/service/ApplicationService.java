@@ -18,8 +18,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Value;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import com.solsol.heycalendar.dto.request.MileageRequest;
+import com.solsol.heycalendar.service.MileageService;
 
 /**
  * Service class for scholarship application management
@@ -32,6 +41,11 @@ public class ApplicationService {
 
     private final ApplicationMapper applicationMapper;
     private final ApplicationDocumentMapper applicationDocumentMapper;
+    private final S3Presigner s3Presigner;
+    private final MileageService mileageService;
+
+    @Value("${aws.s3.bucket}")
+    private String bucketName;
 
     /**
      * Get all applications with scholarship information (Admin)
@@ -39,7 +53,31 @@ public class ApplicationService {
     @Transactional(readOnly = true)
     public List<ApplicationResponse> getAllApplications() {
         log.debug("Fetching all applications with scholarship information");
-        return applicationMapper.findAllApplicationsWithScholarship();
+        List<ApplicationResponse> applications = applicationMapper.findAllApplicationsWithScholarship();
+        
+        // 각 application에 대해 관련 documents 조회 및 Presigned URL 생성
+        for (ApplicationResponse application : applications) {
+            List<ApplicationDocumentResponse> documents = applicationDocumentMapper.findDocumentsByApplication(
+                application.getUserNm(), String.valueOf(application.getScholarshipNm())
+            );
+            
+            // 각 document의 fileUrl을 Presigned URL로 변환
+            for (ApplicationDocumentResponse document : documents) {
+                if (document.getFileUrl() != null) {
+                    try {
+                        String presignedUrl = generateApplicationDocumentDownloadUrl(document.getFileUrl());
+                        document.setFileUrl(presignedUrl);
+                    } catch (Exception e) {
+                        log.warn("Failed to generate presigned URL for document: {}", document.getFileUrl(), e);
+                        // Presigned URL 생성 실패 시 원본 URL 유지
+                    }
+                }
+            }
+            
+            application.setDocuments(documents);
+        }
+        
+        return applications;
     }
 
     /**
@@ -122,6 +160,19 @@ public class ApplicationService {
         List<ApplicationDocumentResponse> documentResponses = documents.stream()
                 .map(this::convertToApplicationDocumentResponse)
                 .collect(Collectors.toList());
+        
+        // Convert fileUrls to Presigned URLs
+        for (ApplicationDocumentResponse document : documentResponses) {
+            if (document.getFileUrl() != null) {
+                try {
+                    String presignedUrl = generateApplicationDocumentDownloadUrl(document.getFileUrl());
+                    document.setFileUrl(presignedUrl);
+                } catch (Exception e) {
+                    log.warn("Failed to generate presigned URL for document: {}", document.getFileUrl(), e);
+                    // Presigned URL 생성 실패 시 원본 URL 유지
+                }
+            }
+        }
 
         return ApplicationDetailResponse.builder()
                 .userNm(applicationResponse.getUserNm())
@@ -177,6 +228,23 @@ public class ApplicationService {
         applicationMapper.insertApplication(application);
         log.info("Application submitted successfully for user: {} and scholarship: {}", 
                 userNm, request.getScholarshipId());
+
+        // 제출서류 저장
+        if (request.getDocuments() != null && !request.getDocuments().isEmpty()) {
+            for (ApplicationRequest.DocumentInfo docInfo : request.getDocuments()) {
+                ApplicationDocument document = ApplicationDocument.builder()
+                        .userNm(userNm)
+                        .scholarshipNm(request.getScholarshipId().toString())
+                        .fileUrl(docInfo.getFileUrl())
+                        .originalFileName(docInfo.getFileName())
+                        .uploadedAt(LocalDateTime.now())
+                        .build();
+                
+                applicationDocumentMapper.insertApplicationDocument(document);
+                log.info("Document uploaded for application - User: {}, Scholarship: {}, File: {}", 
+                        userNm, request.getScholarshipId(), docInfo.getFileName());
+            }
+        }
 
         // Return response with scholarship information
         List<ApplicationResponse> responses = applicationMapper.findApplicationsWithScholarshipByUser(userNm);
@@ -390,5 +458,128 @@ public class ApplicationService {
         }
 
         return String.format("%.1f %s", size, units[unitIndex]);
+    }
+
+    /**
+     * Generate presigned URL for application document download
+     */
+    public String generateApplicationDocumentDownloadUrl(String fileUrl) {
+        try {
+            log.info("🔄 Presigned URL 생성 시작 - 원본 URL: {}", fileUrl);
+            
+            // S3 URL에서 object key 추출
+            String objectKey = extractObjectKeyFromS3Url(fileUrl);
+            log.info("🔑 추출된 Object Key: {}", objectKey);
+            
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(objectKey)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofMinutes(10)) // 10분 유효
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+            String presignedUrl = presignedRequest.url().toString();
+            
+            log.info("✅ Presigned URL 생성 완료: {}", presignedUrl.substring(0, Math.min(presignedUrl.length(), 100)) + "...");
+            
+            return presignedUrl;
+            
+        } catch (Exception e) {
+            log.error("❌ Application document download URL 생성 실패 - fileUrl: {}", fileUrl, e);
+            throw new RuntimeException("파일 다운로드 URL 생성에 실패했습니다.", e);
+        }
+    }
+
+    /**
+     * Extract object key from S3 URL
+     */
+    private String extractObjectKeyFromS3Url(String s3Url) {
+        // S3 URL 형태: https://heycalendar.s3.amazonaws.com/documents/김소연/1756366962035_5518dd81.pdf
+        // 또는: https://s3.amazonaws.com/heycalendar/documents/김소연/1756366962035_5518dd81.pdf
+        
+        if (s3Url.contains("amazonaws.com/")) {
+            String[] parts = s3Url.split("amazonaws.com/");
+            if (parts.length > 1) {
+                return parts[1];
+            }
+        }
+        
+        // 만약 이미 object key 형태라면 그대로 반환
+        if (!s3Url.startsWith("http")) {
+            return s3Url;
+        }
+        
+        throw new IllegalArgumentException("올바르지 않은 S3 URL 형태입니다: " + s3Url);
+    }
+
+    /**
+     * Approve application document and award mileage
+     */
+    @Transactional
+    public void approveApplicationDocument(String userNm, String scholarshipNm, Integer mileage) {
+        try {
+            log.info("📋 서류 승인 및 마일리지 지급 시작 - User: {}, Scholarship: {}, Mileage: {}", 
+                    userNm, scholarshipNm, mileage);
+            
+            // 신청서 존재 확인
+            Application application = applicationMapper.findApplicationByUserAndScholarship(userNm, scholarshipNm);
+            if (application == null) {
+                throw new IllegalArgumentException("신청서를 찾을 수 없습니다.");
+            }
+            
+            // 신청서 상태를 APPROVED로 변경
+            application.setState(ApplicationState.APPROVED);
+            applicationMapper.updateApplication(application);
+            log.info("✅ 신청서 상태를 APPROVED로 변경 완료");
+            
+            // 마일리지 지급
+            if (mileage > 0) {
+                MileageRequest mileageRequest = MileageRequest.builder()
+                        .userNm(userNm)
+                        .amount(mileage)
+                        .description("서류 승인 - " + scholarshipNm)
+                        .build();
+                
+                mileageService.addMileage(mileageRequest);
+                log.info("💰 마일리지 지급 완료 - User: {}, Amount: {}", userNm, mileage);
+            }
+            
+            log.info("🎉 서류 승인 및 마일리지 지급 완료");
+            
+        } catch (Exception e) {
+            log.error("❌ 서류 승인 실패 - User: {}, Scholarship: {}", userNm, scholarshipNm, e);
+            throw new RuntimeException("서류 승인에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Reject application document
+     */
+    @Transactional
+    public void rejectApplicationDocument(String userNm, String scholarshipNm) {
+        try {
+            log.info("📋 서류 반려 시작 - User: {}, Scholarship: {}", userNm, scholarshipNm);
+            
+            // 신청서 존재 확인
+            Application application = applicationMapper.findApplicationByUserAndScholarship(userNm, scholarshipNm);
+            if (application == null) {
+                throw new IllegalArgumentException("신청서를 찾을 수 없습니다.");
+            }
+            
+            // 신청서 상태를 REJECTED로 변경
+            application.setState(ApplicationState.REJECTED);
+            applicationMapper.updateApplication(application);
+            log.info("✅ 신청서 상태를 REJECTED로 변경 완료");
+            
+            log.info("🚫 서류 반려 완료");
+            
+        } catch (Exception e) {
+            log.error("❌ 서류 반려 실패 - User: {}, Scholarship: {}", userNm, scholarshipNm, e);
+            throw new RuntimeException("서류 반려에 실패했습니다: " + e.getMessage(), e);
+        }
     }
 }

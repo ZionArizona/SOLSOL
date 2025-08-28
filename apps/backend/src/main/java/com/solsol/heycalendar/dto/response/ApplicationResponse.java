@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Response DTO for application list and basic application information
@@ -55,4 +56,7 @@ public class ApplicationResponse {
     
     @Schema(description = "대학명", example = "삼성대학교")
     private String universityName;
+
+    @Schema(description = "제출서류 목록")
+    private List<ApplicationDocumentResponse> documents;
 }
