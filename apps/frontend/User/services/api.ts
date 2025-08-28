@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import tokenManager from '../utils/tokenManager';
 
 // API Base URL
 export const BASE_URL = 'http://localhost:8080/api';
@@ -12,45 +12,7 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
-// 토큰 관리 유틸리티
-export const tokenManager = {
-  async getAccessToken(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem('accessToken');
-    } catch (error) {
-      console.error('토큰 조회 실패:', error);
-      return null;
-    }
-  },
-
-  async getRefreshToken(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem('refreshToken');
-    } catch (error) {
-      console.error('리프레시 토큰 조회 실패:', error);
-      return null;
-    }
-  },
-
-  async setTokens(accessToken: string, refreshToken: string): Promise<void> {
-    try {
-      await AsyncStorage.multiSet([
-        ['accessToken', accessToken],
-        ['refreshToken', refreshToken],
-      ]);
-    } catch (error) {
-      console.error('토큰 저장 실패:', error);
-    }
-  },
-
-  async clearTokens(): Promise<void> {
-    try {
-      await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'userData']);
-    } catch (error) {
-      console.error('토큰 삭제 실패:', error);
-    }
-  }
-};
+// 기존 tokenManager를 사용하므로 별도 정의 불필요
 
 // HTTP 클라이언트 클래스
 class ApiClient {
@@ -84,19 +46,11 @@ class ApiClient {
 
   private extractUserFromToken(token: string): string | null {
     try {
-      // JWT는 헤더.페이로드.서명으로 구성되어 있음
-      const payload = token.split('.')[1];
+      const payload = tokenManager.decodeAccessToken(token);
       if (!payload) return null;
-
-      // Base64 URL 디코딩
-      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-      const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
       
-      const jsonPayload = atob(paddedBase64);
-      const decoded = JSON.parse(jsonPayload);
-      
-      // 토큰에서 사용자명 추출 (sub 또는 userNm 필드를 확인)
-      return decoded.sub || decoded.userNm || decoded.userId || null;
+      // 토큰에서 사용자명 추출
+      return payload.sub || payload.userName || payload.userId || null;
     } catch (error) {
       console.error('JWT 토큰 디코딩 오류:', error);
       return null;
@@ -146,7 +100,7 @@ class ApiClient {
 
       if (response.ok) {
         const data: ApiResponse<{accessToken: string, refreshToken: string}> = await response.json();
-        await tokenManager.setTokens(data.data.accessToken, data.data.refreshToken);
+        await tokenManager.saveTokens(data.data);
         return true;
       }
 

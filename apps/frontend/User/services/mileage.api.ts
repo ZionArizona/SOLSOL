@@ -11,10 +11,12 @@ export interface MileageHistory {
 }
 
 export interface UserMileage {
-  currentMileage: number;
-  totalEarned: number;
-  totalUsed: number;
-  history: MileageHistory[];
+  userNm: string;
+  totalMileage: number;
+  availableMileage: number;
+  pendingExchange: number;
+  mileageHistory: MileageHistory[];
+  exchangeHistory: Exchange[];
 }
 
 export interface ExchangeRequest {
