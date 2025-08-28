@@ -83,7 +83,7 @@ export default function NotificationsPage() {
       timestamp: formatTimestamp(notification.createdAt),
       isRead: notification.isRead,
       actionLabel: typeInfo.actionLabel,
-      actionRoute: typeInfo.actionRoute
+      actionRoute: notification.actionRoute || typeInfo.actionRoute
     };
   };
 

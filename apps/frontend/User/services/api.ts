@@ -49,8 +49,11 @@ class ApiClient {
       const payload = tokenManager.decodeAccessToken(token);
       if (!payload) return null;
       
+      console.log('🔍 JWT Payload:', payload);
       // 토큰에서 사용자명 추출
-      return payload.sub || payload.userName || payload.userId || null;
+      const userNm = payload.sub || payload.userName || payload.userId || null;
+      console.log('👤 Extracted userNm:', userNm);
+      return userNm;
     } catch (error) {
       console.error('JWT 토큰 디코딩 오류:', error);
       return null;
@@ -119,6 +122,9 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     try {
       const headers = await this.getAuthHeaders();
+      console.log(`🔐 API Request: ${options.method || 'GET'} ${this.baseURL}${endpoint}`);
+      console.log('🔐 Request Headers:', headers);
+      
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
         headers: { ...headers, ...options.headers },
@@ -126,6 +132,7 @@ class ApiClient {
 
       // 401 Unauthorized - 토큰 갱신 시도
       if (response.status === 401) {
+        console.log('❌ 401 Unauthorized error occurred');
         const refreshSuccess = await this.refreshTokenIfNeeded();
         if (refreshSuccess) {
           // 토큰 갱신 성공 - 요청 재시도
