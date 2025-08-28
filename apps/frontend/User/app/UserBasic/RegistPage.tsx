@@ -2,6 +2,8 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, ImageBackground, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { BASE_URL } from '../../services/api';
+import tokenManager from '../../utils/tokenManager';
+import { useAuth } from '../../contexts/AuthContext';
 
 // API_BASE는 services/api.ts의 BASE_URL 사용
 
@@ -36,6 +38,7 @@ const departments = [
 ];
 
 export default function RegistPage() {
+  const { login } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -110,17 +113,72 @@ export default function RegistPage() {
         throw new Error(raw || `HTTP ${res.status}`);
       }
 
-      console.log('✅ 성공 조건 통과 - Alert 표시 시작');
-      Alert.alert('회원가입 성공 !', '', [
-        {
-          text: '확인',
-          onPress: () => {
-            console.log('✅ Alert 확인 버튼 클릭 - 로그인 페이지로 이동');
-            router.replace('/UserBasic/LoginPage');
-          },
-        },
-      ]);
-      console.log('✅ Alert 설정 완료');
+      console.log('✅ 회원가입 성공 - 자동 로그인 시도');
+      
+      // 자동 로그인 시도
+      try {
+        const loginRes = await fetch(`${BASE_URL.replace('/api', '')}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: email.trim(),
+            password: pw,
+          }),
+        });
+
+        const loginData = await loginRes.json();
+        console.log('🔐 로그인 응답:', loginData);
+
+        if (loginData.success && loginData.data) {
+          // 토큰 저장
+          await tokenManager.saveTokens({
+            accessToken: loginData.data.accessToken,
+            refreshToken: loginData.data.refreshToken,
+          });
+          
+          // AuthContext의 login 함수 호출 (AuthTokens 객체로 전달)
+          await login({
+            accessToken: loginData.data.accessToken,
+            refreshToken: loginData.data.refreshToken,
+          });
+          
+          console.log('✅ 자동 로그인 성공');
+          
+          // 바로 메인 페이지로 이동
+          console.log('✅ 메인 페이지로 이동 시작');
+          router.replace('/UserBasic/MainPage');
+          
+          // 이동 후 알림 표시
+          setTimeout(() => {
+            Alert.alert(
+              '회원가입 성공!', 
+              '자동으로 로그인되었습니다.'
+            );
+          }, 500);
+        } else {
+          // 자동 로그인 실패 시 로그인 페이지로 이동
+          console.log('⚠️ 자동 로그인 실패 - 로그인 페이지로 이동');
+          router.replace('/UserBasic/LoginPage');
+          
+          setTimeout(() => {
+            Alert.alert(
+              '회원가입 성공!',
+              '로그인 페이지로 이동합니다.'
+            );
+          }, 500);
+        }
+      } catch (loginError) {
+        console.log('⚠️ 자동 로그인 중 오류:', loginError);
+        // 자동 로그인 실패해도 회원가입은 성공했으므로 로그인 페이지로 이동
+        router.replace('/UserBasic/LoginPage');
+        
+        setTimeout(() => {
+          Alert.alert(
+            '회원가입 성공!',
+            '로그인 페이지로 이동합니다.'
+          );
+        }, 500);
+      }
     } catch (e: any) {
       Alert.alert('가입 실패', e?.message || '잠시 후 다시 시도해주세요.');
     } finally {

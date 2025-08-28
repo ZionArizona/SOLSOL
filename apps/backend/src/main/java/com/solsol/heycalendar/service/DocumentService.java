@@ -34,7 +34,7 @@ public class DocumentService {
     private final MyboxMapper myboxMapper;
     private final CryptoUtil cryptoUtil;
 
-    @Value("${cloud.aws.s3.bucket}")
+    @Value("${AWS_S3_BUCKET}")
     private String bucketName;
 
     // 지원하는 파일 타입

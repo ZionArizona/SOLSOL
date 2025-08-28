@@ -33,6 +33,10 @@ export default function MainPage() {
     router.push("/Scholarship/ScholarshipApply");
   };
 
+  const handleCalendarPress = () => {
+    router.push("/Schedule/MyCalendar");
+  };
+
   // 사용자 정보 및 마일리지 데이터 로드
   useEffect(() => {
     const loadUserData = async () => {
@@ -157,7 +161,7 @@ export default function MainPage() {
             <PromoBanner
               title={`신청부터 지금까지,\n헤이영 캘린더가\n다 챙겨드려요`}
               ctaLabel="나의 일정 바로가기"
-              onPressCTA={() => {}}
+              onPressCTA={handleCalendarPress}
               page={0}
               total={3}
             />

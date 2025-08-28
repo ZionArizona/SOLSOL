@@ -364,38 +364,74 @@ export default function DocumentApproval(){
                 <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
                   <input
                     type="number"
-                    placeholder="지급할 마일리지 입력"
+                    placeholder={selectedDocument.state === 'APPROVED' || selectedDocument.applicationState === 'APPROVED' ? "마일리지 지급 완료" : "지급할 마일리지 입력"}
                     value={mileageInput}
                     onChange={(e) => setMileageInput(e.target.value)}
+                    disabled={selectedDocument.state === 'APPROVED' || selectedDocument.applicationState === 'APPROVED'}
                     style={{
                       padding: '8px 12px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '6px',
                       flex: 1,
-                      fontSize: '14px'
+                      fontSize: '14px',
+                      backgroundColor: selectedDocument.state === 'APPROVED' || selectedDocument.applicationState === 'APPROVED' ? '#f9fafb' : 'white',
+                      cursor: selectedDocument.state === 'APPROVED' || selectedDocument.applicationState === 'APPROVED' ? 'not-allowed' : 'text'
                     }}
                     min="0"
                   />
                   <span style={{color: '#6b7280', fontSize: '14px'}}>마일리지</span>
                 </div>
                 <p style={{fontSize: '12px', color: '#6b7280'}}>
-                  * 서류 승인 시 입력한 마일리지가 사용자에게 지급됩니다.
+                  {selectedDocument.state === 'APPROVED' || selectedDocument.applicationState === 'APPROVED' 
+                    ? "* 이 서류는 이미 승인되어 마일리지 지급이 완료되었습니다."
+                    : "* 서류 승인 시 입력한 마일리지가 사용자에게 지급됩니다."
+                  }
                 </p>
               </div>
             </div>
             <div className="modal-footer">
-              <button 
-                className="reject-btn-modal" 
-                onClick={handleRejectDocument}
-              >
-                반려
-              </button>
-              <button 
-                className="approve-btn-modal" 
-                onClick={handleApproveDocument}
-              >
-                승인 및 마일리지 지급
-              </button>
+              {selectedDocument.state === 'APPROVED' || selectedDocument.applicationState === 'APPROVED' ? (
+                <div style={{
+                  width: '100%', 
+                  textAlign: 'center', 
+                  padding: '12px',
+                  backgroundColor: '#f0f9ff',
+                  border: '1px solid #0ea5e9',
+                  borderRadius: '6px',
+                  color: '#0369a1',
+                  fontWeight: '600'
+                }}>
+                  ✅ 이미 승인된 서류입니다. 마일리지 지급이 완료되었습니다.
+                </div>
+              ) : selectedDocument.state === 'REJECTED' || selectedDocument.applicationState === 'REJECTED' ? (
+                <div style={{
+                  width: '100%', 
+                  textAlign: 'center', 
+                  padding: '12px',
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #f87171',
+                  borderRadius: '6px',
+                  color: '#dc2626',
+                  fontWeight: '600'
+                }}>
+                  ❌ 반려된 서류입니다.
+                </div>
+              ) : (
+                <>
+                  <button 
+                    className="reject-btn-modal" 
+                    onClick={handleRejectDocument}
+                  >
+                    반려
+                  </button>
+                  <button 
+                    className="approve-btn-modal" 
+                    onClick={handleApproveDocument}
+                  >
+                    승인 및 마일리지 지급
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
