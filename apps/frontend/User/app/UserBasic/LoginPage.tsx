@@ -2,8 +2,9 @@ import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { AuthTokens } from '../../utils/tokenManager';
-import tokenManager from '../../utils/tokenManager';
+import tokenManager, { AuthTokens } from '../../utils/tokenManager';
+import { BASE_URL } from '../../services/api';
+
 
 
 interface LoginPageProps {
@@ -17,7 +18,7 @@ const goBackOrHome = () => {
   else router.replace('/');                          // 없으면 메인으로 (index.tsx 기준)
 };
 
-const API_BASE = 'http://localhost:8080'; // Android 에뮬레이터용
+// API_BASE는 services/api.ts의 BASE_URL 사용
 
 const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
     const emailInputRef = useRef<TextInput>(null);
@@ -36,7 +37,7 @@ const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
         }
         try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/api/auth/login`, {
+        const res = await fetch(`${BASE_URL.replace('/api', '')}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

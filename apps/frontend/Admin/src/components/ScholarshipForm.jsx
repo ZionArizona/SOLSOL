@@ -29,11 +29,24 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
         ...initial,
         picks: String(initial.picks ?? ''),
         categories: Array.isArray(initial.categories) ? initial.categories.join(', ') : (initial.categories || ''),
-        chips: Array.isArray(initial.chips) ? initial.chips.join(', ') : (initial.chips || '')
+        chips: Array.isArray(initial.chips) ? initial.chips.join(', ') : (initial.chips || ''),
+        // 기존 데이터가 한국어로 저장되어 있을 경우 ENUM으로 변환
+        type: convertToEnum(initial.type) || initial.type || ''
       })
     }
     // eslint-disable-next-line
   }, [initial])
+
+  // 한국어 타입을 ENUM으로 변환
+  const convertToEnum = (koreanType) => {
+    const typeMap = {
+      '성적우수': 'ACADEMIC',
+      '생활지원': 'FINANCIAL_AID', 
+      '공로/활동': 'ACTIVITY',
+      '기타': 'OTHER'
+    }
+    return typeMap[koreanType]
+  }
 
   const addCri = ()=>{
     if(!cri.name.trim()) return
@@ -77,7 +90,7 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
           </div>
           <div className="field">
             <label className="label">장학금 지급 금액 *</label>
-            <input className="ip" value={form.amount} onChange={e=>set('amount', e.target.value)} placeholder="금액 (원)"/>
+            <input className="ip" value={form.amount} onChange={e=>set('amount', e.target.value)} placeholder="금액 (마일리지)"/>
           </div>
         </div>
 
@@ -85,7 +98,11 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
           <div className="field">
             <label className="label">장학금 종류 *</label>
             <select className="ip" value={form.type} onChange={e=>set('type', e.target.value)}>
-              <option value="">선택하세요</option><option>성적우수</option><option>생활지원</option><option>공로/활동</option><option>기타</option>
+              <option value="">선택하세요</option>
+              <option value="ACADEMIC">성적우수</option>
+              <option value="FINANCIAL_AID">생활지원</option>
+              <option value="ACTIVITY">공로/활동</option>
+              <option value="OTHER">기타</option>
             </select>
           </div>
           <div className="field">

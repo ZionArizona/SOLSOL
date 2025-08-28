@@ -67,10 +67,15 @@ export const NotificationCard = ({
     }
   };
 
-  const handlePress = () => {
-    // 읽지 않은 알림인 경우 읽음 처리
+  const handlePress = async () => {
+    // 읽지 않은 알림인 경우 읽음 처리 (실패해도 네비게이션은 계속 진행)
     if (!notification.isRead && onMarkAsRead) {
-      onMarkAsRead(notification.id);
+      try {
+        await onMarkAsRead(notification.id);
+      } catch (error) {
+        console.warn('알림 읽음 처리 실패:', error);
+        // 읽음 처리 실패해도 네비게이션은 계속 진행
+      }
     }
     router.push(notification.actionRoute);
   };

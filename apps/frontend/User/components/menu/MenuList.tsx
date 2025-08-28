@@ -1,9 +1,9 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { MenuItem } from "./MenuItem";
-import { CalendarIcon, FileBoxIcon, ScholarshipIcon, BellIcon, UserCircleIcon, HomeIcon } from "../shared/icons";
-import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import React from "react";
+import { StyleSheet } from "react-native";
+import { BellIcon, CalendarIcon, FileBoxIcon, HomeIcon, ScholarshipIcon, UserCircleIcon } from "../shared/icons";
+import { MenuItem } from "./MenuItem";
 
 export const MenuList = () => {
   return (
@@ -47,7 +47,7 @@ export const MenuList = () => {
       {/* 로그인/로그아웃은 프로젝트 상태에 맞게 분기해서 사용 */}
       <MenuItem
         icon={<UserCircleIcon size={24} />}
-        title="로그인 / 로그아웃"
+        title="로그아웃"
         desc="계정 전환 및 보안"
         onPress={() => router.push("/UserBasic/LoginPage")}
       />

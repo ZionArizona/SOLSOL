@@ -152,7 +152,7 @@ export default function ScholarshipCreate(){
                   <input 
                     className="ip" 
                     type="number"
-                    placeholder="금액을 입력하세요 (원)"
+                    placeholder="금액을 입력하세요 (마일리지)"
                     value={formData.amount}
                     onChange={(e) => handleInputChange('amount', e.target.value)}
                   />
