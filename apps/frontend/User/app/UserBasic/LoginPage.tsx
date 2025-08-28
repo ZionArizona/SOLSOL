@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import tokenManager, { AuthTokens } from '../../utils/tokenManager';
+import { BASE_URL } from '../../services/api';
 
 
 
@@ -17,7 +18,7 @@ const goBackOrHome = () => {
   else router.replace('/');                          // 없으면 메인으로 (index.tsx 기준)
 };
 
-const API_BASE = 'http://10.0.2.2:8080';
+const API_BASE = BASE_URL.replace('/api', '');
 
 const LoginPage = ({ onLoginSuccess}: LoginPageProps) => {
     const emailInputRef = useRef<TextInput>(null);

@@ -4,13 +4,20 @@ import { Platform } from 'react-native';
 
 // API Base URL
 //export const BASE_URL = 'http://localhost:8080/api'; 
+// 웹 환경 감지
+const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+console.log('🔍 Platform.OS:', Platform.OS, '__DEV__:', __DEV__, 'isWeb:', isWeb);
+
 export const BASE_URL = __DEV__
   ? (
-      Platform.OS === 'android'
+      isWeb 
+        ? 'http://localhost:8080/api'  // 웹 브라우저 → localhost 사용 (우선순위)
+        : Platform.OS === 'android'
         ? 'http://10.0.2.2:8080/api'   // Android 에뮬레이터 → 로컬 호스트 접근
-        : 'http://localhost:8080/api'  // iOS 시뮬레이터
+        : 'http://localhost:8080/api'  // iOS 시뮬레이터 → localhost 사용
     )
   : 'https://heycalendar.store/api';   // 실제 배포(앱 빌드/실기기)
+console.log('🌐 Selected BASE_URL:', BASE_URL);
 
 // API Response 타입 정의
 export interface ApiResponse<T = any> {
