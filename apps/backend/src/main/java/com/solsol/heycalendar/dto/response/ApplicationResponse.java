@@ -36,4 +36,23 @@ public class ApplicationResponse {
     
     @Schema(description = "신청 사유", example = "학업 성취도가 우수함")
     private String reason;
+    
+    @Schema(description = "사용자 이름", example = "홍길동")
+    private String userName;
+    
+    @Schema(description = "신청 날짜", example = "2024-01-01T10:00:00")
+    private LocalDateTime applicationDate;
+    
+    @Schema(description = "신청 상태", example = "PENDING")
+    private ApplicationState applicationState;
+    
+    // User information fields
+    @Schema(description = "학과명", example = "컴퓨터공학과")
+    private String departmentName;
+    
+    @Schema(description = "단과대명", example = "공과대학")
+    private String collegeName;
+    
+    @Schema(description = "대학명", example = "삼성대학교")
+    private String universityName;
 }

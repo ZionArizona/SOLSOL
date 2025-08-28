@@ -34,15 +34,12 @@ public class ApplicationService {
     private final ApplicationDocumentMapper applicationDocumentMapper;
 
     /**
-     * Get all applications
+     * Get all applications with scholarship information (Admin)
      */
     @Transactional(readOnly = true)
     public List<ApplicationResponse> getAllApplications() {
-        log.debug("Fetching all applications");
-        List<Application> applications = applicationMapper.findAllApplications();
-        return applications.stream()
-                .map(this::convertToApplicationResponse)
-                .collect(Collectors.toList());
+        log.debug("Fetching all applications with scholarship information");
+        return applicationMapper.findAllApplicationsWithScholarship();
     }
 
     /**
@@ -108,30 +105,37 @@ public class ApplicationService {
     }
 
     /**
-     * Get detailed application information
+     * Get detailed application information with user and scholarship info
      */
     @Transactional(readOnly = true)
     public ApplicationDetailResponse getApplicationDetail(String userNm, String scholarshipNm) {
         log.debug("Fetching application detail for user: {} and scholarship: {}", userNm, scholarshipNm);
         
-        Application application = applicationMapper.findApplicationByUserAndScholarship(userNm, scholarshipNm);
-        if (application == null) {
+        // Get application with user and scholarship information
+        ApplicationResponse applicationResponse = applicationMapper.findApplicationDetailByUserAndScholarship(userNm, scholarshipNm);
+        if (applicationResponse == null) {
             throw new IllegalArgumentException("Application not found for user: " + userNm + " and scholarship: " + scholarshipNm);
         }
 
+        // Get documents for this application
         List<ApplicationDocument> documents = applicationDocumentMapper.findDocumentsByUserAndScholarship(userNm, scholarshipNm);
         List<ApplicationDocumentResponse> documentResponses = documents.stream()
                 .map(this::convertToApplicationDocumentResponse)
                 .collect(Collectors.toList());
 
         return ApplicationDetailResponse.builder()
-                .userNm(application.getUserNm())
-                .scholarshipNm(application.getScholarshipNm())
-                .state(application.getState())
-                .appliedAt(application.getAppliedAt())
-                .reason(application.getReason())
-                .userDisplayName(application.getUserNm()) // Could be enhanced with actual user names
-                .scholarshipDisplayName(application.getScholarshipNm()) // Could be enhanced with actual scholarship titles
+                .userNm(applicationResponse.getUserNm())
+                .scholarshipNm(applicationResponse.getScholarshipNm() != null ? applicationResponse.getScholarshipNm().toString() : null)
+                .state(applicationResponse.getState())
+                .appliedAt(applicationResponse.getAppliedAt())
+                .reason(applicationResponse.getReason())
+                .userDisplayName(applicationResponse.getUserName() != null ? applicationResponse.getUserName() : applicationResponse.getUserNm())
+                .scholarshipDisplayName(applicationResponse.getScholarshipName())
+                .userName(applicationResponse.getUserName())
+                .departmentName(applicationResponse.getDepartmentName())
+                .collegeName(applicationResponse.getCollegeName())
+                .universityName(applicationResponse.getUniversityName())
+                .scholarshipName(applicationResponse.getScholarshipName())
                 .documents(documentResponses)
                 .build();
     }
@@ -344,6 +348,9 @@ public class ApplicationService {
                 .state(application.getState())
                 .appliedAt(application.getAppliedAt())
                 .reason(application.getReason())
+                .userName(application.getUserNm()) // 프론트엔드가 기대하는 필드
+                .applicationDate(application.getAppliedAt()) // 프론트엔드가 기대하는 필드 
+                .applicationState(application.getState()) // 프론트엔드가 기대하는 필드
                 .build();
     }
 

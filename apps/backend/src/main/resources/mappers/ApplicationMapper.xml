@@ -17,9 +17,15 @@
         <result property="userNm" column="userNm"/>
         <result property="scholarshipNm" column="scholarshipNm"/>
         <result property="scholarshipName" column="scholarship_name"/>
+        <result property="userName" column="user_name"/>
+        <result property="departmentName" column="department_name"/>
+        <result property="collegeName" column="college_name"/>
+        <result property="universityName" column="university_name"/>
         <result property="state" column="state" typeHandler="com.solsol.heycalendar.config.ApplicationStateTypeHandler"/>
         <result property="appliedAt" column="applied_at"/>
         <result property="reason" column="reason"/>
+        <result property="applicationState" column="state" typeHandler="com.solsol.heycalendar.config.ApplicationStateTypeHandler"/>
+        <result property="applicationDate" column="applied_at"/>
     </resultMap>
 
     <!-- Find all applications -->
@@ -50,6 +56,28 @@
         SELECT userNm, scholarshipNm, state, applied_at, reason
         FROM application
         WHERE userNm = #{userNm} AND scholarshipNm = #{scholarshipNm}
+    </select>
+
+    <!-- Find application detail with user and scholarship information -->
+    <select id="findApplicationDetailByUserAndScholarship" resultMap="ApplicationResponseResultMap">
+        SELECT 
+            a.userNm, 
+            a.scholarshipNm, 
+            s.scholarship_name,
+            u.userName as user_name,
+            d.Deptname as department_name,
+            c.name as college_name,
+            univ.univName as university_name,
+            a.state, 
+            a.applied_at, 
+            a.reason
+        FROM application a
+        JOIN scholarship s ON a.scholarshipNm = s.id
+        LEFT JOIN User u ON a.userNm = u.userNm
+        LEFT JOIN Department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
+        LEFT JOIN College c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
+        LEFT JOIN University univ ON u.univNm = univ.univNm
+        WHERE a.userNm = #{userNm} AND a.scholarshipNm = #{scholarshipNm}
     </select>
 
     <!-- Insert a new application -->
@@ -127,26 +155,68 @@
 
     <!-- Find applications by user with scholarship information -->
     <select id="findApplicationsWithScholarshipByUser" resultMap="ApplicationResponseResultMap">
-        SELECT a.userNm, a.scholarshipNm, s.scholarship_name, a.state, a.applied_at, a.reason
+        SELECT 
+            a.userNm, 
+            a.scholarshipNm, 
+            s.scholarship_name,
+            u.userName as user_name,
+            d.Deptname as department_name,
+            c.name as college_name,
+            univ.univName as university_name,
+            a.state, 
+            a.applied_at, 
+            a.reason
         FROM application a
         JOIN scholarship s ON a.scholarshipNm = s.id
+        LEFT JOIN User u ON a.userNm = u.userNm
+        LEFT JOIN Department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
+        LEFT JOIN College c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
+        LEFT JOIN University univ ON u.univNm = univ.univNm
         WHERE a.userNm = #{userNm}
         ORDER BY a.applied_at DESC
     </select>
 
     <!-- Find all applications with scholarship information (Admin) -->
     <select id="findAllApplicationsWithScholarship" resultMap="ApplicationResponseResultMap">
-        SELECT a.userNm, a.scholarshipNm, s.scholarship_name, a.state, a.applied_at, a.reason
+        SELECT 
+            a.userNm, 
+            a.scholarshipNm, 
+            s.scholarship_name,
+            u.userName as user_name,
+            d.Deptname as department_name,
+            c.name as college_name,
+            univ.univName as university_name,
+            a.state, 
+            a.applied_at, 
+            a.reason
         FROM application a
         JOIN scholarship s ON a.scholarshipNm = s.id
+        LEFT JOIN User u ON a.userNm = u.userNm
+        LEFT JOIN Department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
+        LEFT JOIN College c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
+        LEFT JOIN University univ ON u.univNm = univ.univNm
         ORDER BY a.applied_at DESC
     </select>
 
     <!-- Find applications by scholarship with user information -->
     <select id="findApplicationsWithUserByScholarship" resultMap="ApplicationResponseResultMap">
-        SELECT a.userNm, a.scholarshipNm, s.scholarship_name, a.state, a.applied_at, a.reason
+        SELECT 
+            a.userNm, 
+            a.scholarshipNm, 
+            s.scholarship_name,
+            u.userName as user_name,
+            d.Deptname as department_name,
+            c.name as college_name,
+            univ.univName as university_name,
+            a.state, 
+            a.applied_at, 
+            a.reason
         FROM application a
         JOIN scholarship s ON a.scholarshipNm = s.id
+        LEFT JOIN User u ON a.userNm = u.userNm
+        LEFT JOIN Department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
+        LEFT JOIN College c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
+        LEFT JOIN University univ ON u.univNm = univ.univNm
         WHERE a.scholarshipNm = #{scholarshipNm}
         ORDER BY a.applied_at DESC
     </select>

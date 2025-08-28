@@ -28,6 +28,15 @@ public class ApplicationDetailResponse {
     private String userDisplayName;
     private String scholarshipDisplayName;
     
+    // User information
+    private String userName;
+    private String departmentName;
+    private String collegeName;
+    private String universityName;
+    
+    // Scholarship information
+    private String scholarshipName;
+    
     // Associated documents
     private List<ApplicationDocumentResponse> documents;
     

@@ -12,7 +12,7 @@ function Files({list=[]}){
   )
 }
 
-function Row({r}){
+function Row({r, onViewDetails}){
   return (
     <div className="trow">
       <div className="cell-title">
@@ -35,15 +35,21 @@ function Row({r}){
         <div>{r.time.split(' ')[1]}</div>
       </div>
 
-      <div className="act" style={{gap:10}}>
+      <div className="act" style={{gap:8}}>
         <Badge status={r.status}/>
-        <button className="view-btn">보기</button>
+        <button className="view-btn" onClick={() => onViewDetails(r)}>상세보기</button>
+        {r.status === '검토 대기' && (
+          <>
+            <button className="approve-btn" onClick={r.onApprove}>승인</button>
+            <button className="reject-btn" onClick={r.onReject}>반려</button>
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-export default function DocTable({rows=[]}){
+export default function DocTable({rows=[], onViewDetails}){
   return (
     <section className="table">
       <div className="thead">
@@ -54,7 +60,7 @@ export default function DocTable({rows=[]}){
         <div style={{textAlign:'right'}}>작업</div>
       </div>
 
-      {rows.map(r => <Row key={r.id} r={r}/>)}
+      {rows.map(r => <Row key={r.id} r={r} onViewDetails={onViewDetails}/>)}
     </section>
   )
 }
