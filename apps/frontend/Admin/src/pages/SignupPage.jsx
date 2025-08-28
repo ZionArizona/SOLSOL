@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { API_BASE_URL } from '../config/env'
 import './signup.css'
 
 export default function SignupPage(){
@@ -22,7 +23,7 @@ export default function SignupPage(){
 
   const fetchUniversities = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/universities')
+      const response = await fetch(`${API_BASE_URL}/universities`)
       if (response.ok) {
         const universities = await response.json()
         setUniversities(universities)
@@ -56,7 +57,7 @@ export default function SignupPage(){
         accountCreationConsent: false
       }
 
-      const response = await fetch('http://localhost:8080/api/auth/signup', {
+      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
