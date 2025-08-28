@@ -12,6 +12,8 @@ export default function SubmissionManage(){
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('all')
+  const [selectedApplication, setSelectedApplication] = useState(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const [stats, setStats] = useState([
     { label: '등록 서류', value: 0 },
     { label: '검토 대기', value: 0 },
@@ -40,9 +42,9 @@ export default function SubmissionManage(){
 
   const calculateStats = (data) => {
     const total = data.length
-    const pending = data.filter(app => app.applicationState === 'PENDING').length
-    const approved = data.filter(app => app.applicationState === 'APPROVED').length
-    const rejected = data.filter(app => app.applicationState === 'REJECTED').length
+    const pending = data.filter(app => app.applicationState === 'PENDING' || app.state === 'PENDING').length
+    const approved = data.filter(app => app.applicationState === 'APPROVED' || app.state === 'APPROVED').length
+    const rejected = data.filter(app => app.applicationState === 'REJECTED' || app.state === 'REJECTED').length
 
     setStats([
       { label: '등록 서류', value: total },
@@ -75,13 +77,13 @@ export default function SubmissionManage(){
   const transformApplicationData = (application) => ({
     id: `${application.userNm}-${application.scholarshipNm}`,
     scholarship: application.scholarshipName || '장학금명 없음',
-    unit: 'SCC000-학과정보 없음',
+    unit: application.departmentName ? `${application.departmentName} - ${application.collegeName || ''}` : '학과정보 없음',
     files: application.documents?.map(doc => doc.documentName) || [],
     applicant: application.userName || '신청자명 없음',
-    studentId: `${application.userNm} - 학과정보 없음`,
-    time: new Date(application.applicationDate).toLocaleString('ko-KR') || '-',
-    status: application.applicationState === 'PENDING' ? '검토 대기' :
-             application.applicationState === 'APPROVED' ? '승인' : '반려',
+    studentId: `${application.userNm} - ${application.departmentName || '학과정보 없음'}`,
+    time: new Date(application.applicationDate || application.appliedAt).toLocaleString('ko-KR') || '-',
+    status: application.applicationState === 'PENDING' || application.state === 'PENDING' ? '검토 대기' :
+             application.applicationState === 'APPROVED' || application.state === 'APPROVED' ? '승인' : '반려',
     userNm: application.userNm,
     scholarshipNm: application.scholarshipNm,
     onApprove: () => handleApproval(application.userNm, application.scholarshipNm, 'approve'),
@@ -94,9 +96,9 @@ export default function SubmissionManage(){
       app.userName?.toLowerCase().includes(searchQuery.toLowerCase())
     
     if (activeTab === 'all') return matchesSearch
-    if (activeTab === 'pending') return matchesSearch && app.applicationState === 'PENDING'
-    if (activeTab === 'approved') return matchesSearch && app.applicationState === 'APPROVED'
-    if (activeTab === 'rejected') return matchesSearch && app.applicationState === 'REJECTED'
+    if (activeTab === 'pending') return matchesSearch && (app.applicationState === 'PENDING' || app.state === 'PENDING')
+    if (activeTab === 'approved') return matchesSearch && (app.applicationState === 'APPROVED' || app.state === 'APPROVED')
+    if (activeTab === 'rejected') return matchesSearch && (app.applicationState === 'REJECTED' || app.state === 'REJECTED')
     
     return matchesSearch
   })
@@ -110,6 +112,17 @@ export default function SubmissionManage(){
 
   const handleSearch = () => {
     // 검색 로직은 이미 filteredApplications에서 처리됨
+  }
+
+  const handleViewDetails = async (application) => {
+    try {
+      const result = await api.get(`/applications/${application.userNm}/${application.scholarshipNm}`)
+      setSelectedApplication(result)
+      setShowDetailModal(true)
+    } catch (error) {
+      console.error('Failed to fetch application details:', error)
+      alert('상세 정보를 불러오는데 실패했습니다.')
+    }
   }
 
   if (loading) {
@@ -157,9 +170,97 @@ export default function SubmissionManage(){
           {/* 테이블 */}
           <DocTable 
             rows={filteredApplications.map(transformApplicationData)}
+            onViewDetails={handleViewDetails}
           />
         </main>
       </div>
+
+      {/* 상세보기 모달 */}
+      {showDetailModal && selectedApplication && (
+        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>신청서 상세 정보</h3>
+              <button className="close-btn" onClick={() => setShowDetailModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-section">
+                <h4>장학금 정보</h4>
+                <p><strong>장학금명:</strong> {selectedApplication.scholarshipName || '정보 없음'}</p>
+                <p><strong>장학금 ID:</strong> {selectedApplication.scholarshipNm}</p>
+              </div>
+              
+              <div className="detail-section">
+                <h4>신청자 정보</h4>
+                <p><strong>이름:</strong> {selectedApplication.userName || '정보 없음'}</p>
+                <p><strong>학번:</strong> {selectedApplication.userNm}</p>
+                <p><strong>학과:</strong> {selectedApplication.departmentName || '정보 없음'}</p>
+                <p><strong>단과대:</strong> {selectedApplication.collegeName || '정보 없음'}</p>
+                <p><strong>대학교:</strong> {selectedApplication.universityName || '정보 없음'}</p>
+              </div>
+              
+              <div className="detail-section">
+                <h4>신청 정보</h4>
+                <p><strong>신청일시:</strong> {new Date(selectedApplication.appliedAt).toLocaleString('ko-KR')}</p>
+                <p><strong>상태:</strong> 
+                  <span className={`status-badge ${selectedApplication.state?.toLowerCase()}`}>
+                    {selectedApplication.state === 'PENDING' ? '검토 대기' :
+                     selectedApplication.state === 'APPROVED' ? '승인' : '반려'}
+                  </span>
+                </p>
+                {selectedApplication.reason && (
+                  <p><strong>사유/메모:</strong> {selectedApplication.reason}</p>
+                )}
+              </div>
+
+              {selectedApplication.documents && selectedApplication.documents.length > 0 && (
+                <div className="detail-section">
+                  <h4>제출 서류</h4>
+                  <div className="documents-list">
+                    {selectedApplication.documents.map((doc, index) => (
+                      <div key={index} className="document-item">
+                        <span className="doc-icon">📄</span>
+                        <div>
+                          <p><strong>{doc.applicationDocumentNm}</strong></p>
+                          <p className="doc-details">
+                            {doc.originalFileName} ({doc.formattedFileSize || '크기 정보 없음'})
+                          </p>
+                          <p className="doc-date">
+                            업로드: {new Date(doc.uploadedAt).toLocaleString('ko-KR')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {selectedApplication.state === 'PENDING' && (
+              <div className="modal-footer">
+                <button 
+                  className="approve-btn-modal"
+                  onClick={() => {
+                    handleApproval(selectedApplication.userNm, selectedApplication.scholarshipNm, 'approve')
+                    setShowDetailModal(false)
+                  }}
+                >
+                  승인
+                </button>
+                <button 
+                  className="reject-btn-modal"
+                  onClick={() => {
+                    handleApproval(selectedApplication.userNm, selectedApplication.scholarshipNm, 'reject')
+                    setShowDetailModal(false)
+                  }}
+                >
+                  반려
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   )
 }

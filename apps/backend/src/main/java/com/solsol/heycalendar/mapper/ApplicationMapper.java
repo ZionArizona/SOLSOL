@@ -140,4 +140,14 @@ public interface ApplicationMapper {
      * @return List of ApplicationResponse for the scholarship
      */
     List<ApplicationResponse> findApplicationsWithUserByScholarship(@Param("scholarshipNm") Long scholarshipNm);
+
+    /**
+     * Find application detail with user and scholarship information
+     * @param userNm User name
+     * @param scholarshipNm Scholarship name
+     * @return ApplicationResponse with detailed information
+     */
+    ApplicationResponse findApplicationDetailByUserAndScholarship(
+            @Param("userNm") String userNm, 
+            @Param("scholarshipNm") String scholarshipNm);
 }
