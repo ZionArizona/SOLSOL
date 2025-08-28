@@ -299,3 +299,13 @@ ALTER TABLE ApplicationDocument
   ADD COLUMN original_file_name varchar(255),
   ADD COLUMN file_size bigint,
   ADD COLUMN content_type varchar(100);
+
+ALTER TABLE scholarship
+    ADD COLUMN required_documents JSON NULL COMMENT '필수';
+
+ALTER TABLE ApplicationDocument
+    MODIFY COLUMN applicationDocumentNm bigint NOT NULL
+    AUTO_INCREMENT;
+
+ALTER TABLE Mileage
+    MODIFY COLUMN `Key` bigint NOT NULL AUTO_INCREMENT;

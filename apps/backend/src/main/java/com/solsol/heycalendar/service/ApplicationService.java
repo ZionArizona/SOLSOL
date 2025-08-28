@@ -44,7 +44,7 @@ public class ApplicationService {
     private final S3Presigner s3Presigner;
     private final MileageService mileageService;
 
-    @Value("${aws.s3.bucket}")
+    @Value("${AWS_S3_BUCKET}")
     private String bucketName;
 
     /**
