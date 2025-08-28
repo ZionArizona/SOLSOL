@@ -41,6 +41,9 @@
         <task path="$PROJECT_DIR$/apps/backend">
           <activation />
         </task>
+        <task path="$PROJECT_DIR$/apps/backend/build.gradle">
+          <activation />
+        </task>
         <projects_view>
           <tree_state>
             <expand>
@@ -61,10 +64,10 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/apps/backend/src/main/java/com/solsol/heycalendar/service/ScholarshipService.java" root0="SKIP_INSPECTION" />
   </component>
-  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
-  <component name="KubernetesApiProvider"><![CDATA[{
-  "isMigrated": true
-}]]></component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
 }</component>
@@ -95,6 +98,9 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "모듈",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -225,7 +231,7 @@
       <option name="presentableId" value="Default" />
       <updated>1756281492841</updated>
       <workItem from="1756281494099" duration="186000" />
-      <workItem from="1756284149809" duration="24987000" />
+      <workItem from="1756284149809" duration="29457000" />
     </task>
     <servers />
   </component>

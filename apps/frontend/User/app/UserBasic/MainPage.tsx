@@ -17,12 +17,16 @@ import { UserCircleIcon, MenuIcon, BellIcon } from "../../components/shared/icon
 import { useAuth } from "../../contexts/AuthContext";
 import { userApi } from "../../services/user.api";
 import { mileageApi } from "../../services/mileage.api";
+import { useWebSocket } from "../../contexts/WebSocketContext";
 
 export default function MainPage() {
   const { user } = useAuth();
   const [userInfo, setUserInfo] = useState(null);
   const [mileage, setMileage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // WebSocket 실시간 알림
+  const { unreadCount, isConnected } = useWebSocket();
 
   const handleScholarshipPress = () => {
     router.push("/Scholarship/ScholarshipApply");
@@ -125,7 +129,19 @@ export default function MainPage() {
                 onPress={() => router.push("/Notifications/Notifications")}
                 activeOpacity={0.8}
               >
-                <BellIcon size={20} />
+                <View style={styles.notificationContainer}>
+                  <BellIcon size={20} />
+                  {unreadCount > 0 && (
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.notificationBadgeText}>
+                        {unreadCount > 99 ? '99+' : unreadCount.toString()}
+                      </Text>
+                    </View>
+                  )}
+                  {isConnected && (
+                    <View style={styles.connectionIndicator} />
+                  )}
+                </View>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.profileButton} 
@@ -211,6 +227,36 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 4,
+  },
+  notificationContainer: {
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#FF4D4F',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  connectionIndicator: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#52C41A',
   },
   profileButton: {
     padding: 4,
