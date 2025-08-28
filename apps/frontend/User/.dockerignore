@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+.git
+.vscode
+*.log
+.DS_Store
+coverage

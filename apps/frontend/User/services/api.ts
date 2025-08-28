@@ -1,17 +1,32 @@
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import tokenManager from '../utils/tokenManager';
-import { Platform } from 'react-native';
 
 // API Base URL
 //export const BASE_URL = 'http://localhost:8080/api'; 
-const BASE_URL = __DEV__
-  ? (
-      Platform.OS === 'android'
-        ? 'http://10.0.2.2:8080/api'   // Android 에뮬레이터 → 로컬 호스트 접근
-        : 'http://localhost:8080/api'  // iOS 시뮬레이터
-    )
-  : 'https://heycalendar.store/api';   // 실제 배포(앱 빌드/실기기)
+// const BASE_URL = __DEV__
+//   ? (
+//       Platform.OS === 'android'
+//         ? 'http://10.0.2.2:8080/api'   // Android 에뮬레이터 → 로컬 호스트 접근
+//         : 'http://localhost:8080/api'  // iOS 시뮬레이터
+//     )
+//   : 'https://heycalendar.store/api';   // 실제 배포(앱 빌드/실기기)
 
+const ENV_ORIGIN = process.env.EXPO_PUBLIC_API_ORIGIN;
+
+const isWeb = Platform.OS === 'web';
+const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+
+const PROD_ORIGIN =
+  isWeb
+    ? (ENV_ORIGIN || (typeof window !== 'undefined' ? window.location.origin : 'https://heycalendar.store'))
+    : (ENV_ORIGIN || 'https://heycalendar.store');
+
+
+export const BASE_URL = isDev
+  ? (Platform.OS === 'android'
+      ? 'http://10.0.2.2:8080/api'
+      : 'http://localhost:8080/api')
+  : `${PROD_ORIGIN}/api`;
 
 // API Response 타입 정의
 export interface ApiResponse<T = any> {

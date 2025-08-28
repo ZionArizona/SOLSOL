@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import tokenManager, { AccessTokenPayload, AuthTokens } from '../utils/tokenManager';
 import { router } from 'expo-router';
+import { apiClient, BASE_URL } from '../services/api'
+
+console.log('🔎 BASE_URL at runtime:', BASE_URL);
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -14,7 +17,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = 'http://localhost:8080';
+//const API_BASE = 'http://localhost:8080';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -119,23 +122,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // 백엔드에 토큰 갱신 요청
-      const response = await fetch(`${API_BASE}/api/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          refreshToken: refreshToken,
-        }),
-      });
+      // const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     refreshToken: refreshToken,
+      //   }),
+      // });
 
-      if (!response.ok) {
-        console.log('❌ 토큰 갱신 실패:', response.status);
-        return false;
-      }
+      // if (!response.ok) {
+      //   console.log('❌ 토큰 갱신 실패:', response.status);
+      //   return false;
+      // }
 
-      const newTokens: AuthTokens = await response.json();
-      
+      //const newTokens: AuthTokens = await response.json();
+      const { data: newTokens } = await apiClient.post<AuthTokens>('/auth/refresh', { refreshToken });
+
       // 새 토큰 저장
       await tokenManager.saveTokens(newTokens);
       
