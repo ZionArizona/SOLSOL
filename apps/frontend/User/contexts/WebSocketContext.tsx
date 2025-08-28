@@ -105,11 +105,13 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   };
 
   const markAsRead = (notificationId: number) => {
-    setNotifications(prev => 
-      prev.map(n => 
+    setNotifications(prev => {
+      const updated = prev.map(n => 
         n.id === notificationId ? { ...n, isRead: true } : n
-      )
-    );
+      );
+      console.log(`🔄 WebSocket: Marked notification ${notificationId} as read. New unread count: ${updated.filter(n => !n.isRead).length}`);
+      return updated;
+    });
   };
 
   const clearNotifications = () => {

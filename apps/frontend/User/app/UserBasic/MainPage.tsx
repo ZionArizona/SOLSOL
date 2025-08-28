@@ -13,7 +13,8 @@ import { StudentCard } from "../../components/home/StudentCard";
 import { PromoBanner } from "../../components/home/PromoBanner";
 import { MileageCard } from "../../components/home/MileageCard";
 import { ThisWeekList } from "../../components/home/ThisWeekList";
-import { UserCircleIcon, MenuIcon, BellIcon } from "../../components/shared/icons";
+import { UserCircleIcon, MenuIcon } from "../../components/shared/icons";
+import { NotificationBell } from "../../components/shared/NotificationBell";
 import { useAuth } from "../../contexts/AuthContext";
 import { userApi } from "../../services/user.api";
 import { mileageApi } from "../../services/mileage.api";
@@ -124,25 +125,7 @@ export default function MainPage() {
               >
                 <MenuIcon size={20} />
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.headerButton} 
-                onPress={() => router.push("/Notifications/Notifications")}
-                activeOpacity={0.8}
-              >
-                <View style={styles.notificationContainer}>
-                  <BellIcon size={20} />
-                  {unreadCount > 0 && (
-                    <View style={styles.notificationBadge}>
-                      <Text style={styles.notificationBadgeText}>
-                        {unreadCount > 99 ? '99+' : unreadCount.toString()}
-                      </Text>
-                    </View>
-                  )}
-                  {isConnected && (
-                    <View style={styles.connectionIndicator} />
-                  )}
-                </View>
-              </TouchableOpacity>
+              <NotificationBell size={20} />
               <TouchableOpacity 
                 style={styles.profileButton} 
                 onPress={() => router.push("/UserBasic/MyPage")}

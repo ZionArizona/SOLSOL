@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeftIcon, HomeIcon, MenuIcon, BellIcon } from "../shared/icons";
+import { ChevronLeftIcon, HomeIcon, MenuIcon } from "../shared/icons";
+import { NotificationBell } from "../shared/NotificationBell";
 
 export const TopBar = ({ title }: { title: string }) => {
   return (
@@ -24,9 +25,7 @@ export const TopBar = ({ title }: { title: string }) => {
         <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/Menu/Menu")}>
           <MenuIcon size={20} />
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/Notifications/Notifications")}>
-          <BellIcon size={20} />
-        </TouchableOpacity>
+        <NotificationBell size={20} />
       </View>
     </View>
   );
