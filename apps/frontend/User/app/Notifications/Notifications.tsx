@@ -8,7 +8,7 @@ import { notificationApi, Notification, NotificationType } from "../../services/
 import { useWebSocket } from "../../contexts/WebSocketContext";
 
 export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState<string>("전체");
+  const [activeTab, setActiveTab] = useState<string>("읽지않음");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -122,11 +122,11 @@ export default function NotificationsPage() {
       // WebSocket 컨텍스트에서도 읽음 처리
       markRealtimeAsRead(id);
       
-      // 로컬 상태 업데이트
+      // 로컬 상태 업데이트 - 읽음 상태 변경
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === id
-            ? { ...notification, isRead: true, readAt: new Date().toISOString() }
+            ? { ...notification, isRead: true }
             : notification
         )
       );
@@ -224,7 +224,7 @@ export default function NotificationsPage() {
 
           {/* 알림 탭 */}
           <NotificationTabs
-            tabs={["전체", "장학금", "일정", "마감임박", "읽지않음"]}
+            tabs={["읽지않음", "전체", "장학금", "일정", "마감임박"]}
             active={activeTab}
             onChange={setActiveTab}
           />
@@ -242,8 +242,10 @@ export default function NotificationsPage() {
             ) : (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>
-                  {activeTab === "전체" 
-                    ? "알림이 없습니다." 
+                  {activeTab === "읽지않음" 
+                    ? "새로운 알림이 없습니다." 
+                    : activeTab === "전체"
+                    ? "알림이 없습니다."
                     : `${activeTab} 알림이 없습니다.`
                   }
                 </Text>
