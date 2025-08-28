@@ -47,6 +47,10 @@ dependencies {
 
 	// --- Environment Variables ---
 	implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+	
+	// --- AWS SDK ---
+	implementation platform('software.amazon.awssdk:bom:2.20.56')
+	implementation 'software.amazon.awssdk:s3'
 
 	// --- DevTools / Annotation Processors ---
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'

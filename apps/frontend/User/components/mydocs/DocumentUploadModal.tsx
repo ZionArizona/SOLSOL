@@ -7,14 +7,16 @@ import {
   Modal, 
   TextInput,
   ScrollView,
-  Alert 
+  Alert,
+  Platform 
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
 import { UploadIcon } from "../shared/icons";
 import Svg, { Path } from "react-native-svg";
+import { uploadDocument } from "../../services/document.api";
 
-type FileItem = { name: string; uri: string; size?: number };
+type FileItem = { name: string; uri: string; size?: number; type?: string };
 
 export type DocumentUploadModalProps = {
   visible: boolean;
@@ -32,25 +34,50 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
   const [category, setCategory] = useState("기타");
   const [tags, setTags] = useState("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const categories = ["성적증명", "자격증", "어학", "기타"];
 
   const pickFile = async () => {
     try {
-      const res = await DocumentPicker.getDocumentAsync({ 
-        multiple: false, 
-        copyToCacheDirectory: true, 
-        type: "*/*" 
-      });
-      
-      if (res.type === "success") {
-        setSelectedFile({ 
-          name: res.name, 
-          uri: res.uri, 
-          size: res.size 
+      if (Platform.OS === 'web') {
+        // 웹 환경에서는 HTML input 사용
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '*/*';
+        input.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            setSelectedFile({
+              name: file.name,
+              uri: '', // 웹에서는 사용하지 않음
+              size: file.size,
+              type: file.type,
+            });
+            if (!fileName) {
+              setFileName(file.name);
+            }
+          }
+        };
+        input.click();
+      } else {
+        // 모바일 환경
+        const res = await DocumentPicker.getDocumentAsync({ 
+          multiple: false, 
+          copyToCacheDirectory: true, 
+          type: "*/*" 
         });
-        if (!fileName) {
-          setFileName(res.name);
+        
+        if (res.type === "success") {
+          setSelectedFile({ 
+            name: res.name, 
+            uri: res.uri, 
+            size: res.size,
+            type: res.mimeType 
+          });
+          if (!fileName) {
+            setFileName(res.name);
+          }
         }
       }
     } catch (error) {
@@ -58,7 +85,7 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
       Alert.alert("알림", "파일을 선택해주세요.");
       return;
@@ -68,21 +95,49 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
       return;
     }
 
-    const metaTags = tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
-    
-    onUpload({
-      fileName: fileName.trim(),
-      category,
-      metaTags,
-      file: selectedFile
-    });
+    try {
+      setUploading(true);
+      
+      if (Platform.OS === 'web') {
+        // 웹 환경에서는 실제 파일 업로드
+        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+        const file = input?.files?.[0];
+        
+        if (file) {
+          await uploadDocument(file, fileName.trim(), category);
+          Alert.alert("성공", "서류가 업로드되었습니다.");
+          onUpload({
+            fileName: fileName.trim(),
+            category,
+            metaTags: tags.split(",").map(t => t.trim()).filter(t => t.length > 0),
+            file: selectedFile
+          });
+        }
+      } else {
+        // 모바일 환경에서는 기존 로직 사용 (실제 업로드는 구현 필요)
+        const metaTags = tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+        
+        onUpload({
+          fileName: fileName.trim(),
+          category,
+          metaTags,
+          file: selectedFile
+        });
+      }
 
-    // Reset form
-    setFileName("");
-    setCategory("기타");
-    setTags("");
-    setSelectedFile(null);
-    onClose();
+      // Reset form
+      setFileName("");
+      setCategory("기타");
+      setTags("");
+      setSelectedFile(null);
+      onClose();
+      
+    } catch (error) {
+      console.error('업로드 실패:', error);
+      Alert.alert("오류", error instanceof Error ? error.message : "업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleClose = () => {
@@ -198,8 +253,14 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
               <TouchableOpacity style={styles.cancelBtn} onPress={handleClose}>
                 <Text style={styles.cancelBtnText}>취소</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.uploadBtn} onPress={handleUpload}>
-                <Text style={styles.uploadBtnText}>업로드</Text>
+              <TouchableOpacity 
+                style={[styles.uploadBtn, { opacity: uploading ? 0.5 : 1 }]} 
+                onPress={handleUpload}
+                disabled={uploading}
+              >
+                <Text style={styles.uploadBtnText}>
+                  {uploading ? "업로드 중..." : "업로드"}
+                </Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>

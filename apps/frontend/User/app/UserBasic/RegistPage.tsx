@@ -104,17 +104,22 @@ export default function RegistPage() {
         if (raw.trim().toLowerCase() === 'ok') ok = true;
       }
 
-      if (!ok) throw new Error(raw || `HTTP ${res.status}`);
+      if (!ok) {
+        console.log('❌ 조건 실패 - ok:', ok);
+        throw new Error(raw || `HTTP ${res.status}`);
+      }
 
-      Alert.alert('가입 완료', '회원가입 요청이 정상 처리되었습니다.', [
+      console.log('✅ 성공 조건 통과 - Alert 표시 시작');
+      Alert.alert('회원가입 성공 !', '', [
         {
           text: '확인',
           onPress: () => {
-            if ((router as any).canGoBack?.()) router.back();
-            else router.replace('/UserBasic/LoginPage');
+            console.log('✅ Alert 확인 버튼 클릭 - 로그인 페이지로 이동');
+            router.replace('/UserBasic/LoginPage');
           },
         },
       ]);
+      console.log('✅ Alert 설정 완료');
     } catch (e: any) {
       Alert.alert('가입 실패', e?.message || '잠시 후 다시 시도해주세요.');
     } finally {
