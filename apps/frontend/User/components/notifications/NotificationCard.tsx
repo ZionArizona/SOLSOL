@@ -18,10 +18,12 @@ export type NotificationItem = {
 
 export const NotificationCard = ({ 
   notification, 
-  onMarkAsRead 
+  onMarkAsRead,
+  onDeleteForAction
 }: { 
   notification: NotificationItem;
   onMarkAsRead?: (id: string) => void;
+  onDeleteForAction?: (id: string, actionRoute: string) => void;
 }) => {
   const getIcon = () => {
     switch (notification.type) {
@@ -68,8 +70,15 @@ export const NotificationCard = ({
   };
 
   const handlePress = async () => {
-    // 읽지 않은 알림인 경우 읽음 처리 (실패해도 네비게이션은 계속 진행)
-    if (!notification.isRead && onMarkAsRead) {
+    // 장학금 보기인 경우 삭제 처리, 그 외는 읽음 처리
+    if (onDeleteForAction) {
+      try {
+        await onDeleteForAction(notification.id, notification.actionRoute);
+      } catch (error) {
+        console.warn('알림 처리 실패:', error);
+        // 처리 실패해도 네비게이션은 계속 진행
+      }
+    } else if (!notification.isRead && onMarkAsRead) {
       try {
         await onMarkAsRead(notification.id);
       } catch (error) {

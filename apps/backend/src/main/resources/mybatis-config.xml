@@ -6,5 +6,8 @@
         <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" javaType="com.solsol.heycalendar.domain.PaymentMethod"/>
         <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" javaType="com.solsol.heycalendar.domain.EvaluationMethod"/>
         <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" javaType="com.solsol.heycalendar.domain.RecruitmentStatus"/>
+        <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" javaType="com.solsol.heycalendar.domain.EligibilityField"/>
+        <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" javaType="com.solsol.heycalendar.domain.EligibilityOperator"/>
+        <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" javaType="com.solsol.heycalendar.domain.ExchangeState"/>
     </typeHandlers>
 </configuration>

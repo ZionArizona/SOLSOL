@@ -8,8 +8,7 @@
         <id property="exchangeNm" column="exchangeNm"/>
         <result property="userNm" column="userNm"/>
         <result property="amount" column="amount"/>
-        <result property="state" column="state" 
-                javaType="com.solsol.heycalendar.domain.ExchangeState" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="state" column="state"/>
         <result property="appliedAt" column="applied_at"/>
         <result property="processedAt" column="processed_at"/>
     </resultMap>
