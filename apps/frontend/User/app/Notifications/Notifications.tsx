@@ -5,12 +5,22 @@ import { TopBar } from "../../components/scholarship/TopBar";
 import { NotificationTabs } from "../../components/notifications/NotificationTabs";
 import { NotificationCard, NotificationItem } from "../../components/notifications/NotificationCard";
 import { notificationApi, Notification, NotificationType } from "../../services/notification.api";
+import { useWebSocket } from "../../contexts/WebSocketContext";
 
 export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState<string>("전체");
+  const [activeTab, setActiveTab] = useState<string>("읽지않음");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // WebSocket 컨텍스트에서 실시간 알림 가져오기
+  const { 
+    notifications: realtimeNotifications, 
+    unreadCount, 
+    isConnected, 
+    connectionState, 
+    markAsRead: markRealtimeAsRead 
+  } = useWebSocket();
 
   // 백엔드 알림 데이터를 프론트엔드 형태로 변환
   const convertToNotificationItem = (notification: Notification): NotificationItem => {
@@ -51,8 +61,8 @@ export default function NotificationsPage() {
         case NotificationType.DEADLINE_REMINDER:
           return { 
             displayType: "deadline", 
-            actionLabel: "신청하기", 
-            actionRoute: "/Scholarship/ScholarshipApply" 
+            actionLabel: "장학금 보기", 
+            actionRoute: "/Scholarship/ScholarshipDetail" 
           };
         default:
           return { 
@@ -73,7 +83,7 @@ export default function NotificationsPage() {
       timestamp: formatTimestamp(notification.createdAt),
       isRead: notification.isRead,
       actionLabel: typeInfo.actionLabel,
-      actionRoute: typeInfo.actionRoute
+      actionRoute: notification.actionRoute || typeInfo.actionRoute
     };
   };
 
@@ -104,16 +114,28 @@ export default function NotificationsPage() {
   // 알림 읽음 처리 함수
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      await notificationApi.markAsRead(parseInt(notificationId));
+      const id = parseInt(notificationId);
+      console.log(`📖 Starting to mark notification as read: ${id}`);
       
-      // 로컬 상태 업데이트
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification.id === parseInt(notificationId)
-            ? { ...notification, isRead: true, readAt: new Date().toISOString() }
+      // 백엔드에 읽음 처리 요청
+      await notificationApi.markAsRead(id);
+      console.log(`✅ Backend markAsRead successful for: ${id}`);
+      
+      // WebSocket 컨텍스트에서도 읽음 처리
+      markRealtimeAsRead(id);
+      console.log(`✅ WebSocket markAsRead successful for: ${id}`);
+      
+      // 로컬 상태 업데이트 - 읽음 상태 변경
+      setNotifications(prev => {
+        const updated = prev.map(notification => 
+          notification.id === id
+            ? { ...notification, isRead: true }
             : notification
-        )
-      );
+        );
+        console.log(`📝 Local state updated for: ${id}`, 
+          updated.find(n => n.id === id)?.isRead ? 'READ' : 'UNREAD');
+        return updated;
+      });
     } catch (error) {
       console.error('알림 읽음 처리 실패:', error);
     }
@@ -124,20 +146,51 @@ export default function NotificationsPage() {
     loadNotifications();
   }, []);
 
-  // 백엔드 데이터를 프론트엔드 형태로 변환
+  // 실시간 알림이 업데이트될 때마다 기존 알림과 병합
+  const mergedNotifications = useMemo(() => {
+    // WebSocket 실시간 알림을 백엔드 형식으로 변환
+    const convertedRealtimeNotifications = realtimeNotifications.map(wsNotification => ({
+      id: wsNotification.id || Math.floor(Math.random() * 1000000), // 임시 ID
+      userNm: wsNotification.userNm,
+      type: wsNotification.type as NotificationType,
+      title: wsNotification.title,
+      message: wsNotification.message,
+      relatedId: wsNotification.relatedId || null,
+      isRead: wsNotification.isRead,
+      actionRoute: wsNotification.actionRoute || null,
+      createdAt: wsNotification.createdAt,
+      updatedAt: wsNotification.updatedAt
+    }));
+
+    // 기존 API 알림과 실시간 알림 병합 (중복 제거, API 알림 우선)
+    const allNotifications = [...notifications, ...convertedRealtimeNotifications];
+    const uniqueNotifications = allNotifications.filter((notification, index, self) => 
+      index === self.findIndex(n => n.id === notification.id)
+    );
+
+    // 생성일 기준으로 내림차순 정렬
+    return uniqueNotifications.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [notifications, realtimeNotifications]);
+
+  // 병합된 데이터를 프론트엔드 형태로 변환
   const convertedNotifications = useMemo<NotificationItem[]>(() => {
-    const result = notifications && Array.isArray(notifications) ? notifications.map(convertToNotificationItem) : [];
-    console.log('🔄 Converting notifications:', notifications?.length || 0, 'items');
+    const result = mergedNotifications && Array.isArray(mergedNotifications) ? mergedNotifications.map(convertToNotificationItem) : [];
+    console.log('🔄 Converting merged notifications:', mergedNotifications?.length || 0, 'items');
     console.log('🔄 Converted result:', result.length, 'items');
+    console.log('🔌 WebSocket connected:', isConnected, 'State:', connectionState);
+    console.log('📊 Unread count:', unreadCount);
     if (result.length > 0) {
       console.log('🔄 First converted item:', result[0]);
+      console.log('🔄 Read states:', result.map(item => ({ id: item.id, isRead: item.isRead, type: item.type })));
     }
     return result;
-  }, [notifications]);
+  }, [mergedNotifications, isConnected, connectionState, unreadCount]);
 
   // 탭별 필터링된 알림 데이터
   const filteredNotifications = useMemo(() => {
-    return convertedNotifications.filter(notification => {
+    const filtered = convertedNotifications.filter(notification => {
       switch (activeTab) {
         case "장학금":
           return notification.type === "scholarship";
@@ -151,6 +204,9 @@ export default function NotificationsPage() {
           return true;
       }
     });
+    console.log(`📋 Filtered notifications for "${activeTab}":`, filtered.length, 'items');
+    console.log(`📋 Filter details:`, filtered.map(item => ({ id: item.id, type: item.type, isRead: item.isRead })));
+    return filtered;
   }, [convertedNotifications, activeTab]);
 
   if (loading) {
@@ -178,7 +234,7 @@ export default function NotificationsPage() {
 
           {/* 알림 탭 */}
           <NotificationTabs
-            tabs={["전체", "장학금", "일정", "마감임박", "읽지않음"]}
+            tabs={["읽지않음", "전체", "장학금", "일정", "마감임박"]}
             active={activeTab}
             onChange={setActiveTab}
           />
@@ -196,8 +252,10 @@ export default function NotificationsPage() {
             ) : (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>
-                  {activeTab === "전체" 
-                    ? "알림이 없습니다." 
+                  {activeTab === "읽지않음" 
+                    ? "새로운 알림이 없습니다." 
+                    : activeTab === "전체"
+                    ? "알림이 없습니다."
                     : `${activeTab} 알림이 없습니다.`
                   }
                 </Text>

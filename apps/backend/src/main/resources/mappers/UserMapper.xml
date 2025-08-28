@@ -174,7 +174,7 @@
     <select id="findAllActiveUserNames" resultType="string">
         SELECT userNm 
         FROM `User` 
-        WHERE state = 'ACTIVE'
+        WHERE state = 'ENROLLED'
     </select>
 
 </mapper>

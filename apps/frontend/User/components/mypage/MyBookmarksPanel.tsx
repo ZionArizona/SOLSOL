@@ -64,7 +64,7 @@ export const MyBookmarksPanel = () => {
   };
 
   const formatAmount = (amount: number) => {
-    return `${(amount / 10000).toLocaleString()}만원`;
+    return `${amount.toLocaleString()}마일리지`;
   };
 
   const getDaysUntilDeadline = (endDate: string) => {

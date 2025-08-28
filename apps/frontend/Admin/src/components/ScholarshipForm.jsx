@@ -67,7 +67,7 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
           </div>
           <div className="field">
             <label className="label">장학금 지급 금액 *</label>
-            <input className="ip" value={form.amount} onChange={e=>set('amount', e.target.value)} placeholder="금액 (원)"/>
+            <input className="ip" value={form.amount} onChange={e=>set('amount', e.target.value)} placeholder="금액 (마일리지)"/>
           </div>
         </div>
 
