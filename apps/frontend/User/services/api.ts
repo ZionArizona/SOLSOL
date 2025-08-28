@@ -2,7 +2,7 @@ import { Alert } from 'react-native';
 import tokenManager from '../utils/tokenManager';
 
 // API Base URL
-export const BASE_URL = 'http://localhost:8080/api';
+export const BASE_URL = 'http://localhost:8080/api'; 
 
 // API Response 타입 정의
 export interface ApiResponse<T = any> {

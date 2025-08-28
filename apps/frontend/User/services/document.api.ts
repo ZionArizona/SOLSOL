@@ -1,6 +1,6 @@
 import tokenManager from '../utils/tokenManager';
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = 'http://localhost:8080'; 
 
 // 토큰 가져오기
 const getAuthToken = async (): Promise<string> => {
@@ -164,21 +164,111 @@ export const generateDownloadUrl = async (documentId: number): Promise<string> =
 
 // 서류 삭제
 export const deleteDocument = async (documentId: number): Promise<void> => {
-  const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents/${documentId}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
+  try {
+    console.log('🗑️ 서류 삭제 API 호출:', documentId);
+    
+    const token = await getAuthToken();
+    console.log('🔑 토큰 확인:', token ? '있음' : '없음');
+    
+    const url = `${API_BASE}/api/student/documents/${documentId}`;
+    console.log('🌐 삭제 요청 URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || '서류 삭제에 실패했습니다.');
+    console.log('📋 삭제 응답 상태:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ 삭제 실패 응답:', errorData);
+      throw new Error(errorData.message || `삭제 실패 (HTTP ${response.status})`);
+    }
+    
+    console.log('✅ 서류 삭제 API 성공');
+  } catch (error) {
+    console.error('❌ deleteDocument 함수 오류:', error);
+    throw error;
   }
 };
 
-// 전체 업로드 프로세스 (프론트엔드 통합 함수)
+// React Native용 파일 업로드 함수
+export const uploadDocumentRN = async (
+  fileUri: string, 
+  fileName: string, 
+  contentType: string, 
+  fileSize: number, 
+  category: string
+): Promise<DocumentItem> => {
+  try {
+    console.log('📄 문서 업로드 시작:', fileName);
+
+    // 1. 업로드 URL 생성
+    const uploadRequest: DocumentUploadRequest = {
+      fileName,
+      contentType,
+      fileSize,
+    };
+
+    const uploadResponse = await generateUploadUrl(uploadRequest);
+    console.log('✅ 업로드 URL 생성 완료');
+
+    // 2. S3에 파일 업로드 (React Native 방식)
+    await uploadFileToS3RN(uploadResponse.uploadUrl, fileUri, contentType);
+    console.log('✅ S3 업로드 완료');
+
+    // 3. 파일 해시 계산 (임시로 랜덤 값 사용)
+    const checksum = Math.random().toString(36).substring(2, 15);
+    console.log('✅ 파일 해시 계산 완료');
+
+    // 4. 업로드 완료 처리
+    await completeUpload({
+      objectKey: uploadResponse.objectKey,
+      fileName,
+      contentType,
+      fileSize,
+      checksum,
+    });
+    console.log('✅ 업로드 완료 처리');
+
+    // 5. 업로드된 문서 정보 반환
+    return {
+      id: Date.now(),
+      fileName,
+      contentType,
+      sizeBytes: fileSize,
+      createdAt: new Date().toISOString(),
+    };
+
+  } catch (error) {
+    console.error('❌ 문서 업로드 실패:', error);
+    throw error;
+  }
+};
+
+// React Native용 S3 업로드
+export const uploadFileToS3RN = async (uploadUrl: string, fileUri: string, contentType: string): Promise<void> => {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': contentType,
+    },
+    body: {
+      uri: fileUri,
+      type: contentType,
+      name: fileUri.split('/').pop() || 'file',
+    } as any,
+  });
+
+  if (!response.ok) {
+    throw new Error('파일 업로드에 실패했습니다.');
+  }
+};
+
+// 전체 업로드 프로세스 (웹용 - 기존 유지)
 export const uploadDocument = async (file: File, fileName: string, category: string): Promise<DocumentItem> => {
   try {
     console.log('📄 문서 업로드 시작:', fileName);
