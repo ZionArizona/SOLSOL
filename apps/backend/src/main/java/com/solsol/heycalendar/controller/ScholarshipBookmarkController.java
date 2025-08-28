@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,27 +29,27 @@ public class ScholarshipBookmarkController {
             @RequestHeader("user-nm") String userNm) {
         try {
             bookmarkService.bookmarkScholarship(userNm, scholarshipId);
-            return ResponseEntity.ok().body(Map.of(
-                "success", true,
-                "message", "장학금을 찜목록에 추가했습니다.",
-                "code", "OK",
-                "data", null
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "장학금을 찜목록에 추가했습니다.");
+            response.put("code", "OK");
+            response.put("data", null);
+            return ResponseEntity.ok().body(response);
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage(),
-                "code", "BAD_REQUEST",
-                "data", null
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            response.put("code", "BAD_REQUEST");
+            response.put("data", null);
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             log.error("Error bookmarking scholarship", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "찜하기 중 오류가 발생했습니다.",
-                "code", "INTERNAL_SERVER_ERROR",
-                "data", null
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "찜하기 중 오류가 발생했습니다.");
+            response.put("code", "INTERNAL_SERVER_ERROR");
+            response.put("data", null);
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 
@@ -61,27 +62,27 @@ public class ScholarshipBookmarkController {
             @RequestHeader("user-nm") String userNm) {
         try {
             bookmarkService.unbookmarkScholarship(userNm, scholarshipId);
-            return ResponseEntity.ok().body(Map.of(
-                "success", true,
-                "message", "찜목록에서 제거했습니다.",
-                "code", "OK",
-                "data", null
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "찜목록에서 제거했습니다.");
+            response.put("code", "OK");
+            response.put("data", null);
+            return ResponseEntity.ok().body(response);
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage(),
-                "code", "BAD_REQUEST",
-                "data", null
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            response.put("code", "BAD_REQUEST");
+            response.put("data", null);
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             log.error("Error unbookmarking scholarship", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "찜 취소 중 오류가 발생했습니다.",
-                "code", "INTERNAL_SERVER_ERROR",
-                "data", null
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "찜 취소 중 오류가 발생했습니다.");
+            response.put("code", "INTERNAL_SERVER_ERROR");
+            response.put("data", null);
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 
