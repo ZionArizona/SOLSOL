@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
 import { UploadIcon } from "../shared/icons";
 import Svg, { Path } from "react-native-svg";
-import { uploadDocument } from "../../services/document.api";
+import { uploadDocument, uploadDocumentRN } from "../../services/document.api";
 
 type FileItem = { name: string; uri: string; size?: number; type?: string };
 
@@ -34,6 +34,7 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
   const [category, setCategory] = useState("기타");
   const [tags, setTags] = useState("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [actualWebFile, setActualWebFile] = useState<File | null>(null); // 웹용 실제 File 객체 저장
   const [uploading, setUploading] = useState(false);
 
   const categories = ["성적증명", "자격증", "어학", "기타"];
@@ -54,6 +55,7 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
               size: file.size,
               type: file.type,
             });
+            setActualWebFile(file); // 실제 File 객체 저장
             if (!fileName) {
               setFileName(file.name);
             }
@@ -99,37 +101,46 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
       setUploading(true);
       
       if (Platform.OS === 'web') {
-        // 웹 환경에서는 실제 파일 업로드
-        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-        const file = input?.files?.[0];
-        
-        if (file) {
-          await uploadDocument(file, fileName.trim(), category);
-          Alert.alert("성공", "서류가 업로드되었습니다.");
-          onUpload({
-            fileName: fileName.trim(),
-            category,
-            metaTags: tags.split(",").map(t => t.trim()).filter(t => t.length > 0),
-            file: selectedFile
-          });
+        // 웹 환경에서는 저장된 실제 File 객체 사용
+        if (!actualWebFile) {
+          Alert.alert("오류", "파일이 제대로 선택되지 않았습니다.");
+          return;
         }
-      } else {
-        // 모바일 환경에서는 기존 로직 사용 (실제 업로드는 구현 필요)
-        const metaTags = tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
         
-        onUpload({
-          fileName: fileName.trim(),
-          category,
-          metaTags,
-          file: selectedFile
-        });
+        await uploadDocument(actualWebFile, fileName.trim(), category);
+        Alert.alert("성공", "서류가 업로드되었습니다.");
+      } else {
+        // 모바일 환경에서는 React Native 업로드 함수 사용
+        if (!selectedFile.uri || !selectedFile.size || !selectedFile.type) {
+          Alert.alert("오류", "파일 정보가 불완전합니다.");
+          return;
+        }
+
+        await uploadDocumentRN(
+          selectedFile.uri,
+          fileName.trim(),
+          selectedFile.type,
+          selectedFile.size,
+          category
+        );
+        Alert.alert("성공", "서류가 업로드되었습니다.");
       }
+
+      // 성공 시 콜백 호출
+      const metaTags = tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+      onUpload({
+        fileName: fileName.trim(),
+        category,
+        metaTags,
+        file: selectedFile
+      });
 
       // Reset form
       setFileName("");
       setCategory("기타");
       setTags("");
       setSelectedFile(null);
+      setActualWebFile(null); // 웹 파일 객체도 초기화
       onClose();
       
     } catch (error) {
@@ -145,6 +156,7 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
     setCategory("기타");
     setTags("");
     setSelectedFile(null);
+    setActualWebFile(null); // 웹 파일 객체도 초기화
     onClose();
   };
 

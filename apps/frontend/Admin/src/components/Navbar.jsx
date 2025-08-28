@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import logo from '../assets/heyLogo.png'
+import { API_BASE_URL } from '../config/env'
 
 const navStyle={
   wrap:{
@@ -25,7 +26,7 @@ export default function Navbar(){
     try {
       const refreshToken = localStorage.getItem('refreshToken')
       if (refreshToken) {
-        await fetch('http://localhost:8080/api/auth/logout', {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -15,7 +15,7 @@ export const StoragePanel = ({
         </View>
         <View style={styles.progressRow}>
           <Text style={styles.progressText}>{used} / {capacity}</Text>
-          <Text style={styles.progressText}>{percent}% 사용중</Text>
+          <Text style={styles.progressText}>{percent}% 유효</Text>
         </View>
       </View>
 
