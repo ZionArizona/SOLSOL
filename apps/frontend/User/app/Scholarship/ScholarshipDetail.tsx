@@ -24,35 +24,42 @@ export default function ScholarshipDetail() {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
   
-  const { markAsRead } = useWebSocket();
+  const { markAsRead, deleteNotificationsByScholarship } = useWebSocket();
 
-  // 특정 장학금과 관련된 알림들을 읽음 처리하는 함수
-  const markNotificationsAsReadForScholarship = async (scholarshipId: number) => {
+  // 특정 장학금과 관련된 알림들을 삭제하는 함수
+  const deleteNotificationsForScholarship = async (scholarshipId: number) => {
     try {
-      console.log(`📖 Marking notifications as read for scholarship: ${scholarshipId}`);
+      console.log(`🗑️ Deleting notifications for scholarship: ${scholarshipId}`);
       
       // 모든 알림을 가져와서 이 장학금과 관련된 것들을 찾음
       const notifications = await notificationApi.getUserNotifications();
       
       // 이 장학금 ID와 관련된 알림들 필터링
       const relatedNotifications = notifications.filter(notification => 
-        notification.relatedId === scholarshipId && !notification.isRead
+        notification.relatedId === scholarshipId
       );
       
-      console.log(`📖 Found ${relatedNotifications.length} unread notifications for scholarship ${scholarshipId}`);
+      console.log(`🗑️ Found ${relatedNotifications.length} notifications for scholarship ${scholarshipId}`);
       
-      // 각각의 알림을 읽음 처리
+      // 각각의 알림을 삭제
       for (const notification of relatedNotifications) {
         try {
-          await notificationApi.markAsRead(notification.id);
-          markAsRead(notification.id);
-          console.log(`✅ Marked notification ${notification.id} as read`);
+          // 읽지 않은 알림이면 먼저 읽음 처리 (unreadCount 감소)
+          if (!notification.isRead) {
+            await notificationApi.markAsRead(notification.id);
+            markAsRead(notification.id);
+            console.log(`✅ Marked notification ${notification.id} as read`);
+          }
+          
+          // 알림 삭제
+          await notificationApi.deleteNotification(notification.id);
+          console.log(`🗑️ Deleted notification ${notification.id}`);
         } catch (error) {
-          console.warn(`⚠️ Failed to mark notification ${notification.id} as read:`, error);
+          console.warn(`⚠️ Failed to delete notification ${notification.id}:`, error);
         }
       }
     } catch (error) {
-      console.error('❌ Failed to mark scholarship notifications as read:', error);
+      console.error('❌ Failed to delete scholarship notifications:', error);
     }
   };
 
@@ -217,8 +224,11 @@ export default function ScholarshipDetail() {
         console.log('🔖 Bookmark status:', bookmarkStatus);
         console.log('📋 Application data:', applicationData);
         
-        // 이 장학금과 관련된 알림을 자동으로 읽음 처리
-        await markNotificationsAsReadForScholarship(parseInt(id));
+        // 이 장학금과 관련된 알림을 자동으로 삭제
+        await deleteNotificationsForScholarship(parseInt(id));
+        
+        // WebSocket 컨텍스트에서도 해당 장학금 관련 알림들 삭제
+        deleteNotificationsByScholarship(parseInt(id));
         
         if (scholarshipData) {
           setScholarship(scholarshipData);

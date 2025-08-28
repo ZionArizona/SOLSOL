@@ -19,7 +19,8 @@ export default function NotificationsPage() {
     unreadCount, 
     isConnected, 
     connectionState, 
-    markAsRead: markRealtimeAsRead 
+    markAsRead: markRealtimeAsRead,
+    deleteNotification: deleteRealtimeNotification 
   } = useWebSocket();
 
   // 백엔드 알림 데이터를 프론트엔드 형태로 변환
@@ -111,7 +112,7 @@ export default function NotificationsPage() {
     loadNotifications();
   };
 
-  // 알림 읽음 처리 함수
+  // 알림 읽음 처리 함수 (읽음 상태만 변경, 삭제하지 않음)
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       const id = parseInt(notificationId);
@@ -125,7 +126,7 @@ export default function NotificationsPage() {
       markRealtimeAsRead(id);
       console.log(`✅ WebSocket markAsRead successful for: ${id}`);
       
-      // 로컬 상태 업데이트 - 읽음 상태 변경
+      // 로컬 상태 업데이트 - 읽음 상태만 변경 (삭제하지 않음)
       setNotifications(prev => {
         const updated = prev.map(notification => 
           notification.id === id
@@ -141,9 +142,106 @@ export default function NotificationsPage() {
     }
   };
 
-  // 컴포넌트 마운트 시 데이터 로드
+  // 장학금 보기를 위한 알림 삭제 함수 (장학금 관련 알림만)
+  const handleDeleteNotificationForAction = async (notificationId: string, actionRoute: string) => {
+    try {
+      const id = parseInt(notificationId);
+      console.log(`🗑️ Starting to delete notification for action: ${id}`);
+      
+      // 장학금 관련 알림인 경우에만 삭제 처리
+      if (actionRoute.includes('/Scholarship/ScholarshipDetail')) {
+        // 먼저 읽지 않은 알림이면 읽음 처리 (unreadCount 감소)
+        const notification = notifications.find(n => n.id === id);
+        if (notification && !notification.isRead) {
+          await notificationApi.markAsRead(id);
+          markRealtimeAsRead(id);
+          console.log(`✅ Marked notification ${id} as read before deletion`);
+        }
+        
+        // 백엔드에서 알림 삭제
+        await notificationApi.deleteNotification(id);
+        console.log(`✅ Backend deleteNotification successful for: ${id}`);
+        
+        // WebSocket 컨텍스트에서도 삭제 처리
+        deleteRealtimeNotification(id);
+        console.log(`✅ WebSocket deleteNotification successful for: ${id}`);
+        
+        // 로컬 상태에서 제거
+        setNotifications(prev => {
+          const updated = prev.filter(notification => notification.id !== id);
+          console.log(`📝 Local state updated - removed notification ${id}, remaining: ${updated.length}`);
+          return updated;
+        });
+      } else {
+        // 다른 타입의 알림은 읽음 처리만
+        await handleMarkAsRead(notificationId);
+      }
+    } catch (error) {
+      console.error('알림 삭제 처리 실패:', error);
+    }
+  };
+
+  // 읽지 않은 모든 알림을 읽음 처리하는 함수
+  const markAllUnreadAsRead = async () => {
+    try {
+      console.log('📖 Marking all unread notifications as read on page entry');
+      
+      // 현재 로드된 알림에서 읽지 않은 것들 찾기
+      const unreadNotifications = notifications.filter(n => !n.isRead);
+      console.log(`📖 Found ${unreadNotifications.length} unread notifications to mark as read`);
+      
+      // WebSocket 실시간 알림에서 읽지 않은 것들도 찾기
+      const unreadRealtimeNotifications = realtimeNotifications.filter(n => !n.isRead);
+      console.log(`📖 Found ${unreadRealtimeNotifications.length} unread realtime notifications to mark as read`);
+      
+      // 각각의 읽지 않은 알림을 읽음 처리 (API 알림)
+      for (const notification of unreadNotifications) {
+        try {
+          await notificationApi.markAsRead(notification.id);
+          markRealtimeAsRead(notification.id);
+          console.log(`✅ Marked notification ${notification.id} as read on page entry`);
+        } catch (error) {
+          console.warn(`⚠️ Failed to mark notification ${notification.id} as read:`, error);
+        }
+      }
+      
+      // WebSocket 실시간 알림들도 읽음 처리
+      for (const notification of unreadRealtimeNotifications) {
+        try {
+          markRealtimeAsRead(notification.id!);
+          console.log(`✅ Marked realtime notification ${notification.id} as read on page entry`);
+        } catch (error) {
+          console.warn(`⚠️ Failed to mark realtime notification ${notification.id} as read:`, error);
+        }
+      }
+      
+      // 로컬 상태 업데이트
+      if (unreadNotifications.length > 0 || unreadRealtimeNotifications.length > 0) {
+        setNotifications(prev => 
+          prev.map(notification => ({ ...notification, isRead: true }))
+        );
+        
+        // 읽음 처리 후 즉시 데이터 새로고침 (WebSocket 상태도 반영되도록)
+        setTimeout(() => {
+          loadNotifications();
+        }, 100);
+      }
+      
+      console.log(`📊 After marking as read - WebSocket unread count should be: 0`);
+    } catch (error) {
+      console.error('❌ Failed to mark unread notifications as read:', error);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 로드 및 읽지 않은 알림 읽음 처리
   useEffect(() => {
-    loadNotifications();
+    const initializePage = async () => {
+      await loadNotifications();
+      // 알림 데이터를 로드한 후 읽지 않은 알림들을 읽음 처리
+      await markAllUnreadAsRead();
+    };
+    
+    initializePage();
   }, []);
 
   // 실시간 알림이 업데이트될 때마다 기존 알림과 병합
@@ -247,6 +345,7 @@ export default function NotificationsPage() {
                   key={notification.id} 
                   notification={notification} 
                   onMarkAsRead={handleMarkAsRead}
+                  onDeleteForAction={handleDeleteNotificationForAction}
                 />
               ))
             ) : (

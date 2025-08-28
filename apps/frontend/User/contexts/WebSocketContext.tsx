@@ -10,6 +10,8 @@ interface WebSocketContextType {
   connect: () => void;
   disconnect: () => void;
   markAsRead: (notificationId: number) => void;
+  deleteNotification: (notificationId: number) => void;
+  deleteNotificationsByScholarship: (scholarshipId: number) => void;
   clearNotifications: () => void;
   addNotification: (notification: NotificationMessage) => void;
 }
@@ -114,6 +116,23 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     });
   };
 
+  const deleteNotification = (notificationId: number) => {
+    setNotifications(prev => {
+      const updated = prev.filter(n => n.id !== notificationId);
+      console.log(`🗑️ WebSocket: Deleted notification ${notificationId}. New total count: ${updated.length}`);
+      return updated;
+    });
+  };
+
+  const deleteNotificationsByScholarship = (scholarshipId: number) => {
+    setNotifications(prev => {
+      const updated = prev.filter(n => n.relatedId !== scholarshipId);
+      const deletedCount = prev.length - updated.length;
+      console.log(`🗑️ WebSocket: Deleted ${deletedCount} notifications for scholarship ${scholarshipId}. New total count: ${updated.length}`);
+      return updated;
+    });
+  };
+
   const clearNotifications = () => {
     setNotifications([]);
   };
@@ -126,6 +145,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     connect,
     disconnect,
     markAsRead,
+    deleteNotification,
+    deleteNotificationsByScholarship,
     clearNotifications,
     addNotification
   };
