@@ -9,10 +9,16 @@ const getApiBaseUrl = () => {
   return process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api'
 }
 
-export const API_BASE_URL = getApiBaseUrl()
+const MODE = import.meta.env.MODE;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (MODE === 'development' ? 'http://localhost:8080/api' : '/api');
+
+export { API_BASE_URL };
+
+//export const API_BASE_URL = getApiBaseUrl()
 
 // 기타 환경 설정들
 export const ENV = {
+    MODE,
   API_BASE_URL,
   // 향후 다른 설정들 추가 가능
 }

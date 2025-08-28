@@ -7,7 +7,7 @@ import Toolbar from '../components/Toolbar'
 import FilterBar from '../components/FilterBar'
 import ScholarshipCard from '../components/ScholarshipCard'
 import { api } from '../utils/api'
-import './scholarship-manage.css'
+import './Scholarship-manage.css'
 
 export default function ScholarshipManage(){
   const [scholarships, setScholarships] = useState([])
