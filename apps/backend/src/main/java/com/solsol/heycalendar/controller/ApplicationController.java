@@ -33,10 +33,10 @@ public class ApplicationController {
 
     @Operation(summary = "전체 장학금 신청 목록 조회", description = "시스템에 등록된 모든 장학금 신청 내역을 조회합니다.")
     @GetMapping
-    public ResponseEntity<List<ApplicationResponse>> getAllApplications() {
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> getAllApplications() {
         log.info("Fetching all applications");
         List<ApplicationResponse> applications = applicationService.getAllApplications();
-        return ResponseEntity.ok(applications);
+        return ResponseEntity.ok(new ApiResponse<>(true, "조회 성공", "OK", applications));
     }
 
     @Operation(summary = "사용자별 장학금 신청 내역 조회", description = "특정 사용자가 신청한 장학금 목록을 조회합니다.")

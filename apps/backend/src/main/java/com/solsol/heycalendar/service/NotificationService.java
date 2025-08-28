@@ -58,24 +58,44 @@ public class NotificationService {
     }
 
     /**
-     * 마감임박 알림 생성
+     * 마감임박 알림 생성 (오늘 중복 체크 포함)
      */
     @Transactional
     public void createDeadlineReminderNotification(String userNm, Long scholarshipId, 
                                                   String scholarshipName, int daysLeft) {
+        // 오늘 날짜로 마감임박 알림이 이미 생성되었는지 체크
+        // 같은 장학금에 대해 하루에 여러번 마감임박 알림이 생성되는 것을 방지
+        if (isDuplicateDeadlineReminder(userNm, scholarshipId)) {
+            log.debug("오늘 이미 생성된 마감임박 알림 - 사용자: {}, 장학금ID: {}", userNm, scholarshipId);
+            return;
+        }
+        
         String title = "신청 마감 임박";
         String message = String.format("찜한 '%s' 신청 마감까지 %d일 남았습니다.", scholarshipName, daysLeft);
         String actionRoute = String.format("/Scholarship/ScholarshipDetail?id=%d", scholarshipId);
         
         createNotification(userNm, NotificationType.DEADLINE_REMINDER, title, message, scholarshipId, actionRoute);
     }
+    
+    /**
+     * 오늘 이미 해당 장학금에 대한 마감임박 알림이 생성되었는지 체크
+     */
+    private boolean isDuplicateDeadlineReminder(String userNm, Long scholarshipId) {
+        return notificationMapper.existsByUserAndTypeAndRelatedIdToday(userNm, NotificationType.DEADLINE_REMINDER, scholarshipId);
+    }
 
     /**
-     * 새로운 장학금 알림 생성
+     * 새로운 장학금 알림 생성 (중복 체크 포함)
      */
     @Transactional
     public void createNewScholarshipNotification(String userNm, Long scholarshipId, 
                                                String scholarshipName, int amount) {
+        // 중복 알림 체크
+        if (notificationMapper.existsByUserAndTypeAndRelatedId(userNm, NotificationType.NEW_SCHOLARSHIP, scholarshipId)) {
+            log.debug("이미 존재하는 새 장학금 알림 - 사용자: {}, 장학금ID: {}", userNm, scholarshipId);
+            return;
+        }
+        
         String title = "새로운 장학금이 등록되었습니다";
         String message = String.format("%s (%d만원)이 새로 등록되었습니다. 지금 신청해보세요!", 
                                       scholarshipName, amount / 10000);

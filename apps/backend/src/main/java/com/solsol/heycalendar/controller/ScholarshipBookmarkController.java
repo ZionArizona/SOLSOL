@@ -95,20 +95,20 @@ public class ScholarshipBookmarkController {
             @RequestHeader("user-nm") String userNm) {
         try {
             boolean isBookmarked = bookmarkService.isBookmarked(userNm, scholarshipId);
-            return ResponseEntity.ok().body(Map.of(
-                "success", true,
-                "message", "찜 여부 확인 성공",
-                "code", "OK",
-                "data", isBookmarked
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "찜 여부 확인 성공");
+            response.put("code", "OK");
+            response.put("data", isBookmarked);
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             log.error("Error checking bookmark status", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "찜 여부 확인 실패",
-                "code", "ERROR",
-                "data", false
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "찜 여부 확인 실패");
+            response.put("code", "ERROR");
+            response.put("data", false);
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 
@@ -119,20 +119,20 @@ public class ScholarshipBookmarkController {
     public ResponseEntity<?> getMyBookmarkedScholarships(@RequestHeader("user-nm") String userNm) {
         try {
             List<Scholarship> scholarships = bookmarkService.getBookmarkedScholarships(userNm);
-            return ResponseEntity.ok().body(Map.of(
-                "success", true,
-                "message", "찜목록 조회 성공",
-                "code", "OK",
-                "data", scholarships
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "찜목록 조회 성공");
+            response.put("code", "OK");
+            response.put("data", scholarships);
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             log.error("Error getting bookmarked scholarships", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "찜목록 조회 실패",
-                "code", "INTERNAL_SERVER_ERROR",
-                "data", new ArrayList<>()
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "찜목록 조회 실패");
+            response.put("code", "INTERNAL_SERVER_ERROR");
+            response.put("data", new ArrayList<>());
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 
@@ -143,20 +143,20 @@ public class ScholarshipBookmarkController {
     public ResponseEntity<?> getBookmarkCount(@RequestHeader("user-nm") String userNm) {
         try {
             int count = bookmarkService.getBookmarkCount(userNm);
-            return ResponseEntity.ok().body(Map.of(
-                "success", true,
-                "message", "찜목록 개수 조회 성공",
-                "code", "OK",
-                "data", count
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "찜목록 개수 조회 성공");
+            response.put("code", "OK");
+            response.put("data", count);
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             log.error("Error getting bookmark count", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "찜목록 개수 조회 실패", 
-                "code", "INTERNAL_SERVER_ERROR",
-                "data", 0
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "찜목록 개수 조회 실패");
+            response.put("code", "INTERNAL_SERVER_ERROR");
+            response.put("data", 0);
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 }

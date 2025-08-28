@@ -253,4 +253,13 @@
 		ORDER BY created_at DESC
 	</select>
 
+	<!-- === Filter Queries === -->
+	<!-- 사용 가능한 카테고리 목록 조회 -->
+	<select id="findDistinctCategories" resultType="string">
+		SELECT DISTINCT category
+		FROM scholarship
+		WHERE category IS NOT NULL AND category != ''
+		ORDER BY category ASC
+	</select>
+
 </mapper>

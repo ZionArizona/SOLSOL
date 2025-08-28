@@ -170,4 +170,11 @@
         )
     </insert>
 
+    <!-- 활성 사용자의 userNm 목록 조회 (알림용) -->
+    <select id="findAllActiveUserNames" resultType="string">
+        SELECT userNm 
+        FROM `User` 
+        WHERE state = 'ACTIVE'
+    </select>
+
 </mapper>

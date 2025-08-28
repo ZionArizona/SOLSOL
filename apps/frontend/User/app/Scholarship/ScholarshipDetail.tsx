@@ -20,6 +20,7 @@ export default function ScholarshipDetail() {
   const [hasApplied, setHasApplied] = useState(false);
   const [applicationLoading, setApplicationLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString: string) => {
@@ -51,6 +52,52 @@ export default function ScholarshipDetail() {
     return `${diffDays}일 남음`;
   };
 
+  // 신청 가능 여부 확인
+  const isApplicationOpen = () => {
+    if (!scholarship) return false;
+    
+    // 모집 상태가 CLOSED인 경우
+    if (scholarship.recruitmentStatus === 'CLOSED') return false;
+    
+    // 모집 종료일이 지난 경우
+    if (scholarship.recruitmentEndDate) {
+      const endDate = new Date(scholarship.recruitmentEndDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      if (today > endDate) return false;
+    }
+    
+    return scholarship.recruitmentStatus === 'OPEN';
+  };
+
+  // 신청 상태 메시지 생성
+  const getApplicationStatusMessage = () => {
+    if (!scholarship) return "확인 중...";
+    
+    const isOpen = isApplicationOpen();
+    const daysLeft = getDaysLeft(scholarship.recruitmentEndDate);
+    
+    if (!isOpen) {
+      if (daysLeft === "마감됨") return "모집 마감";
+      if (scholarship.recruitmentStatus === 'CLOSED') return "모집 마감";
+      return "신청 불가";
+    }
+    
+    // 모집 시작일 확인
+    if (scholarship.recruitmentStartDate) {
+      const startDate = new Date(scholarship.recruitmentStartDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      startDate.setHours(0, 0, 0, 0);
+      
+      if (today < startDate) return "신청 예정";
+    }
+    
+    return "신청 가능";
+  };
+
   // 북마크 토글 함수
   const handleBookmarkToggle = async () => {
     if (!id) return;
@@ -70,9 +117,45 @@ export default function ScholarshipDetail() {
     }
   };
 
+  // 신청 버튼 라벨 결정
+  const getApplicationButtonLabel = () => {
+    if (!hasApplied) return "지원하기";
+    
+    switch (applicationStatus) {
+      case 'REJECTED':
+        return "재신청하기";
+      case 'PENDING':
+        return "수정하기";
+      case 'APPROVED':
+        return "합격됨";
+      default:
+        return "수정하기";
+    }
+  };
+
+  // 신청 버튼 활성화 여부 확인
+  const isApplicationButtonEnabled = () => {
+    if (!isApplicationOpen()) return false;
+    if (applicationStatus === 'APPROVED') return false; // 합격한 경우 수정 불가
+    return true;
+  };
+
   // 장학금 신청 페이지로 이동
   const handleApply = () => {
     if (!id) return;
+    
+    // 신청이 불가능한 경우 알림 표시
+    if (!isApplicationOpen()) {
+      Alert.alert('알림', '현재 신청할 수 없는 장학금입니다.');
+      return;
+    }
+    
+    // 합격한 경우 알림
+    if (applicationStatus === 'APPROVED') {
+      Alert.alert('알림', '이미 합격한 장학금입니다.');
+      return;
+    }
+    
     const editMode = hasApplied ? '&edit=true' : '';
     router.push(`/Scholarship/ScholarshipApplyForm?scholarshipId=${id}${editMode}`);
   };
@@ -104,6 +187,7 @@ export default function ScholarshipDetail() {
           setScholarship(scholarshipData);
           setIsBookmarked(bookmarkStatus);
           setHasApplied(!!applicationData);
+          setApplicationStatus(applicationData?.state || null);
         } else {
           Alert.alert('오류', '장학금 정보를 찾을 수 없습니다.');
           router.back();
@@ -230,6 +314,26 @@ export default function ScholarshipDetail() {
             />
           )}
 
+          {/* 상태 정보 표시 */}
+          <InfoPanel
+            title="신청 상태"
+            headerIcon="info"
+            body={
+              <>
+                <InfoPanel.P accent>
+                  {getApplicationStatusMessage()}
+                </InfoPanel.P>
+                {hasApplied && applicationStatus && (
+                  <InfoPanel.P muted>
+                    {applicationStatus === 'PENDING' && '심사 진행중입니다'}
+                    {applicationStatus === 'APPROVED' && '축하합니다! 선발되었습니다'}
+                    {applicationStatus === 'REJECTED' && '아쉽게도 탈락하였지만 재신청이 가능합니다'}
+                  </InfoPanel.P>
+                )}
+              </>
+            }
+          />
+
           {/* 북마크 버튼 */}
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 16, marginHorizontal: 12 }}>
             <TouchableOpacity
@@ -242,11 +346,28 @@ export default function ScholarshipDetail() {
               </Text>
             </TouchableOpacity>
 
-            <PrimaryButton
-              label={hasApplied ? "수정하기" : "지원하기"}
-              onPress={handleApply}
-              style={{ flex: 1 }}
-            />
+            {isApplicationButtonEnabled() ? (
+              <PrimaryButton
+                label={getApplicationButtonLabel()}
+                onPress={handleApply}
+                style={{ flex: 1 }}
+              />
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.disabledButton, 
+                  applicationStatus === 'APPROVED' && styles.approvedButton
+                ]}
+                disabled={true}
+              >
+                <Text style={[
+                  styles.disabledButtonText,
+                  applicationStatus === 'APPROVED' && styles.approvedButtonText
+                ]}>
+                  {applicationStatus === 'APPROVED' ? '합격됨' : getApplicationStatusMessage()}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
         </View>
@@ -268,5 +389,25 @@ const styles = StyleSheet.create({
   bookmarkButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  disabledButton: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#999999',
+  },
+  approvedButton: {
+    backgroundColor: '#4CAF50',
+  },
+  approvedButtonText: {
+    color: '#FFFFFF',
   },
 });

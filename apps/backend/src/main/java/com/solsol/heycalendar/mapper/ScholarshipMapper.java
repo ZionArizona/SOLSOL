@@ -51,4 +51,7 @@ public interface ScholarshipMapper {
 	// --- scheduler ---
 	List<Scholarship> findScholarshipsEndingBetween(@Param("startDate") String startDate, @Param("endDate") String endDate);
 	List<Scholarship> findScholarshipsCreatedBetween(@Param("startDate") String startDate, @Param("endDate") String endDate);
+
+	// --- filter ---
+	List<String> findDistinctCategories();
 }

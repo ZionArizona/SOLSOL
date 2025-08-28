@@ -72,4 +72,23 @@
         WHERE id = #{id}
     </delete>
 
+    <!-- 중복 알림 체크 -->
+    <select id="existsByUserAndTypeAndRelatedId" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM notification 
+        WHERE user_nm = #{userNm} 
+          AND type = #{type,typeHandler=com.solsol.heycalendar.config.NotificationTypeHandler}
+          AND related_id = #{relatedId}
+    </select>
+
+    <!-- 오늘 생성된 특정 타입의 알림 중복 체크 -->
+    <select id="existsByUserAndTypeAndRelatedIdToday" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM notification 
+        WHERE user_nm = #{userNm} 
+          AND type = #{type,typeHandler=com.solsol.heycalendar.config.NotificationTypeHandler}
+          AND related_id = #{relatedId}
+          AND DATE(created_at) = CURDATE()
+    </select>
+
 </mapper>

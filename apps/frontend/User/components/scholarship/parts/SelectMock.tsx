@@ -1,20 +1,42 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-export const SelectMock = ({ label }: { label: string }) => {
+interface SelectMockProps {
+  label: string;
+  value?: string;
+  disabled?: boolean;
+}
+
+export const SelectMock = ({ label, value, disabled = false }: SelectMockProps) => {
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.field}>
-        <Text style={styles.placeholder}>선택</Text>
+      <Text style={[styles.label, disabled && styles.labelDisabled]}>
+        {label}
+      </Text>
+      <View style={[styles.field, disabled && styles.fieldDisabled]}>
+        <Text style={value ? styles.valueText : styles.placeholder}>
+          {value || "선택"}
+        </Text>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  wrap: { width: "48%" },
-  label: { fontSize: 12, color: "#2E3C5C", opacity: 0.9, marginBottom: 6, fontWeight: "700" },
+  wrap: { 
+    width: "48%",
+    marginBottom: 8,
+  },
+  label: { 
+    fontSize: 12, 
+    color: "#2E3C5C", 
+    opacity: 0.9, 
+    marginBottom: 6, 
+    fontWeight: "700" 
+  },
+  labelDisabled: {
+    opacity: 0.6,
+  },
   field: {
     height: 36,
     borderRadius: 10,
@@ -29,5 +51,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 1,
   },
-  placeholder: { color: "#7C89A6", fontWeight: "700" },
+  fieldDisabled: {
+    backgroundColor: "#F5F7FF",
+    borderColor: "#E0E6FF",
+    opacity: 0.8,
+  },
+  placeholder: { 
+    color: "#7C89A6", 
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  valueText: {
+    color: "#2E3C5C",
+    fontWeight: "700",
+    fontSize: 12,
+  },
 });

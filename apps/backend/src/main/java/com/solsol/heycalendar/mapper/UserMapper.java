@@ -1,5 +1,6 @@
 package com.solsol.heycalendar.mapper;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -33,4 +34,6 @@ public interface UserMapper {
 	int updateUserInfo(@Param("userId") String userId, @Param("request") UserInfoUpdateRequest request);
 	
 	int insertUser(User user);
+	
+	List<String> findAllActiveUserNames();
 }

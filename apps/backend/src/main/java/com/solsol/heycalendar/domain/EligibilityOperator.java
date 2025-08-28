@@ -5,7 +5,8 @@ public enum EligibilityOperator {
 	LESS_THAN_OR_EQUAL("<="),
 	EQUAL("=="),
 	GREATER_THAN(">"),
-	LESS_THAN("<");
+	LESS_THAN("<"),
+	OTHER("OTHER");
 	
 	private final String symbol;
 	

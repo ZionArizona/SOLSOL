@@ -8,7 +8,15 @@
       "Bash(npm run web:*)",
       "Bash(mysql:*)",
       "Bash(git log:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+<<<<<<< Updated upstream
+      "Bash(git stash:*)",
+      "Bash(git add:*)"
+=======
+      "Bash(find:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
+>>>>>>> Stashed changes
     ],
     "deny": [],
     "ask": []

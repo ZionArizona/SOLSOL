@@ -1,5 +1,6 @@
 package com.solsol.heycalendar.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -12,6 +13,7 @@ import com.solsol.heycalendar.domain.*;
 import com.solsol.heycalendar.dto.request.ScholarshipRequest;
 import com.solsol.heycalendar.dto.response.ScholarshipResponse;
 import com.solsol.heycalendar.mapper.ScholarshipMapper;
+import com.solsol.heycalendar.mapper.UserMapper;
 
 import lombok.RequiredArgsConstructor;
 import com.solsol.heycalendar.dto.request.*;
@@ -22,6 +24,8 @@ import com.solsol.heycalendar.dto.response.*;
 public class ScholarshipService {
 
 	private final ScholarshipMapper mapper;
+	private final NotificationService notificationService;
+	private final UserMapper userMapper;
 
 	/* 목록 */
 	@Transactional(readOnly = true)
@@ -112,7 +116,12 @@ public class ScholarshipService {
 			mapper.upsertNotice(n);
 		}
 
-		return getScholarshipById(s.getId());
+		ScholarshipResponse createdScholarship = getScholarshipById(s.getId());
+		
+		// 새 장학금 알림 생성 - 모든 활성 사용자에게 발송
+		createNewScholarshipNotifications(createdScholarship);
+		
+		return createdScholarship;
 	}
 
 	/* 수정 */
@@ -429,6 +438,193 @@ public class ScholarshipService {
 				.scholarshipId(notice.getScholarshipId())
 				.scholarshipName(scholarship != null ? scholarship.getScholarshipName() : "알 수 없음")
 				.build();
+	}
+
+	/**
+	 * 새 장학금 등록 시 모든 활성 사용자에게 알림 생성
+	 */
+	@Transactional
+	private void createNewScholarshipNotifications(ScholarshipResponse scholarship) {
+		try {
+			// 모든 활성 사용자 조회
+			List<String> activeUsers = userMapper.findAllActiveUserNames();
+			
+			// 각 활성 사용자에게 알림 생성
+			for (String userNm : activeUsers) {
+				try {
+					notificationService.createNewScholarshipNotification(
+						userNm,
+						scholarship.getId(),
+						scholarship.getScholarshipName(),
+						scholarship.getAmount()
+					);
+				} catch (Exception e) {
+					// 개별 사용자 알림 생성 실패 시 로그만 남기고 계속 진행
+					System.err.println("새 장학금 알림 생성 실패 - 사용자: " + userNm + 
+						", 장학금: " + scholarship.getScholarshipName() + ", 오류: " + e.getMessage());
+				}
+			}
+			
+			System.out.println("새 장학금 알림 생성 완료 - " + scholarship.getScholarshipName() + 
+				" (대상 사용자: " + activeUsers.size() + "명)");
+				
+		} catch (Exception e) {
+			// 전체 프로세스 실패 시에도 장학금 생성은 성공으로 처리
+			System.err.println("새 장학금 알림 생성 프로세스 실패: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * 사용자 맞춤 장학금 필터링 조회
+	 */
+	@Transactional(readOnly = true)
+	public List<ScholarshipResponse> getFilteredScholarshipsForUser(String userNm, String category, String status) {
+		try {
+			System.out.println("🔍 필터링 요청 - 사용자: " + userNm + ", 카테고리: " + category + ", 상태: " + status);
+			
+			// 사용자 정보 조회 (사용자 정보가 없어도 기본 장학금은 보여줌)
+			User tempUser = null;
+			try {
+				tempUser = userMapper.findByUserNm(userNm).orElse(null);
+				if (tempUser == null) {
+					System.out.println("⚠️ 사용자 정보를 찾을 수 없음: " + userNm + ", 기본 필터링 적용");
+				} else {
+					System.out.println("✅ 사용자 정보 조회 성공: " + tempUser.getUserName());
+				}
+			} catch (Exception e) {
+				System.err.println("❌ 사용자 정보 조회 실패: " + e.getMessage());
+				tempUser = null;
+			}
+			final User user = tempUser;
+			
+			// 모든 장학금 조회
+			List<Scholarship> allScholarships = mapper.findAll();
+			System.out.println("📚 전체 장학금 수: " + allScholarships.size());
+		
+		// 사용자 정보 기반 자동 필터링
+		List<Scholarship> filteredScholarships = allScholarships.stream()
+			.filter(scholarship -> {
+				// 상태 필터링 (기본값: OPEN)
+				String targetStatus = status != null ? status : "OPEN";
+				if (!targetStatus.equals("ALL") && !scholarship.getRecruitmentStatus().name().equals(targetStatus)) {
+					return false;
+				}
+				
+				// 카테고리 필터링 (사용자가 선택한 경우) - 장학금 타입 기반
+				if (category != null && !category.equals("ALL")) {
+					String scholarshipTypeLabel = getTypeLabelFromEnum(scholarship.getType());
+					if (!scholarshipTypeLabel.equals(category)) {
+						return false;
+					}
+				}
+				
+				// 사용자 정보 기반 자동 필터링 (사용자 정보가 있는 경우에만)
+				return user != null ? isEligibleForUser(scholarship, user) : true;
+			})
+			.collect(Collectors.toList());
+		
+		System.out.println("🎯 필터링 후 장학금 수: " + filteredScholarships.size());
+		
+		// ScholarshipResponse로 변환
+		return filteredScholarships.stream()
+			.map(this::toSummaryResponse)
+			.collect(Collectors.toList());
+			
+		} catch (Exception e) {
+			System.err.println("❌ 필터링 처리 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			
+			// 오류 발생 시 기본 장학금 목록 반환
+			try {
+				List<Scholarship> basicScholarships = mapper.findAll();
+				return basicScholarships.stream()
+					.filter(s -> status == null || status.equals("ALL") || s.getRecruitmentStatus().name().equals(status))
+					.map(this::toSummaryResponse)
+					.collect(Collectors.toList());
+			} catch (Exception fallbackError) {
+				System.err.println("❌ 기본 장학금 조회도 실패: " + fallbackError.getMessage());
+				return new ArrayList<>();
+			}
+		}
+	}
+
+	/**
+	 * 장학금 타입 enum을 한글 라벨로 변환
+	 */
+	private String getTypeLabelFromEnum(ScholarshipType type) {
+		if (type == null) return "기타";
+		
+		switch (type) {
+			case ACADEMIC:
+				return "성적우수";
+			case FINANCIAL_AID:
+				return "생활지원";
+			case ACTIVITY:
+				return "공로/활동";
+			case OTHER:
+			default:
+				return "기타";
+		}
+	}
+
+	/**
+	 * 사용자가 해당 장학금에 지원 가능한지 확인
+	 */
+	private boolean isEligibleForUser(Scholarship scholarship, User user) {
+		try {
+			// 학년 제한 확인
+			if (scholarship.getGradeRestriction() != null && !scholarship.getGradeRestriction().isEmpty()) {
+				if (!scholarship.getGradeRestriction().equals("전체") && 
+					!scholarship.getGradeRestriction().contains(String.valueOf(user.getGrade()))) {
+					return false;
+				}
+			}
+			
+			// 최소 평점 확인 (사용자 GPA가 있는 경우)
+			if (user.getGpa() != null && scholarship.getMinGpa() != null) {
+				if (user.getGpa().compareTo(scholarship.getMinGpa()) < 0) {
+					return false;
+				}
+			}
+			
+			// 전공 제한 확인 (향후 구현 - 현재는 기본적으로 통과)
+			if (scholarship.getMajorRestriction() != null && !scholarship.getMajorRestriction().isEmpty()) {
+				// 전공 제한 로직은 User 도메인에 전공 정보가 추가된 후 구현
+				// 현재는 "전체" 또는 빈 값인 경우만 통과
+				if (!scholarship.getMajorRestriction().equals("전체") && !scholarship.getMajorRestriction().equals("제한없음")) {
+					// 추후 사용자 전공 정보와 비교 로직 추가
+				}
+			}
+			
+			return true;
+			
+		} catch (Exception e) {
+			// 필터링 오류 시 기본적으로 포함
+			System.err.println("장학금 자격 확인 오류: " + e.getMessage());
+			return true;
+		}
+	}
+
+	/**
+	 * 카테고리 목록 조회 (장학금 타입 기반)
+	 */
+	@Transactional(readOnly = true)
+	public List<String> getAvailableCategories() {
+		try {
+			// 장학금 타입을 한글 라벨로 변환하여 반환
+			List<String> categories = Arrays.asList(
+				"성적우수",     // ACADEMIC
+				"생활지원",     // FINANCIAL_AID  
+				"공로/활동",    // ACTIVITY
+				"기타"         // OTHER
+			);
+			
+			System.out.println("📋 Available categories: " + categories);
+			return categories;
+		} catch (Exception e) {
+			System.err.println("❌ 카테고리 조회 실패: " + e.getMessage());
+			return Arrays.asList("성적우수", "생활지원", "공로/활동", "기타");
+		}
 	}
 
 

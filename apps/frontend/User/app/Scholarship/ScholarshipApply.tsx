@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { View, StyleSheet, ImageBackground, ScrollView, StatusBar, ActivityIndicator, Alert, RefreshControl, Text } from "react-native";
 import { router } from "expo-router";
-import { scholarshipApi, Scholarship } from "../../services/scholarship.api";
+import { scholarshipApi, Scholarship, FilterParams } from "../../services/scholarship.api";
 import { mileageApi } from "../../services/mileage.api";
 import SOLBG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
@@ -15,6 +15,7 @@ export default function ScholarshipApply() {
   const [currentMileage, setCurrentMileage] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentFilter, setCurrentFilter] = useState<FilterParams>({ status: 'OPEN' });
 
   // 날짜 포맷팅 함수
   const formatDateRange = (startDate: string, endDate: string) => {
@@ -47,28 +48,28 @@ export default function ScholarshipApply() {
   };
 
   // 데이터 로드 함수
-  const loadData = async () => {
+  const loadData = async (filterParams: FilterParams = currentFilter) => {
     try {
       setLoading(true);
 
-      // 병렬로 데이터 로드
+      // 병렬로 데이터 로드 - 필터링된 장학금 데이터 사용
       const [scholarshipData, mileageData] = await Promise.all([
-        scholarshipApi.getScholarships({ page: 0, size: 20, status: 'OPEN' }),
+        scholarshipApi.getFilteredScholarships(filterParams),
         mileageApi.getUserMileage()
       ]);
 
-      console.log('📚 Scholarship data received:', scholarshipData);
+      console.log('📚 Filtered scholarship data received:', scholarshipData);
       console.log('💰 Mileage data received:', mileageData);
 
       if (scholarshipData) {
-        console.log('📚 Setting scholarships:', scholarshipData.scholarships?.length || 0);
+        console.log('📚 Setting filtered scholarships:', scholarshipData.scholarships?.length || 0);
         if (scholarshipData.scholarships && scholarshipData.scholarships.length > 0) {
-          console.log('📚 First scholarship details:', scholarshipData.scholarships[0]);
-          console.log('📚 First scholarship keys:', Object.keys(scholarshipData.scholarships[0]));
+          console.log('📚 First filtered scholarship details:', scholarshipData.scholarships[0]);
+          console.log('📚 Applied filter params:', filterParams);
         }
         setScholarships(scholarshipData.scholarships || []);
       } else {
-        console.log('❌ No scholarship data received');
+        console.log('❌ No filtered scholarship data received');
         setScholarships([]);
       }
 
@@ -77,7 +78,7 @@ export default function ScholarshipApply() {
         setCurrentMileage(mileageData.currentMileage);
       }
     } catch (error) {
-      console.error('📚 Error loading scholarship data:', error);
+      console.error('📚 Error loading filtered scholarship data:', error);
       Alert.alert('오류', '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -89,6 +90,13 @@ export default function ScholarshipApply() {
   const handleRefresh = () => {
     setRefreshing(true);
     loadData();
+  };
+
+  // 필터 변경 핸들러
+  const handleFilterChange = (filterParams: FilterParams) => {
+    console.log('🎯 Filter changed:', filterParams);
+    setCurrentFilter(filterParams);
+    loadData(filterParams);
   };
 
   // 컴포넌트 마운트 시 데이터 로드
@@ -142,7 +150,7 @@ export default function ScholarshipApply() {
 
           <MileagePanel points={currentMileage} />
 
-          <FilterPanel />
+          <FilterPanel onFilterChange={handleFilterChange} />
 
           <SectionBox>
             {scholarships && scholarships.length > 0 ? (
@@ -153,6 +161,7 @@ export default function ScholarshipApply() {
                     amount={scholarship.amount.toLocaleString()}
                     period={formatDateRange(scholarship.recruitmentStartDate, scholarship.recruitmentEndDate)}
                     status={getDeadlineStatus(scholarship.recruitmentEndDate)}
+                    category={scholarship.category}
                     onPress={() => handleScholarshipPress(scholarship.id)}
                   />
                 </View>
@@ -173,6 +182,7 @@ export default function ScholarshipApply() {
                     amount={scholarship.amount.toLocaleString()}
                     period={formatDateRange(scholarship.recruitmentStartDate, scholarship.recruitmentEndDate)}
                     status={getDeadlineStatus(scholarship.recruitmentEndDate)}
+                    category={scholarship.category}
                     onPress={() => handleScholarshipPress(scholarship.id)}
                   />
                 </View>
