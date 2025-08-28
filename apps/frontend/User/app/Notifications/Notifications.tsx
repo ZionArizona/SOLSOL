@@ -61,8 +61,8 @@ export default function NotificationsPage() {
         case NotificationType.DEADLINE_REMINDER:
           return { 
             displayType: "deadline", 
-            actionLabel: "신청하기", 
-            actionRoute: "/Scholarship/ScholarshipApply" 
+            actionLabel: "장학금 보기", 
+            actionRoute: "/Scholarship/ScholarshipDetail" 
           };
         default:
           return { 
@@ -115,21 +115,27 @@ export default function NotificationsPage() {
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       const id = parseInt(notificationId);
+      console.log(`📖 Starting to mark notification as read: ${id}`);
       
       // 백엔드에 읽음 처리 요청
       await notificationApi.markAsRead(id);
+      console.log(`✅ Backend markAsRead successful for: ${id}`);
       
       // WebSocket 컨텍스트에서도 읽음 처리
       markRealtimeAsRead(id);
+      console.log(`✅ WebSocket markAsRead successful for: ${id}`);
       
       // 로컬 상태 업데이트 - 읽음 상태 변경
-      setNotifications(prev => 
-        prev.map(notification => 
+      setNotifications(prev => {
+        const updated = prev.map(notification => 
           notification.id === id
             ? { ...notification, isRead: true }
             : notification
-        )
-      );
+        );
+        console.log(`📝 Local state updated for: ${id}`, 
+          updated.find(n => n.id === id)?.isRead ? 'READ' : 'UNREAD');
+        return updated;
+      });
     } catch (error) {
       console.error('알림 읽음 처리 실패:', error);
     }
@@ -156,8 +162,8 @@ export default function NotificationsPage() {
       updatedAt: wsNotification.updatedAt
     }));
 
-    // 기존 API 알림과 실시간 알림 병합 (중복 제거)
-    const allNotifications = [...convertedRealtimeNotifications, ...notifications];
+    // 기존 API 알림과 실시간 알림 병합 (중복 제거, API 알림 우선)
+    const allNotifications = [...notifications, ...convertedRealtimeNotifications];
     const uniqueNotifications = allNotifications.filter((notification, index, self) => 
       index === self.findIndex(n => n.id === notification.id)
     );
@@ -177,13 +183,14 @@ export default function NotificationsPage() {
     console.log('📊 Unread count:', unreadCount);
     if (result.length > 0) {
       console.log('🔄 First converted item:', result[0]);
+      console.log('🔄 Read states:', result.map(item => ({ id: item.id, isRead: item.isRead, type: item.type })));
     }
     return result;
   }, [mergedNotifications, isConnected, connectionState, unreadCount]);
 
   // 탭별 필터링된 알림 데이터
   const filteredNotifications = useMemo(() => {
-    return convertedNotifications.filter(notification => {
+    const filtered = convertedNotifications.filter(notification => {
       switch (activeTab) {
         case "장학금":
           return notification.type === "scholarship";
@@ -197,6 +204,9 @@ export default function NotificationsPage() {
           return true;
       }
     });
+    console.log(`📋 Filtered notifications for "${activeTab}":`, filtered.length, 'items');
+    console.log(`📋 Filter details:`, filtered.map(item => ({ id: item.id, type: item.type, isRead: item.isRead })));
+    return filtered;
   }, [convertedNotifications, activeTab]);
 
   if (loading) {
