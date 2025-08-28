@@ -253,6 +253,14 @@
 		ORDER BY created_at DESC
 	</select>
 
+	<!-- 특정 날짜에 마감되는 장학금 조회 (마감임박 알림용) -->
+	<select id="findScholarshipsEndingOn" resultMap="ScholarshipMap">
+		SELECT * FROM scholarship 
+		WHERE recruitment_status = 'OPEN' 
+		  AND recruitment_end_date = #{endDate}
+		ORDER BY recruitment_end_date ASC
+	</select>
+
 	<!-- === Filter Queries === -->
 	<!-- 사용 가능한 카테고리 목록 조회 -->
 	<select id="findDistinctCategories" resultType="string">

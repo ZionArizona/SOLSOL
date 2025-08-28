@@ -104,8 +104,8 @@ public class NotificationService {
         }
         
         String title = "새로운 장학금이 등록되었습니다";
-        String message = String.format("%s (%d만원)이 새로 등록되었습니다. 지금 신청해보세요!", 
-                                      scholarshipName, amount / 10000);
+        String message = String.format("%s (%d마일리지)이 새로 등록되었습니다. 지금 신청해보세요!", 
+                                      scholarshipName, amount);
         String actionRoute = String.format("/Scholarship/ScholarshipDetail?id=%d", scholarshipId);
         
         createNotification(userNm, NotificationType.NEW_SCHOLARSHIP, title, message, scholarshipId, actionRoute);
