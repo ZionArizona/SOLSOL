@@ -8,6 +8,7 @@ interface CategorySelectProps {
   value?: string;
   onSelect: (value: string) => void;
   placeholder?: string;
+  includeAllOption?: boolean;
 }
 
 export const CategorySelect = ({ 
@@ -15,11 +16,13 @@ export const CategorySelect = ({
   options, 
   value, 
   onSelect, 
-  placeholder = "선택" 
+  placeholder = "선택",
+  includeAllOption = false
 }: CategorySelectProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
   const handleSelect = (selectedValue: string) => {
+    console.log('📄 CategorySelect handleSelect called with:', selectedValue);
     onSelect(selectedValue);
     setIsVisible(false);
   };
@@ -33,8 +36,8 @@ export const CategorySelect = ({
         onPress={() => setIsVisible(true)}
         activeOpacity={0.7}
       >
-        <Text style={value ? styles.selectedText : styles.placeholder}>
-          {value || placeholder}
+        <Text style={value && value !== "" ? styles.selectedText : styles.placeholder}>
+          {(value && value !== "") ? value : placeholder}
         </Text>
         <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
           <Path 
@@ -62,14 +65,16 @@ export const CategorySelect = ({
             <Text style={styles.modalTitle}>{label} 선택</Text>
             
             <ScrollView style={styles.optionsList}>
-              <TouchableOpacity 
-                style={styles.option}
-                onPress={() => handleSelect("")}
-              >
-                <Text style={[styles.optionText, !value && styles.selectedOption]}>
-                  전체
-                </Text>
-              </TouchableOpacity>
+              {includeAllOption && (
+                <TouchableOpacity 
+                  style={styles.option}
+                  onPress={() => handleSelect("전체")}
+                >
+                  <Text style={[styles.optionText, (!value || value === "전체") && styles.selectedOption]}>
+                    전체
+                  </Text>
+                </TouchableOpacity>
+              )}
               
               {options.map((option) => (
                 <TouchableOpacity 
