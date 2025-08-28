@@ -1,4 +1,4 @@
-import mascot from '../assets/Mascot.png'
+import mascot from '../assets/mascot.png'
 
 const m = {
   wrap:{
