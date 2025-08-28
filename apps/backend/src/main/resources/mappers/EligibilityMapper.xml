@@ -7,8 +7,8 @@
 	<resultMap id="eligibilityResultMap" type="com.solsol.heycalendar.domain.Eligibility">
 		<id property="eligibilityNm" column="eligibility_nm"/>
 		<result property="scholarshipNm" column="scholarship_nm"/>
-		<result property="field" column="field" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
-		<result property="operator" column="operator" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+		<result property="field" column="field" javaType="com.solsol.heycalendar.domain.EligibilityField" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+		<result property="operator" column="operator" javaType="com.solsol.heycalendar.domain.EligibilityOperator" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
 		<result property="value" column="value"/>
 		<result property="content" column="content"/>
 	</resultMap>

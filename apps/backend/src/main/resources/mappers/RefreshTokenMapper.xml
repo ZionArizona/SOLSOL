@@ -6,7 +6,6 @@
 <mapper namespace="com.solsol.heycalendar.mapper.RefreshTokenMapper">
 
     <sql id="Refresh_Columns">
-        `id`,
     `userNm`,
     `userId`,
     `token`,
@@ -19,10 +18,9 @@
     </sql>
 
     <resultMap id="RefreshTokenResultMap" type="com.solsol.heycalendar.domain.RefreshToken">
-        <id     property="id"        column="id"/>
+        <id     property="token"      column="token"/>
         <result property="userNm"     column="userNm"/>
         <result property="userId"     column="userId"/>
-        <result property="token"      column="token"/>
         <result property="issuedAt"   column="issuedAt"  javaType="java.time.LocalDateTime"/>
         <result property="expiresAt"  column="expiresAt" javaType="java.time.LocalDateTime"/>
         <result property="revoked"    column="revoked"   javaType="boolean"/>
@@ -31,7 +29,7 @@
         <result property="rotatedFrom" column="rotatedFrom"/>
     </resultMap>
 
-    <insert id="insert" parameterType="com.solsol.heycalendar.domain.RefreshToken" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.solsol.heycalendar.domain.RefreshToken">
         INSERT INTO `refresh_token` (
             `userNm`, `userId`, `token`, `issuedAt`, `expiresAt`, `revoked`, `userAgent`, `ip`, `rotatedFrom`
         ) VALUES (

@@ -8,6 +8,7 @@ import './scholarship-create.css'
 export default function ScholarshipCreate(){
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
+  const [categories, setCategories] = useState([])
   
   // 기본 정보
   const [formData, setFormData] = useState({
@@ -45,6 +46,20 @@ export default function ScholarshipCreate(){
   const [criteria, setCriteria] = useState([])
 
   const totalWeight = criteria.reduce((s,c)=> s + Number(c.weight||0), 0)
+
+  // 컴포넌트 마운트 시 카테고리 목록 로드
+  useEffect(() => {
+    loadCategories()
+  }, [])
+
+  const loadCategories = async () => {
+    try {
+      const categoryList = await scholarshipApi.getCategories()
+      setCategories(categoryList)
+    } catch (error) {
+      console.error('카테고리 로드 실패:', error)
+    }
+  }
 
   const addCriteria = () => {
     if(!reqName.trim()) return
@@ -220,12 +235,18 @@ export default function ScholarshipCreate(){
               </Field>
 
               <Field label="장학금 카테고리/태그">
-                <input 
-                  className="ip" 
-                  placeholder="카테고리를 선택/입력하세요"
+                <select 
+                  className="ip"
                   value={formData.category}
                   onChange={(e) => handleInputChange('category', e.target.value)}
-                />
+                >
+                  <option value="">카테고리를 선택하세요</option>
+                  {categories.map((category, index) => (
+                    <option key={index} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </Section>
 

@@ -3,6 +3,7 @@ package com.solsol.heycalendar.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.solsol.heycalendar.common.ApiResponse;
@@ -30,6 +31,22 @@ public class ScholarshipController {
 	@GetMapping
 	public ResponseEntity<ApiResponse<List<ScholarshipResponse>>> getAll() {
 		return ResponseEntity.ok(new ApiResponse<>(true, "OK", "OK", service.getAllScholarships()));
+	}
+
+	@Operation(summary = "사용자 맞춤 장학금 목록 (자동 필터링)")
+	@GetMapping("/filtered")
+	public ResponseEntity<ApiResponse<List<ScholarshipResponse>>> getFilteredScholarships(
+			@RequestParam(required = false) String category,
+			@RequestParam(required = false) String status,
+			Authentication authentication) {
+		try {
+			String userNm = authentication.getName();
+			List<ScholarshipResponse> scholarships = service.getFilteredScholarshipsForUser(userNm, category, status);
+			return ResponseEntity.ok(new ApiResponse<>(true, "사용자 맞춤 장학금 조회 성공", "OK", scholarships));
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError()
+				.body(new ApiResponse<>(false, "장학금 조회 실패", "ERROR", null));
+		}
 	}
 
 	@Operation(summary = "장학금 상세")
@@ -153,6 +170,18 @@ public class ScholarshipController {
 	@GetMapping("/notices/{noticeId}")
 	public ResponseEntity<ApiResponse<NoticeResponse>> getNoticeById(@PathVariable Long noticeId){
 		return ResponseEntity.ok(new ApiResponse<>(true,"OK","OK", service.getNoticeById(noticeId)));
+	}
+
+	@Operation(summary = "장학금 카테고리 목록 조회")
+	@GetMapping("/categories")
+	public ResponseEntity<ApiResponse<List<String>>> getCategories() {
+		try {
+			List<String> categories = service.getAvailableCategories();
+			return ResponseEntity.ok(new ApiResponse<>(true, "카테고리 조회 성공", "OK", categories));
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError()
+				.body(new ApiResponse<>(false, "카테고리 조회 실패", "ERROR", null));
+		}
 	}
 
 }

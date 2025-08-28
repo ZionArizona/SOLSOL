@@ -33,4 +33,14 @@ public interface NotificationMapper {
     
     // 알림 삭제
     void delete(@Param("id") Long id);
+    
+    // 중복 알림 체크
+    boolean existsByUserAndTypeAndRelatedId(@Param("userNm") String userNm, 
+                                          @Param("type") NotificationType type, 
+                                          @Param("relatedId") Long relatedId);
+    
+    // 오늘 생성된 특정 타입의 알림 중복 체크
+    boolean existsByUserAndTypeAndRelatedIdToday(@Param("userNm") String userNm, 
+                                               @Param("type") NotificationType type, 
+                                               @Param("relatedId") Long relatedId);
 }

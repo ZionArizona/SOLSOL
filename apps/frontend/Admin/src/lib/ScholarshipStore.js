@@ -168,6 +168,17 @@ export const scholarshipApi = {
       console.error('Failed to delete notice:', error)
       throw error
     }
+  },
+
+  // 장학금 카테고리 목록 조회
+  getCategories: async () => {
+    try {
+      const response = await api.get('/scholarships/categories')
+      return response.data || []
+    } catch (error) {
+      console.error('Failed to fetch categories:', error)
+      throw error
+    }
   }
 }
 
@@ -269,6 +280,8 @@ export const scholarshipUtils = {
 
   // 백엔드용 데이터 변환
   transformForBackend: (formData) => {
+    console.log('🔄 transformForBackend 입력 데이터:', formData);
+    
     // Enum 매핑 함수들
     const getTypeEnum = (typeLabel) => {
       const typeMap = {
@@ -298,57 +311,48 @@ export const scholarshipUtils = {
       return methodMap[methodLabel] || 'DOCUMENT_REVIEW'
     }
     
-    return {
-      scholarshipName: formData.title || formData.scholarshipName,
-      description: formData.desc || formData.description,
+    const result = {
+      scholarshipName: formData.title || formData.scholarshipName || '',
+      description: formData.desc || formData.description || '',
       type: getTypeEnum(formData.type),
       amount: parseInt(typeof formData.amount === 'string' ? formData.amount.replace(/[^0-9]/g, '') : formData.amount) || 1,
       numberOfRecipients: parseInt(typeof formData.picks === 'string' ? formData.picks.replace(/[^0-9]/g, '') : formData.picks) || 1,
       paymentMethod: getPaymentMethodEnum(formData.payMethod || formData.paymentMethod),
       
       // 날짜 처리 - judge 객체에서 가져오기
-      recruitmentStartDate: formData.startDate || formData.recruitmentStartDate,
-      recruitmentEndDate: formData.endDate || formData.recruitmentEndDate,
-      evaluationStartDate: formData.judge?.judgeStart || formData.evaluationStartDate,
-      interviewDate: formData.judge?.interviewDate || formData.interviewDate,
-      resultAnnouncementDate: formData.judge?.resultDate || formData.resultAnnouncementDate,
+      recruitmentStartDate: formData.startDate || formData.recruitmentStartDate || null,
+      recruitmentEndDate: formData.endDate || formData.recruitmentEndDate || null,
+      evaluationStartDate: formData.judge?.judgeStart || formData.evaluationStartDate || null,
+      interviewDate: formData.judge?.interviewDate || formData.interviewDate || null,
+      resultAnnouncementDate: formData.judge?.resultDate || formData.resultAnnouncementDate || null,
       
       evaluationMethod: getEvaluationMethodEnum(formData.judge?.mode || formData.method || formData.evaluationMethod),
       recruitmentStatus: formData.recruitmentStatus || 'OPEN',
       
       // 자격 조건
-      eligibilityCondition: formData.eligibility || formData.eligibilityCondition,
-      gradeRestriction: formData.constraints?.gradeLimit !== '제한 없음' ? formData.constraints?.gradeLimit : formData.gradeRestriction,
-      majorRestriction: formData.constraints?.majorLimit || formData.majorRestriction,
+      eligibilityCondition: formData.eligibility || formData.eligibilityCondition || '',
+      gradeRestriction: formData.constraints?.gradeLimit !== '제한 없음' ? (formData.constraints?.gradeLimit || null) : null,
+      majorRestriction: formData.constraints?.majorLimit || formData.majorRestriction || null,
       duplicateAllowed: formData.constraints?.duplicateAllowed ?? formData.duplicateAllowed ?? true,
-      minGpa: parseFloat(formData.constraints?.minGpa) || parseFloat(formData.minGpa) || null,
+      minGpa: formData.constraints?.minGpa ? parseFloat(formData.constraints.minGpa) : (formData.minGpa ? parseFloat(formData.minGpa) : null),
       
-      category: formData.categories || formData.category,
+      category: typeof formData.categories === 'string' ? formData.categories : (formData.category || ''),
       
       // 문의처
-      contactPersonName: formData.contact?.manager || formData.contactPersonName,
-      contactPhone: formData.contact?.phone || formData.contactPhone,
-      contactEmail: formData.contact?.email || formData.contactEmail,
-      officeLocation: formData.contact?.office || formData.officeLocation,
-      consultationHours: formData.contact?.hours || formData.consultationHours,
-      
-      // 태그 - chips에서 가져와서 배열로 변환
-      tags: typeof formData.chips === 'string' ? 
-        formData.chips.split(',').map(s => s.trim()).filter(s => s) : 
-        (formData.tags || formData.chips || []),
-      
-      // 평가 기준
-      criteria: formData.criteria?.map(c => ({
-        name: c.name,
-        std: parseFloat(c.std) || null,
-        weight: parseInt(c.weight) || 0
-      })) || [],
+      contactPersonName: formData.contact?.manager || formData.contactPersonName || '',
+      contactPhone: formData.contact?.phone || formData.contactPhone || '',
+      contactEmail: formData.contact?.email || formData.contactEmail || '',
+      officeLocation: formData.contact?.office || formData.officeLocation || null,
+      consultationHours: formData.contact?.hours || formData.consultationHours || null,
       
       // 공지
-      noticeTitle: formData.notice?.title || formData.noticeTitle,
-      noticeContent: formData.notice?.content || formData.noticeContent,
-      noticeImageUrl: formData.notice?.imageUrl || formData.noticeImageUrl
-    }
+      noticeTitle: formData.notice?.title || formData.noticeTitle || null,
+      noticeContent: formData.notice?.content || formData.noticeContent || null,
+      noticeImageUrl: formData.notice?.imageUrl || formData.noticeImageUrl || null
+    };
+    
+    console.log('🔄 transformForBackend 출력 데이터:', result);
+    return result;
   }
 }
 
