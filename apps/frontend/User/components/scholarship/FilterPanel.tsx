@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { CategorySelect } from "./parts/CategorySelect";
 import { scholarshipApi, FilterParams } from "../../services/scholarship.api";
 
 interface FilterPanelProps {
   onFilterChange?: (params: FilterParams) => void;
+  initialFilter?: FilterParams;
 }
 
 interface RecruitmentStatus {
@@ -13,23 +14,35 @@ interface RecruitmentStatus {
   label: string;
 }
 
-export const FilterPanel = ({ onFilterChange }: FilterPanelProps) => {
+export const FilterPanel = ({ onFilterChange, initialFilter }: FilterPanelProps) => {
   const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("OPEN");
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialFilter?.category || "");
+  const [selectedStatus, setSelectedStatus] = useState<string>(initialFilter?.status || "OPEN");
   const [loading, setLoading] = useState(false);
 
   const recruitmentStatuses: RecruitmentStatus[] = [
     { value: "OPEN", label: "신청가능" },
     { value: "CLOSED", label: "모집마감" },
-    { value: "DRAFT", label: "신청예정" },
-    { value: "ALL", label: "전체" }
+    { value: "DRAFT", label: "신청예정" }
   ];
 
-  // 컴포넌트 마운트 시 카테고리 목록 로드
+  // 컴포넌트 마운트 시 카테고리 목록 로드 및 초기 필터 설정
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  // 초기 필터 변경 시 상태 업데이트
+  useEffect(() => {
+    if (initialFilter) {
+      console.log('🎯 Updating FilterPanel state from initialFilter:', initialFilter);
+      setSelectedCategory(initialFilter.category || "");
+      
+      // status가 undefined면 "전체"(빈 문자열)로, 그렇지 않으면 해당 값으로 설정
+      const statusValue = initialFilter.status === undefined ? "" : (initialFilter.status || "OPEN");
+      console.log('🎯 Setting selectedStatus from initialFilter:', initialFilter.status, '->', statusValue);
+      setSelectedStatus(statusValue);
+    }
+  }, [initialFilter]);
 
   const loadInitialData = async () => {
     try {
@@ -44,37 +57,74 @@ export const FilterPanel = ({ onFilterChange }: FilterPanelProps) => {
     }
   };
 
-  // 필터 적용
-  const handleApplyFilter = async () => {
+  // 즉시 필터 적용
+  const applyCurrentFilter = () => {
     if (!onFilterChange) return;
     
-    setLoading(true);
-    try {
-      const filterParams: FilterParams = {
-        category: selectedCategory || undefined,
-        status: selectedStatus === 'ALL' ? undefined : selectedStatus,
-      };
-      
-      console.log('🎯 Applying filter with params:', filterParams);
-      onFilterChange(filterParams);
-    } catch (error) {
-      console.error('❌ Filter application failed:', error);
-    } finally {
-      setLoading(false);
-    }
+    const filterParams: FilterParams = {
+      category: selectedCategory || undefined,
+      status: selectedStatus,
+    };
+    
+    console.log('🎯 Applying filter with params:', filterParams);
+    onFilterChange(filterParams);
   };
 
-  // 필터 초기화
-  const handleResetFilter = () => {
-    setSelectedCategory("");
-    setSelectedStatus("OPEN");
+  // 카테고리 변경 핸들러
+  const handleCategoryChange = (category: string) => {
+    console.log('📄 Category change requested:', category);
     
-    if (onFilterChange) {
-      const resetParams: FilterParams = {
-        status: 'OPEN',
+    // "전체" 선택 시 빈 문자열로 처리
+    const categoryValue = category === "전체" ? "" : category;
+    console.log('📄 Setting selectedCategory to:', categoryValue);
+    setSelectedCategory(categoryValue);
+    
+    // 카테곣리 변경 후 즉시 필터 적용
+    setTimeout(() => {
+      const filterParams: FilterParams = {
+        category: categoryValue || undefined,
+        status: selectedStatus === "" ? undefined : selectedStatus,
       };
-      console.log('🔄 Resetting filter');
-      onFilterChange(resetParams);
+      console.log('🎯 Category changed, applying filter:', filterParams);
+      onFilterChange?.(filterParams);
+    }, 0);
+  };
+
+  // 모집상태 변경 핸들러
+  const handleStatusChange = (label: string) => {
+    console.log('📄 Status change requested:', label);
+    console.log('📄 Current selectedStatus:', selectedStatus);
+    
+    // "전체" 선택 시 처리
+    if (label === "전체") {
+      console.log('📄 Setting selectedStatus to empty string for ALL');
+      setSelectedStatus(""); // 빈 문자열로 설정
+      setTimeout(() => {
+        const filterParams: FilterParams = {
+          category: selectedCategory || undefined,
+          status: undefined, // 전체 선택 시 status는 undefined
+        };
+        console.log('🎯 Status changed to ALL, applying filter:', filterParams);
+        onFilterChange?.(filterParams);
+      }, 0);
+    } else {
+      const status = recruitmentStatuses.find(s => s.label === label);
+      console.log('📄 Found status for label:', label, '->', status);
+      if (status) {
+        console.log('📄 Setting selectedStatus to:', status.value);
+        setSelectedStatus(status.value);
+        // 모집상태 변경 후 즉시 필터 적용
+        setTimeout(() => {
+          const filterParams: FilterParams = {
+            category: selectedCategory || undefined,
+            status: status.value,
+          };
+          console.log('🎯 Status changed, applying filter:', filterParams);
+          onFilterChange?.(filterParams);
+        }, 0);
+      } else {
+        console.log('❌ No status found for label:', label);
+      }
     }
   };
 
@@ -90,45 +140,30 @@ export const FilterPanel = ({ onFilterChange }: FilterPanelProps) => {
         <CategorySelect
           label="카테고리"
           options={categories}
-          value={selectedCategory}
-          onSelect={setSelectedCategory}
+          value={(() => {
+            console.log('📄 CategorySelect value prop:', selectedCategory, '-> display:', selectedCategory || "전체");
+            return selectedCategory || "전체";
+          })()}
+          onSelect={handleCategoryChange}
           placeholder="전체"
+          includeAllOption={true}
         />
         
         {/* 모집상태 선택 */}
         <CategorySelect
           label="모집상태"
           options={recruitmentStatuses.map(status => status.label)}
-          value={recruitmentStatuses.find(status => status.value === selectedStatus)?.label || "신청가능"}
-          onSelect={(label) => {
-            const status = recruitmentStatuses.find(s => s.label === label);
-            if (status) {
-              setSelectedStatus(status.value);
-            }
-          }}
+          value={(() => {
+            const displayValue = selectedStatus === "" ? "전체" : (recruitmentStatuses.find(status => status.value === selectedStatus)?.label || "신청가능");
+            console.log('📄 StatusSelect value prop:', selectedStatus, '-> display:', displayValue);
+            return displayValue;
+          })()}
+          onSelect={handleStatusChange}
           placeholder="신청가능"
+          includeAllOption={true}
         />
       </View>
 
-      <View style={styles.btnRow}>
-        <TouchableOpacity 
-          style={[styles.btn, styles.primary]} 
-          onPress={handleApplyFilter}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={[styles.btnText, { color: "#fff" }]}>필터 적용</Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.btn, styles.ghost]} 
-          onPress={handleResetFilter}
-        >
-          <Text style={[styles.btnText, { color: "#6576A2" }]}>초기화</Text>
-        </TouchableOpacity>
-      </View>
     </LinearGradient>
   );
 };
@@ -149,29 +184,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-  },
-  btnRow: {
-    marginTop: 16,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "flex-end",
-  },
-  btn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    minWidth: 80,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primary: {
-    backgroundColor: "#6B86FF",
-  },
-  ghost: {
-    backgroundColor: "#E7EBFF",
-  },
-  btnText: { 
-    fontWeight: "800",
-    fontSize: 12,
   },
 });
