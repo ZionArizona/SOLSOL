@@ -47,6 +47,7 @@ public class SecurityConfig {
 				.requestMatchers("/api/universities").permitAll()
 				.requestMatchers("/api/scholarships", "/api/scholarships/**").permitAll()
 				.requestMatchers("/api/applications", "/api/applications/**").permitAll() // Admin 페이지가 접근할 수 있도록 허용
+				.requestMatchers("/ws/**").permitAll() // WebSocket endpoints
 				.requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
 				.requestMatchers("/v3/api-docs/**", "/api-docs/**").permitAll()
 				.requestMatchers("/swagger-ui/index.html").permitAll()

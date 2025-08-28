@@ -5,6 +5,7 @@ import com.solsol.heycalendar.domain.NotificationType;
 import com.solsol.heycalendar.mapper.NotificationMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.List;
 public class NotificationService {
     
     private final NotificationMapper notificationMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 알림 생성
@@ -40,6 +42,11 @@ public class NotificationService {
                 
         notificationMapper.insert(notification);
         log.info("Notification created successfully - userNm: {}, type: {}", userNm, type);
+        
+        // WebSocket을 통해 실시간 알림 전송
+        log.info("About to send realtime notification for user: {}", userNm);
+        sendRealtimeNotification(userNm, notification);
+        log.info("Realtime notification sending completed for user: {}", userNm);
     }
 
     /**
@@ -97,8 +104,8 @@ public class NotificationService {
         }
         
         String title = "새로운 장학금이 등록되었습니다";
-        String message = String.format("%s (%d만원)이 새로 등록되었습니다. 지금 신청해보세요!", 
-                                      scholarshipName, amount / 10000);
+        String message = String.format("%s (%d마일리지)이 새로 등록되었습니다. 지금 신청해보세요!", 
+                                      scholarshipName, amount);
         String actionRoute = String.format("/Scholarship/ScholarshipDetail?id=%d", scholarshipId);
         
         createNotification(userNm, NotificationType.NEW_SCHOLARSHIP, title, message, scholarshipId, actionRoute);
@@ -157,5 +164,44 @@ public class NotificationService {
     public void deleteNotification(Long notificationId) {
         log.info("Deleting notification - id: {}", notificationId);
         notificationMapper.delete(notificationId);
+    }
+    
+    /**
+     * WebSocket을 통한 실시간 알림 전송
+     */
+    private void sendRealtimeNotification(String userNm, Notification notification) {
+        log.info("Starting sendRealtimeNotification for user: {}, messagingTemplate: {}", userNm, messagingTemplate != null ? "AVAILABLE" : "NULL");
+        
+        try {
+            // 사용자별 개인 큐로 알림 전송
+            String destination = "/queue/notifications/" + userNm;
+            log.info("Sending notification to destination: {}", destination);
+            messagingTemplate.convertAndSend(destination, notification);
+            log.info("✅ Realtime notification sent to user: {} at destination: {}", userNm, destination);
+            
+            // 전체 토픽으로도 전송 (선택적)
+            if (notification.getType() == NotificationType.NEW_SCHOLARSHIP) {
+                log.info("Broadcasting new scholarship notification to all users");
+                messagingTemplate.convertAndSend("/topic/new-scholarships", notification);
+                log.info("✅ New scholarship notification broadcasted to all users");
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to send realtime notification to user: {}", userNm, e);
+            // 실시간 알림 실패해도 DB 저장은 성공했으므로 예외를 던지지 않음
+        }
+        
+        log.info("Completed sendRealtimeNotification for user: {}", userNm);
+    }
+    
+    /**
+     * 모든 사용자에게 브로드캐스트 알림 전송
+     */
+    public void broadcastNotification(Notification notification) {
+        try {
+            messagingTemplate.convertAndSend("/topic/notifications", notification);
+            log.info("Broadcast notification sent to all users");
+        } catch (Exception e) {
+            log.error("Failed to broadcast notification", e);
+        }
     }
 }

@@ -27,6 +27,14 @@ export const BASE_URL = isDev
       ? 'http://10.0.2.2:8080/api'
       : 'http://localhost:8080/api')
   : `${PROD_ORIGIN}/api`;
+// export const BASE_URL = __DEV__
+//   ? (
+//       Platform.OS === 'android'
+//         ? 'http://10.0.2.2:8080/api'   // Android 에뮬레이터 → 로컬 호스트 접근
+//         : 'http://localhost:8080/api'  // iOS 시뮬레이터
+//     )
+//   : 'https://heycalendar.store/api';   // 실제 배포(앱 빌드/실기기)
+
 
 // API Response 타입 정의
 export interface ApiResponse<T = any> {
@@ -36,7 +44,7 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
-// 기존 tokenManager를 사용하므로 별도 정의 불필요
+// 토큰 관리는 utils/tokenManager.ts를 사용
 
 // HTTP 클라이언트 클래스
 class ApiClient {
@@ -48,6 +56,8 @@ class ApiClient {
 
   private async getAuthHeaders(): Promise<HeadersInit> {
     const token = await tokenManager.getAccessToken();
+    console.log('🔑 API 토큰 상태:', token ? `토큰 있음 (${token.substring(0, 30)}...)` : '토큰 없음');
+    
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -73,8 +83,11 @@ class ApiClient {
       const payload = tokenManager.decodeAccessToken(token);
       if (!payload) return null;
       
+      console.log('🔍 JWT Payload:', payload);
       // 토큰에서 사용자명 추출
-      return payload.sub || payload.userName || payload.userId || null;
+      const userNm = payload.sub || payload.userName || payload.userId || null;
+      console.log('👤 Extracted userNm:', userNm);
+      return userNm;
     } catch (error) {
       console.error('JWT 토큰 디코딩 오류:', error);
       return null;
@@ -113,9 +126,11 @@ class ApiClient {
     try {
       const refreshToken = await tokenManager.getRefreshToken();
       if (!refreshToken) {
+        console.log('🔄 리프레시 토큰이 없습니다');
         return false;
       }
 
+      console.log('🔄 토큰 갱신 시도 중...');
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,13 +140,16 @@ class ApiClient {
       if (response.ok) {
         const data: ApiResponse<{accessToken: string, refreshToken: string}> = await response.json();
         await tokenManager.saveTokens(data.data);
+        console.log('✅ 토큰 갱신 성공');
         return true;
       }
 
       // 리프레시 토큰도 만료된 경우
+      console.log('❌ 리프레시 토큰 만료됨');
       await tokenManager.clearTokens();
       return false;
     } catch (error) {
+      console.error('❌ 토큰 갱신 실패:', error);
       await tokenManager.clearTokens();
       return false;
     }
@@ -143,6 +161,9 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     try {
       const headers = await this.getAuthHeaders();
+      console.log(`🔐 API Request: ${options.method || 'GET'} ${this.baseURL}${endpoint}`);
+      console.log('🔐 Request Headers:', headers);
+      
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
         headers: { ...headers, ...options.headers },
@@ -150,6 +171,7 @@ class ApiClient {
 
       // 401 Unauthorized - 토큰 갱신 시도
       if (response.status === 401) {
+        console.log('❌ 401 Unauthorized error occurred');
         const refreshSuccess = await this.refreshTokenIfNeeded();
         if (refreshSuccess) {
           // 토큰 갱신 성공 - 요청 재시도

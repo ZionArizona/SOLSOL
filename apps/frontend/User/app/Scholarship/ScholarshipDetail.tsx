@@ -10,6 +10,8 @@ import { router } from "expo-router";
 import { scholarshipApi, Scholarship } from "../../services/scholarship.api";
 import { bookmarkApi } from "../../services/bookmark.api";
 import { applicationApi } from "../../services/application.api";
+import { notificationApi } from "../../services/notification.api";
+import { useWebSocket } from "../../contexts/WebSocketContext";
 
 export default function ScholarshipDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,6 +23,38 @@ export default function ScholarshipDetail() {
   const [applicationLoading, setApplicationLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+  
+  const { markAsRead } = useWebSocket();
+
+  // 특정 장학금과 관련된 알림들을 읽음 처리하는 함수
+  const markNotificationsAsReadForScholarship = async (scholarshipId: number) => {
+    try {
+      console.log(`📖 Marking notifications as read for scholarship: ${scholarshipId}`);
+      
+      // 모든 알림을 가져와서 이 장학금과 관련된 것들을 찾음
+      const notifications = await notificationApi.getUserNotifications();
+      
+      // 이 장학금 ID와 관련된 알림들 필터링
+      const relatedNotifications = notifications.filter(notification => 
+        notification.relatedId === scholarshipId && !notification.isRead
+      );
+      
+      console.log(`📖 Found ${relatedNotifications.length} unread notifications for scholarship ${scholarshipId}`);
+      
+      // 각각의 알림을 읽음 처리
+      for (const notification of relatedNotifications) {
+        try {
+          await notificationApi.markAsRead(notification.id);
+          markAsRead(notification.id);
+          console.log(`✅ Marked notification ${notification.id} as read`);
+        } catch (error) {
+          console.warn(`⚠️ Failed to mark notification ${notification.id} as read:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to mark scholarship notifications as read:', error);
+    }
+  };
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString: string) => {
@@ -182,6 +216,9 @@ export default function ScholarshipDetail() {
         console.log('🎓 Scholarship detail data:', scholarshipData);
         console.log('🔖 Bookmark status:', bookmarkStatus);
         console.log('📋 Application data:', applicationData);
+        
+        // 이 장학금과 관련된 알림을 자동으로 읽음 처리
+        await markNotificationsAsReadForScholarship(parseInt(id));
         
         if (scholarshipData) {
           setScholarship(scholarshipData);

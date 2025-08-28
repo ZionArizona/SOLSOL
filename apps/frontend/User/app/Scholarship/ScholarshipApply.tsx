@@ -95,6 +95,7 @@ export default function ScholarshipApply() {
   // 필터 변경 핸들러
   const handleFilterChange = (filterParams: FilterParams) => {
     console.log('🎯 Filter changed:', filterParams);
+    console.log('🎯 Previous currentFilter:', currentFilter);
     setCurrentFilter(filterParams);
     loadData(filterParams);
   };
@@ -150,7 +151,7 @@ export default function ScholarshipApply() {
 
           <MileagePanel points={currentMileage} />
 
-          <FilterPanel onFilterChange={handleFilterChange} />
+          <FilterPanel onFilterChange={handleFilterChange} initialFilter={currentFilter} />
 
           <SectionBox>
             {scholarships && scholarships.length > 0 ? (

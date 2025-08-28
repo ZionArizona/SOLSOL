@@ -31,7 +31,7 @@ export const SummaryPanel = ({
         </View>
         <View style={styles.item}>
           <Text style={styles.num}>{benefit}</Text>
-          <Text style={styles.label}>수혜금액(만원)</Text>
+          <Text style={styles.label}>수혜금액(마일리지)</Text>
         </View>
       </View>
     </LinearGradient>
