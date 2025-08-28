@@ -20,7 +20,7 @@ import { mileageApi } from "../../services/mileage.api";
 
 export default function MainPage() {
   const { user } = useAuth();
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState<any>(null);
   const [mileage, setMileage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
