@@ -19,12 +19,16 @@ export default function App(){
   return (
     <BrowserRouter basename="/admin">
       <Routes>
-        <Route index element={<Navigate to="/login" replace />} />
+        {/* <Route index element={<Navigate to="/login" replace />} /> */}
+        <Route index element={<Navigate to="/main" replace />} />
 
         {/* 인증 불필요 페이지 */}
         <Route path="/login" element={<LoginPage/>}/>
         <Route path="/signup" element={<SignupPage/>}/>
-        <Route path="/" element={<MainPage/>}/>
+         {/* <Route path="/" element={<MainPage/>}/> */}
+        {/* 관리자 메인페이지 */}
+        <Route path="/main" element={<AdminRoute><MainPage/></AdminRoute>}/>
+        <Route path="/" element={<AdminRoute><MainPage/></AdminRoute>}/>
         
         {/* 관리자 권한 필요 페이지 */}
 
