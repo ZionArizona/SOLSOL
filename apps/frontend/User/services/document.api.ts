@@ -1,6 +1,7 @@
 import tokenManager from '../utils/tokenManager';
+import { BASE_URL } from './api';
 
-const API_BASE = 'http://localhost:8080'; 
+// API_BASE는 services/api.ts의 BASE_URL 사용 
 
 // 토큰 가져오기
 const getAuthToken = async (): Promise<string> => {
@@ -67,7 +68,7 @@ const calculateSHA256 = async (file: File): Promise<string> => {
 // 서류 업로드 URL 생성
 export const generateUploadUrl = async (request: DocumentUploadRequest): Promise<DocumentUploadResponse> => {
   const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents/upload-url`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/student/documents/upload-url`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -109,7 +110,7 @@ export const completeUpload = async (data: {
   checksum: string;
 }): Promise<void> => {
   const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents/complete`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/student/documents/complete`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -127,7 +128,7 @@ export const completeUpload = async (data: {
 // 내 서류 목록 조회
 export const getMyDocuments = async (): Promise<DocumentItem[]> => {
   const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/student/documents`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -146,7 +147,7 @@ export const getMyDocuments = async (): Promise<DocumentItem[]> => {
 // 서류 다운로드 URL 생성
 export const generateDownloadUrl = async (documentId: number): Promise<string> => {
   const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents/${documentId}/download-url`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/student/documents/${documentId}/download-url`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -170,7 +171,7 @@ export const deleteDocument = async (documentId: number): Promise<void> => {
     const token = await getAuthToken();
     console.log('🔑 토큰 확인:', token ? '있음' : '없음');
     
-    const url = `${API_BASE}/api/student/documents/${documentId}`;
+    const url = `${BASE_URL.replace('/api', '')}/api/student/documents/${documentId}`;
     console.log('🌐 삭제 요청 URL:', url);
     
     const response = await fetch(url, {

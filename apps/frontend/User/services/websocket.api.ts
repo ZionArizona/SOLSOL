@@ -1,4 +1,6 @@
 import { getAuthToken } from '../utils/tokenManager';
+import { BASE_URL } from './api';
+import { Platform } from 'react-native';
 
 export interface NotificationMessage {
   id?: number;
@@ -35,7 +37,9 @@ class WebSocketService {
       console.log('🔌 Connecting to WebSocket...');
       
       // React Native Web에서 WebSocket 연결
-      this.ws = new WebSocket('ws://localhost:8080/ws');
+      const wsUrl = BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://').replace('/api', '') + '/ws';
+      console.log('🔌 WebSocket URL:', wsUrl);
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         console.log('✅ WebSocket connected');
