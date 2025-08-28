@@ -22,48 +22,32 @@ export default function MyDocs() {
   const loadDocuments = async () => {
     try {
       setLoading(true);
+      console.log('📋 서류 목록 로드 시작...');
+      
       const docs = await getMyDocuments();
-      const convertedDocs = docs.map((doc, index) => convertToDocItem(doc, index));
-      setDocuments(convertedDocs);
+      console.log('📋 받아온 서류 데이터:', docs);
+      
+      if (docs && docs.length > 0) {
+        const convertedDocs = docs.map((doc, index) => convertToDocItem(doc, index));
+        setDocuments(convertedDocs);
+        console.log('✅ 서류 목록 로드 성공:', convertedDocs.length, '개');
+      } else {
+        console.log('📋 서류가 없습니다. 빈 배열 설정');
+        setDocuments([]);
+      }
     } catch (error) {
-      console.error('서류 목록 로드 실패:', error);
-      Alert.alert('오류', '서류 목록을 불러오는데 실패했습니다.');
-      // 실패 시 샘플 데이터 표시
-      setDocuments([
-        {
-          id: "1",
-          fileName: "성적증명서_2025-1학기.pdf",
-          category: "성적증명",
-          size: "2.3MB",
-          uploadedAt: "7/15 업로드",
-          metaTags: ["성적증명서", "학기1"],
-          status: "사용가능",
-          usageCount: 3,
-          colorKey: "grade",
-        },
-        {
-          id: "2",
-          fileName: "TOEIC_성적표_920점.jpg",
-          category: "어학",
-          size: "2.3MB",
-          uploadedAt: "6/20 업로드",
-          metaTags: ["어학성적", "TOEIC"],
-          status: "사용가능",
-          usageCount: 2,
-          colorKey: "lang",
-        },
-        {
-          id: "3",
-          fileName: "한컴1급_자격증.pdf",
-          category: "자격증",
-          size: "1.2MB",
-          uploadedAt: "5/10 업로드",
-          metaTags: ["자격증"],
-          status: "사용가능",
-          usageCount: 1,
-          colorKey: "license",
-        },
-      ]);
+      console.error('❌ 서류 목록 로드 실패:', error);
+      
+      // 더 자세한 오류 정보 로깅
+      if (error instanceof Error) {
+        console.error('오류 메시지:', error.message);
+        console.error('오류 스택:', error.stack);
+      }
+      
+      Alert.alert('오류', `서류 목록을 불러오는데 실패했습니다.\n${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      
+      // 실패 시에는 빈 배열로 설정 (샘플 데이터 제거)
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -79,6 +63,27 @@ export default function MyDocs() {
     const matchQuery = query.trim().length === 0 ? true : d.fileName.toLowerCase().includes(query.toLowerCase());
     return matchTab && matchQuery;
   });
+
+  // 서류 현황 계산
+  const calculateDocumentStats = () => {
+    const total = documents.length;
+    const available = documents.filter(doc => doc.status === "사용가능").length;
+    const totalUsage = documents.reduce((sum, doc) => sum + (doc.usageCount || 0), 0);
+    
+    // 진행률은 유효한 서류 비율로 계산 (총 서류 대비 사용가능한 서류)
+    const availablePercent = total > 0 ? Math.round((available / total) * 100) : 0;
+    
+    return {
+      used: `${available}개`,
+      capacity: `${total}개`,
+      percent: availablePercent,
+      total: total,
+      reusable: available,
+      expiring: totalUsage, // expiring 파라미터를 총 사용횟수로 활용
+    };
+  };
+
+  const documentStats = calculateDocumentStats();
 
   const handleUpload = (uploadData: any) => {
     // 업로드 성공 후 서류 목록 새로고침
@@ -118,12 +123,18 @@ export default function MyDocs() {
 
   const handleSingleDelete = async (docId: string) => {
     try {
+      console.log('🗑️ 서류 삭제 시작:', docId);
       await deleteDocument(Number(docId));
+      console.log('✅ 서류 삭제 성공:', docId);
+      
       await loadDocuments();
       Alert.alert('성공', '서류가 삭제되었습니다.');
     } catch (error) {
-      console.error('단일 삭제 실패:', error);
-      Alert.alert('오류', '서류 삭제에 실패했습니다.');
+      console.error('❌ 단일 삭제 실패:', error);
+      if (error instanceof Error) {
+        console.error('오류 메시지:', error.message);
+      }
+      Alert.alert('오류', `서류 삭제에 실패했습니다.\n${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     }
   };
 
@@ -134,14 +145,14 @@ export default function MyDocs() {
         <View style={styles.phone}>
           <TopBar title="마이 서류 박스" />
 
-          {/* 상단: 저장공간/카운트 현황 */}
+          {/* 상단: 서류 현황 */}
           <StoragePanel
-            used="350MB"
-            capacity="1GB"
-            percent={65}
-            total={8}
-            reusable={5}
-            expiring={6}
+            used={documentStats.used}
+            capacity={documentStats.capacity}
+            percent={documentStats.percent}
+            total={documentStats.total}
+            reusable={documentStats.reusable}
+            expiring={documentStats.expiring}
           />
 
           {/* 탭 + 업로드/일괄관리 버튼 */}

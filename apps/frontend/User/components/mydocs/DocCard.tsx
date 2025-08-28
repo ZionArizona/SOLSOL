@@ -36,6 +36,7 @@ export const DocCard = ({
   }[item.colorKey || "etc"];
 
   const handleDelete = () => {
+    console.log('🗑️ DocCard handleDelete 호출:', item.id, 'onDelete 함수:', onDelete ? '있음' : '없음');
     if (onDelete) {
       Alert.alert(
         "서류 삭제",
@@ -45,10 +46,15 @@ export const DocCard = ({
           { 
             text: "삭제", 
             style: "destructive",
-            onPress: () => onDelete(item.id)
+            onPress: () => {
+              console.log('🗑️ 삭제 확인 버튼 누름:', item.id);
+              onDelete(item.id);
+            }
           }
         ]
       );
+    } else {
+      console.log('❌ onDelete 함수가 없습니다!');
     }
   };
 
@@ -72,14 +78,23 @@ export const DocCard = ({
                 )}
               </View>
             ) : (
-              onDelete && (
-                <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
-                  <Svg width={16} height={16} viewBox="0 0 24 24">
-                    <Path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#E36464" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
-                    <Path d="M10 11v6M14 11v6" stroke="#E36464" strokeWidth={1.5} strokeLinecap="round"/>
-                  </Svg>
-                </TouchableOpacity>
-              )
+              (() => {
+                console.log('🔍 삭제 버튼 렌더링 조건:', 'onDelete:', onDelete ? '있음' : '없음', 'bulkMode:', bulkMode);
+                return onDelete && (
+                  <TouchableOpacity 
+                    onPress={() => {
+                      console.log('🔘 삭제 버튼 터치됨:', item.id);
+                      handleDelete();
+                    }} 
+                    style={styles.deleteBtn}
+                  >
+                    <Svg width={16} height={16} viewBox="0 0 24 24">
+                      <Path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#E36464" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
+                      <Path d="M10 11v6M14 11v6" stroke="#E36464" strokeWidth={1.5} strokeLinecap="round"/>
+                    </Svg>
+                  </TouchableOpacity>
+                );
+              })()
             )}
           </View>
         </View>
