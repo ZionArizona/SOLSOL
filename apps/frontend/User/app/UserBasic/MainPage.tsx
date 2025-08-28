@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, Platform, Text , TouchableOpacity } from "react-native";
+import React, { useMemo, useEffect, useState } from "react";
+import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, Platform, Text , TouchableOpacity, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 
 // theme
@@ -15,13 +15,90 @@ import { MileageCard } from "../../components/home/MileageCard";
 import { ThisWeekList } from "../../components/home/ThisWeekList";
 import { UserCircleIcon, MenuIcon, BellIcon } from "../../components/shared/icons";
 import { useAuth } from "../../contexts/AuthContext";
+import { userApi } from "../../services/user.api";
+import { mileageApi } from "../../services/mileage.api";
 
 export default function MainPage() {
   const { user } = useAuth();
-  const points = useMemo(() => 4000, []);
+  const [userInfo, setUserInfo] = useState(null);
+  const [mileage, setMileage] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleScholarshipPress = () => {
     router.push("/Scholarship/ScholarshipApply");
+  };
+
+  // 사용자 정보 및 마일리지 데이터 로드
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // 사용자 정보 가져오기 (실패해도 JWT 토큰 정보 사용)
+        try {
+          const userData = await userApi.getMyInfo();
+          if (userData) {
+            setUserInfo(userData);
+          }
+        } catch (userError) {
+          console.log('사용자 정보 API 실패 - JWT 토큰 정보 사용:', userError);
+          // JWT 토큰에서 추출한 정보를 사용하므로 별도 처리 불필요
+        }
+
+        // 마일리지 정보 가져오기 (실패해도 기본값 사용)
+        try {
+          const mileageData = await mileageApi.getUserMileage();
+          if (mileageData) {
+            setMileage(mileageData.availableMileage || 0);
+          }
+        } catch (mileageError) {
+          console.log('마일리지 정보 로드 실패 - 기본값(0) 사용:', mileageError);
+          setMileage(0);
+        }
+      } catch (error) {
+        console.error('사용자 데이터 로드 실패:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  // 학과 정보 포맷팅
+  const getDepartmentInfo = () => {
+    if (!userInfo && !user) return "정보 없음";
+    
+    const info = userInfo || user;
+    const dept = info.deptName || info.deptNm || '학과 정보 없음';
+    const grade = info.grade ? `재학 ${info.grade}학년` : '';
+    
+    return grade ? `${dept}, ${grade}` : dept;
+  };
+
+  // 사용자 이름 가져오기
+  const getUserName = () => {
+    if (!userInfo && !user) return "사용자";
+    return (userInfo?.userName) || user?.userName || "사용자";
+  };
+
+  // 학번 가져오기 (userNm은 실제로는 학번이 아니라 사용자 식별자일 수 있음)
+  const getStudentNumber = () => {
+    if (!userInfo && !user) return "";
+    
+    // 백엔드에서 받은 사용자 정보에 학번이 있는지 확인
+    if (userInfo?.userNm) {
+      return `(${userInfo.userNm})`;
+    }
+    
+    // JWT 토큰에서 추출된 정보 사용 (sub가 학번일 수 있음)
+    if (user?.sub && user.sub !== user.userName) {
+      return `(${user.sub})`;
+    }
+    
+    return "";
   };
 
   return (
@@ -34,7 +111,7 @@ export default function MainPage() {
         {/* 📱 모바일 폭 고정 컨테이너 */}
         <View style={styles.phone}>
           <View style={styles.headerWithProfile}>
-            <HeaderSection school="한양대학교"/>
+            <HeaderSection school={user?.univName || "한양대학교"}/>
             <View style={styles.headerButtons}>
               <TouchableOpacity 
                 style={styles.headerButton} 
@@ -61,11 +138,18 @@ export default function MainPage() {
           </View>
 
           <View style={styles.block}>
-            <StudentCard
-              name={user?.userName || "사용자"}
-              studentNo="(1312967)"
-              dept="컴퓨터공학과, 재학 4학년"
-            />
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles.loadingText}>사용자 정보를 불러오는 중...</Text>
+              </View>
+            ) : (
+              <StudentCard
+                name={getUserName()}
+                studentNo={getStudentNumber()}
+                dept={getDepartmentInfo()}
+              />
+            )}
           </View>
 
           
@@ -83,7 +167,7 @@ export default function MainPage() {
           <View style={styles.block}>
             <MileageCard
               label="회원님의 현재 마일리지는"
-              points={points}
+              points={mileage}
               onPressScholar={handleScholarshipPress}
             />
           </View>
@@ -130,5 +214,24 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     padding: 4,
+  },
+  loadingContainer: {
+    marginHorizontal: 16,
+    borderRadius: 18,
+    padding: 32,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#9bb3ff",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: colors.muted,
+    fontSize: 14,
+    textAlign: "center",
   },
 });

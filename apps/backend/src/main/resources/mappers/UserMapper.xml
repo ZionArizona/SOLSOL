@@ -116,6 +116,29 @@
         WHERE `userId` = #{userId}
     </update>
 
+    <!-- 🔹 사용자 정보 수정 -->
+    <update id="updateUserInfo">
+        UPDATE `User`
+        SET
+            `updatedAt` = CURRENT_TIMESTAMP
+            <if test="request.userName != null and request.userName != ''">
+                , `userName` = #{request.userName}
+            </if>
+            <if test="request.deptNm != null">
+                , `deptNm` = #{request.deptNm}
+            </if>
+            <if test="request.collegeNm != null">
+                , `collegeNm` = #{request.collegeNm}
+            </if>
+            <if test="request.univNm != null">
+                , `univNm` = #{request.univNm}
+            </if>
+            <if test="request.grade != null">
+                , `grade` = #{request.grade}
+            </if>
+        WHERE `userId` = #{userId}
+    </update>
+
     <!-- 🔹 회원가입 시 사용자 등록 -->
     <insert id="insertUser" parameterType="com.solsol.heycalendar.domain.User">
         INSERT INTO `User` (

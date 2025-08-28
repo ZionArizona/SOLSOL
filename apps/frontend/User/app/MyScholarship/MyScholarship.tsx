@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text } from "react-native";
+import { router } from "expo-router";
 import BG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { MileagePanel } from "../../components/scholarship/MileagePanel";
 import { SummaryPanel } from "../../components/myScholarship/SummaryPanel";
 import { StatusTabs } from "../../components/myScholarship/StatusTabs";
 import { ScholarshipProgressCard } from "../../components/myScholarship/ScholarshipProgressCard";
-import { scholarshipApi, Application } from "../../services/scholarship.api";
+import { scholarshipApi } from "../../services/scholarship.api";
+import { applicationApi, Application } from "../../services/application.api";
+import { bookmarkApi } from "../../services/bookmark.api";
 import { mileageApi } from "../../services/mileage.api";
 
 export default function MyScholarshipPage() {
@@ -17,12 +20,41 @@ export default function MyScholarshipPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // 장학금의 현재 진행 상태 계산 (심사 기간 기준)
+  const getApplicationStatus = (application: Application) => {
+    const today = new Date();
+    const appliedAt = new Date(application.appliedAt);
+    
+    // 가상의 심사 시작일 (신청 후 7일) - 실제로는 장학금 데이터에서 가져와야 함
+    const evaluationStartDate = new Date(appliedAt);
+    evaluationStartDate.setDate(evaluationStartDate.getDate() + 7);
+    
+    switch (application.state) {
+      case 'PENDING':
+        // 심사 시작일 전이면 "접수완료", 후면 "심사중"
+        if (today < evaluationStartDate) {
+          return { currentStep: 1, status: "접수완료" };
+        } else {
+          return { currentStep: 2, status: "심사중" };
+        }
+      case 'APPROVED':
+        return { currentStep: 3, status: "합격" };
+      case 'REJECTED':
+        return { currentStep: 3, status: "불합격" };
+      default:
+        return { currentStep: 1, status: "진행중" };
+    }
+  };
+
   // 상태별 개수 계산
   const statusCounts = {
     total: applications.length,
-    inProgress: applications.filter(app => app.status === 'PENDING').length,
-    approved: applications.filter(app => app.status === 'APPROVED').length,
-    rejected: applications.filter(app => app.status === 'REJECTED').length,
+    inProgress: applications.filter(app => {
+      const { status } = getApplicationStatus(app);
+      return status === "접수완료" || status === "심사중";
+    }).length,
+    approved: applications.filter(app => app.state === 'APPROVED').length,
+    rejected: applications.filter(app => app.state === 'REJECTED').length,
   };
 
   // 승인된 장학금 총액 계산 (임시로 0으로 설정, 실제로는 API에서 받아와야 함)
@@ -31,24 +63,21 @@ export default function MyScholarshipPage() {
   // 찜목록 데이터 로드 함수
   const loadBookmarkedScholarships = async () => {
     try {
-      const response = await fetch('/api/bookmarks/my-scholarships', {
-        headers: {
-          'Authorization': `Bearer ${await getAuthToken()}`,
-        },
-      });
+      console.log('🔖 Starting to load bookmarked scholarships...');
+      const bookmarkedScholarships = await bookmarkApi.getMyBookmarks();
+      console.log('🔖 Bookmarked scholarships API response:', bookmarkedScholarships);
+      console.log('🔖 Bookmarked scholarships count:', bookmarkedScholarships?.length || 0);
       
-      if (response.ok) {
-        const data = await response.json();
-        setBookmarkedScholarships(data);
+      if (bookmarkedScholarships && bookmarkedScholarships.length > 0) {
+        console.log('🔖 First bookmarked scholarship:', bookmarkedScholarships[0]);
       }
+      
+      setBookmarkedScholarships(bookmarkedScholarships || []);
+      console.log('🔖 Bookmarked scholarships state updated');
     } catch (error) {
-      console.error('Failed to fetch bookmarked scholarships:', error);
+      console.error('🔖 Failed to fetch bookmarked scholarships:', error);
+      setBookmarkedScholarships([]);
     }
-  };
-
-  const getAuthToken = async () => {
-    // 실제 구현에서는 AsyncStorage나 다른 저장소에서 토큰을 가져와야 합니다
-    return '';
   };
 
   // 데이터 로드 함수
@@ -57,20 +86,26 @@ export default function MyScholarshipPage() {
       setLoading(true);
 
       const [applicationData, mileageData] = await Promise.all([
-        scholarshipApi.getMyApplications(),
+        applicationApi.getMyApplications(),
         mileageApi.getUserMileage(),
         loadBookmarkedScholarships()
       ]);
 
-      if (applicationData) {
-        setApplications(applicationData.applications);
+      console.log('📋 Application data loaded:', applicationData);
+      console.log('💰 Mileage data loaded:', mileageData);
+
+      if (applicationData && Array.isArray(applicationData)) {
+        setApplications(applicationData);
+      } else {
+        setApplications([]);
       }
 
       if (mileageData) {
-        setCurrentMileage(mileageData.currentMileage);
+        setCurrentMileage(mileageData.currentMileage || 0);
       }
     } catch (error) {
       console.error('데이터 로드 실패:', error);
+      setApplications([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -88,33 +123,21 @@ export default function MyScholarshipPage() {
     loadData();
   }, []);
 
+  // 장학금 카드 클릭 핸들러
+  const handleScholarshipPress = (scholarshipId: string) => {
+    router.push(`/Scholarship/ScholarshipDetail?id=${scholarshipId}`);
+  };
+
   // 신청서를 ScholarshipProgressCard 형태로 변환
   const convertToProgressCard = (application: Application) => {
-    // 상태에 따른 진행 단계 계산
-    let currentStep = 1;
-    let status = "진행중";
-    
-    switch (application.status) {
-      case 'PENDING':
-        currentStep = 2;
-        status = "심사중";
-        break;
-      case 'APPROVED':
-        currentStep = 4;
-        status = "합격";
-        break;
-      case 'REJECTED':
-        currentStep = 4;
-        status = "불합격";
-        break;
-    }
+    const { currentStep, status } = getApplicationStatus(application);
 
     return {
-      id: application.applicationNm.toString(),
-      title: application.scholarshipTitle,
-      amount: "미정", // API에서 금액 정보가 없는 경우
+      id: application.scholarshipNm?.toString() || application.userNm,
+      title: application.scholarshipName || `장학금 ${application.scholarshipNm}`,
+      amount: application.amount ? `${application.amount.toLocaleString()}원` : "미정",
       date: new Date(application.appliedAt).toLocaleDateString('ko-KR') + " 신청",
-      steps: ["신청", "서류심사", "면접", "결과발표"],
+      steps: ["신청", "서류심사", "결과발표"],
       currentStep,
       status,
     };
@@ -124,28 +147,35 @@ export default function MyScholarshipPage() {
   const getFilteredData = () => {
     switch (activeTab) {
       case "찜목록":
-        return bookmarkedScholarships.map(scholarship => ({
-          id: scholarship.id.toString(),
-          title: scholarship.scholarshipName,
-          amount: `${(scholarship.amount / 10000).toLocaleString()}만원`,
-          date: `마감일: ${new Date(scholarship.recruitmentEndDate).toLocaleDateString('ko-KR')}`,
-          steps: ["등록", "신청가능", "마감", "결과"],
-          currentStep: scholarship.recruitmentStatus === 'OPEN' ? 2 : 
-                      scholarship.recruitmentStatus === 'CLOSED' ? 3 : 1,
-          status: scholarship.recruitmentStatus === 'OPEN' ? "신청가능" : 
-                 scholarship.recruitmentStatus === 'CLOSED' ? "마감" : "등록됨",
-        }));
+        console.log('🔖 Processing bookmarked scholarships:', bookmarkedScholarships);
+        console.log('🔖 Number of bookmarked scholarships:', bookmarkedScholarships.length);
+        return bookmarkedScholarships.map(scholarship => {
+          console.log('🔖 Processing scholarship:', scholarship);
+          return {
+            id: scholarship.id?.toString() || scholarship.scholarshipId?.toString() || Math.random().toString(),
+            title: scholarship.scholarshipName || scholarship.title || `장학금 ${scholarship.id}`,
+            amount: `${scholarship.amount?.toLocaleString() || '미정'}원`,
+            date: `마감일: ${scholarship.recruitmentEndDate ? new Date(scholarship.recruitmentEndDate).toLocaleDateString('ko-KR') : '미정'}`,
+            steps: ["등록", "신청가능", "마감"],
+            currentStep: scholarship.recruitmentStatus === 'OPEN' ? 2 : 
+                        scholarship.recruitmentStatus === 'CLOSED' ? 3 : 1,
+            status: scholarship.recruitmentStatus === 'OPEN' ? "신청가능" : 
+                   scholarship.recruitmentStatus === 'CLOSED' ? "마감" : "등록됨",
+          };
+        });
       default:
         return applications.filter(application => {
+          const { status } = getApplicationStatus(application);
+          
           switch (activeTab) {
             case "접수완료":
-              return application.status === 'PENDING';
+              return status === "접수완료";
             case "심사중":
-              return application.status === 'PENDING';
+              return status === "심사중";
             case "합격":
-              return application.status === 'APPROVED';
+              return application.state === 'APPROVED';
             case "불합격":
-              return application.status === 'REJECTED';
+              return application.state === 'REJECTED';
             default:
               return true;
           }
@@ -191,7 +221,7 @@ export default function MyScholarshipPage() {
 
           {/* 상태 탭 */}
           <StatusTabs
-            tabs={["전체", "접수완료", "심사중", "찜목록", "합격", "불합격"]}
+            tabs={["전체", "찜목록", "접수완료", "심사중", "합격", "불합격"]}
             active={activeTab}
             onChange={setActiveTab}
           />
@@ -201,7 +231,8 @@ export default function MyScholarshipPage() {
             filteredData.map((item) => (
               <ScholarshipProgressCard 
                 key={item.id} 
-                scholarship={item} 
+                scholarship={item}
+                onPress={() => handleScholarshipPress(item.id)}
               />
             ))
           ) : (

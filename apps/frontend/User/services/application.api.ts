@@ -87,16 +87,44 @@ export const applicationApi = {
     }
   },
 
+  // 특정 장학금에 대한 신청 정보 조회
+  async getApplicationByScholarship(scholarshipId: number): Promise<Application | null> {
+    try {
+      const applications = await this.getMyApplications();
+      return applications.find(app => app.scholarshipNm === scholarshipId) || null;
+    } catch (error) {
+      handleApiError(error, '신청 정보 조회에 실패했습니다.');
+      return null;
+    }
+  },
+
+  // 장학금 신청 수정
+  async updateApplication(scholarshipId: number, reason: string): Promise<boolean> {
+    try {
+      // 일단 기존 신청을 취소하고 새로 신청하는 방식으로 구현
+      await this.cancelApplication(scholarshipId);
+      return await this.submitApplication({ scholarshipId, reason });
+    } catch (error) {
+      handleApiError(error, '신청 수정에 실패했습니다.');
+      return false;
+    }
+  },
+
   // 장학금 신청 취소
   async cancelApplication(scholarshipId: number): Promise<boolean> {
     try {
+      console.log('🔥 cancelApplication API 호출 시작, scholarshipId:', scholarshipId);
       const response = await apiClient.delete(`/applications/cancel/${scholarshipId}`);
+      console.log('🔥 cancelApplication API 응답:', response);
       
       if (response.success) {
+        console.log('✅ 신청 취소 성공');
         return true;
       }
+      console.log('❌ 신청 취소 실패 - response.success가 false');
       return false;
     } catch (error) {
+      console.error('🔥 cancelApplication API 에러:', error);
       handleApiError(error, '신청 취소에 실패했습니다.');
       return false;
     }
