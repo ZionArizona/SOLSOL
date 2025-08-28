@@ -74,8 +74,8 @@ export default function ScholarshipApply() {
       }
 
       if (mileageData) {
-        console.log('💰 Setting current mileage:', mileageData.currentMileage);
-        setCurrentMileage(mileageData.currentMileage);
+        console.log('💰 Setting current mileage:', mileageData.availableMileage);
+        setCurrentMileage(mileageData.availableMileage || 0);
       }
     } catch (error) {
       console.error('📚 Error loading filtered scholarship data:', error);

@@ -1,11 +1,13 @@
 package com.solsol.heycalendar.controller;
 
+import com.solsol.heycalendar.common.ApiResponse;
 import com.solsol.heycalendar.dto.request.ExchangeApprovalRequest;
 import com.solsol.heycalendar.dto.request.ExchangeRequest;
 import com.solsol.heycalendar.dto.request.MileageRequest;
 import com.solsol.heycalendar.dto.response.ExchangeResponse;
 import com.solsol.heycalendar.dto.response.MileageResponse;
 import com.solsol.heycalendar.dto.response.UserMileageResponse;
+import com.solsol.heycalendar.security.CustomUserPrincipal;
 import com.solsol.heycalendar.service.MileageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,11 +32,12 @@ public class MileageController {
 
     @Operation(summary = "현재 사용자 마일리지 내역 조회", description = "로그인한 사용자의 마일리지 적립/사용 내역과 현재 잔액을 조회합니다.")
     @GetMapping("/mileages/my")
-    public ResponseEntity<UserMileageResponse> getMyMileage(Authentication authentication) {
-        String userNm = authentication.getName();
+    public ResponseEntity<ApiResponse<UserMileageResponse>> getMyMileage(Authentication authentication) {
+        CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
+        String userNm = principal.getUserNm();
         log.info("Getting mileage for current user: {}", userNm);
         UserMileageResponse response = mileageService.getUserMileage(userNm);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @Operation(summary = "사용자 마일리지 내역 조회", description = "특정 사용자의 마일리지 적립/사용 내역과 잘러 잔액을 조회합니다.")

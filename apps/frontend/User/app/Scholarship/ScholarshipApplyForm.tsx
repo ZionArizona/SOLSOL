@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, Alert, ActivityIndicator, Text, TouchableOpacity } from "react-native";
+import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, Alert, ActivityIndicator, Text, TouchableOpacity, Modal } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import BG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
@@ -11,6 +11,10 @@ import { PrimaryButton } from "../../components/scholarship/PrimaryButton";
 import { router } from "expo-router";
 import { scholarshipApi, Scholarship } from "../../services/scholarship.api";
 import { applicationApi } from "../../services/application.api";
+import { getMyDocuments, DocumentItem, uploadDocumentRN } from "../../services/document.api";
+import { DocumentUploadModal } from "../../components/mydocs/DocumentUploadModal";
+import * as DocumentPicker from "expo-document-picker";
+import { Platform } from "react-native";
 
 export default function ScholarshipApplyForm() {
   const { scholarshipId, edit } = useLocalSearchParams<{ scholarshipId: string; edit?: string }>();
@@ -22,6 +26,12 @@ export default function ScholarshipApplyForm() {
   const [canceling, setCanceling] = useState(false);
   const [isEditMode, setIsEditMode] = useState(edit === 'true');
   const [existingApplication, setExistingApplication] = useState<any>(null);
+  
+  // MyBox 관련 상태
+  const [myDocuments, setMyDocuments] = useState<DocumentItem[]>([]);
+  const [showMyBoxModal, setShowMyBoxModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
 
   // 장학금 정보 로드
   useEffect(() => {
@@ -68,6 +78,57 @@ export default function ScholarshipApplyForm() {
     loadScholarship();
   }, [scholarshipId]);
 
+  // MyBox 서류 목록 로드
+  const loadMyDocuments = async () => {
+    try {
+      console.log('📋 MyBox 서류 목록 로드 시작...');
+      const docs = await getMyDocuments();
+      console.log('📋 받아온 MyBox 서류:', docs.length, '개');
+      setMyDocuments(docs);
+    } catch (error) {
+      console.error('❌ MyBox 서류 목록 로드 실패:', error);
+      Alert.alert('오류', 'MyBox 서류 목록을 불러올 수 없습니다.');
+    }
+  };
+
+  // MyBox 서류 확인 모달 열기
+  const handleOpenMyBox = async () => {
+    console.log('📦 MyBox 모달 열기');
+    await loadMyDocuments();
+    setShowMyBoxModal(true);
+  };
+
+  // MyBox에서 서류 선택
+  const handleSelectFromMyBox = () => {
+    const selectedDocs = Array.from(selectedDocuments).map(docId => {
+      const doc = myDocuments.find(d => d.id.toString() === docId);
+      return doc ? { name: doc.fileName, uri: `mybox://${doc.id}` } : null;
+    }).filter(Boolean) as { name: string; uri: string }[];
+
+    console.log('✅ MyBox에서 선택된 서류:', selectedDocs);
+    setFiles(prev => [...prev, ...selectedDocs]);
+    setSelectedDocuments(new Set());
+    setShowMyBoxModal(false);
+    Alert.alert('성공', `${selectedDocs.length}개 서류가 추가되었습니다.`);
+  };
+
+  // 파일 업로드 후 MyBox에 저장
+  const handleUploadToMyBox = async () => {
+    console.log('📤 파일 업로드 모달 열기');
+    setShowUploadModal(true);
+  };
+
+  // 업로드 완료 후 처리
+  const handleUploadComplete = (uploadData: any) => {
+    console.log('✅ 업로드 완료:', uploadData);
+    // files 배열에도 추가
+    setFiles(prev => [...prev, { 
+      name: uploadData.fileName, 
+      uri: `mybox://uploaded_${Date.now()}` 
+    }]);
+    Alert.alert('성공', '서류가 MyBox에 저장되었습니다.');
+  };
+
   // 신청/수정 처리 함수
   const handleSubmit = async () => {
     if (!scholarshipId) return;
@@ -81,9 +142,39 @@ export default function ScholarshipApplyForm() {
         success = await applicationApi.updateApplication(parseInt(scholarshipId), submitReason);
         Alert.alert('성공', '장학금 신청이 수정되었습니다.');
       } else {
+        // 선택된 파일들을 documents 배열로 변환 (실제 다운로드 URL 가져오기)
+        const documents = await Promise.all(
+          files.map(async (file, index) => {
+            let fileUrl = file.uri;
+            
+            // MyBox 파일인 경우 실제 다운로드 URL 생성
+            if (file.uri.startsWith('mybox://')) {
+              try {
+                const documentId = parseInt(file.uri.replace('mybox://', ''));
+                const { generateDownloadUrl } = await import('../../services/document.api');
+                fileUrl = await generateDownloadUrl(documentId);
+              } catch (error) {
+                console.error('다운로드 URL 생성 실패:', error);
+                Alert.alert('오류', '파일 URL 생성에 실패했습니다.');
+                return null;
+              }
+            }
+            
+            return {
+              documentNm: index + 1,
+              fileUrl,
+              fileName: file.name
+            };
+          })
+        );
+
+        // null인 항목들 제거
+        const validDocuments = documents.filter(doc => doc !== null);
+
         success = await applicationApi.submitApplication({
           scholarshipId: parseInt(scholarshipId),
-          reason: submitReason
+          reason: submitReason,
+          documents: validDocuments
         });
       }
       
@@ -139,12 +230,34 @@ export default function ScholarshipApplyForm() {
     }
   };
 
-  const checklistItems = [
-    { id: "1", label: "성적증명서", done: files.some(f => /성적|grade/i.test(f.name)) },
-    { id: "2", label: "재학증명서", done: files.some(f => /재학|enroll/i.test(f.name)) },
-    { id: "3", label: "장학금 신청서", done: files.some(f => /신청서|apply/i.test(f.name)) },
-    { id: "4", label: "통장사본", done: false },
-  ];
+  // 더 정확한 서류 매칭을 위한 체크리스트 개선
+  // 장학금 정보의 필수서류를 기반으로 체크리스트 생성
+  const checklistItems = scholarship?.requiredDocuments 
+    ? scholarship.requiredDocuments.map((doc, index) => ({
+        id: `doc_${index}`,
+        label: doc.name,
+        done: files.some(f => 
+          doc.keywords?.some(keyword => 
+            f.name.toLowerCase().includes(keyword.toLowerCase())
+          ) || false
+        ),
+        required: doc.required
+      }))
+    : [
+        // 기본 체크리스트 (필수서류 정보가 없는 경우)
+        { 
+          id: "default_1", 
+          label: "성적증명서", 
+          done: files.some(f => /성적|grade|transcript/i.test(f.name)),
+          required: true
+        },
+        { 
+          id: "default_2", 
+          label: "재학증명서", 
+          done: files.some(f => /재학|enroll|enrollment/i.test(f.name)),
+          required: true
+        }
+      ];
   const canSubmit = true; // 신청 사유는 선택사항
 
   if (loading) {
@@ -183,11 +296,17 @@ export default function ScholarshipApplyForm() {
             onChangeText={setReason}
           />
 
-          <SectionHeader title="제출 서류" actionLabel="mybox 서류확인하기" onPressAction={() => {}} />
+          <SectionHeader 
+            title="제출 서류" 
+            actionLabel="mybox 서류확인하기" 
+            onPressAction={handleOpenMyBox} 
+          />
+          
           <FileUploadPanel
             files={files}
             onAdd={(f) => setFiles((p) => [...p, f])}
             onRemove={(idx) => setFiles((p) => p.filter((_, i) => i !== idx))}
+            onUploadPress={handleUploadToMyBox}
           />
 
           <Checklist title="제출 서류 체크리스트" items={checklistItems} />
@@ -227,6 +346,109 @@ export default function ScholarshipApplyForm() {
           )}
         </View>
       </ScrollView>
+
+      {/* MyBox 서류 선택 모달 */}
+      <Modal
+        visible={showMyBoxModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMyBoxModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>MyBox 서류 선택</Text>
+              <TouchableOpacity onPress={() => setShowMyBoxModal(false)}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalContent}>
+              {myDocuments.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>MyBox에 저장된 서류가 없습니다.</Text>
+                  <TouchableOpacity 
+                    style={styles.uploadButton}
+                    onPress={() => {
+                      setShowMyBoxModal(false);
+                      setShowUploadModal(true);
+                    }}
+                  >
+                    <Text style={styles.uploadButtonText}>새 서류 업로드하기</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                myDocuments.map(doc => (
+                  <TouchableOpacity
+                    key={doc.id}
+                    style={[
+                      styles.documentItem,
+                      selectedDocuments.has(doc.id.toString()) && styles.documentItemSelected
+                    ]}
+                    onPress={() => {
+                      const newSelected = new Set(selectedDocuments);
+                      if (newSelected.has(doc.id.toString())) {
+                        newSelected.delete(doc.id.toString());
+                      } else {
+                        newSelected.add(doc.id.toString());
+                      }
+                      setSelectedDocuments(newSelected);
+                    }}
+                  >
+                    <View style={styles.documentInfo}>
+                      <Text style={styles.documentName}>{doc.fileName}</Text>
+                      <Text style={styles.documentMeta}>
+                        {(doc.sizeBytes / 1024 / 1024).toFixed(2)}MB · {new Date(doc.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <View style={[
+                      styles.checkbox,
+                      selectedDocuments.has(doc.id.toString()) && styles.checkboxSelected
+                    ]}>
+                      {selectedDocuments.has(doc.id.toString()) && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+            
+            {myDocuments.length > 0 && (
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelModalButton}
+                  onPress={() => {
+                    setSelectedDocuments(new Set());
+                    setShowMyBoxModal(false);
+                  }}
+                >
+                  <Text style={styles.cancelModalButtonText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[
+                    styles.selectButton,
+                    selectedDocuments.size === 0 && styles.selectButtonDisabled
+                  ]}
+                  onPress={handleSelectFromMyBox}
+                  disabled={selectedDocuments.size === 0}
+                >
+                  <Text style={styles.selectButtonText}>
+                    선택 ({selectedDocuments.size})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* 서류 업로드 모달 */}
+      <DocumentUploadModal
+        visible={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onUpload={handleUploadComplete}
+      />
     </ImageBackground>
   );
 }
@@ -237,7 +459,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#8B95A1',
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 90,
@@ -245,6 +467,160 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  // 업로드 옵션 버튼들
+  uploadOptions: {
+    flexDirection: 'row',
+    marginHorizontal: 12,
+    marginBottom: 8,
+    gap: 8,
+  },
+  uploadOptionButton: {
+    flex: 1,
+    backgroundColor: '#F0F4FF',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E8FF',
+  },
+  uploadOptionText: {
+    color: '#6B86FF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // 모달 스타일들
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    width: '90%',
+    maxHeight: '80%',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    fontSize: 24,
+    color: '#666',
+    padding: 4,
+  },
+  modalContent: {
+    maxHeight: 400,
+    padding: 16,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  uploadButton: {
+    backgroundColor: '#6B86FF',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  uploadButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  documentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  documentItemSelected: {
+    borderColor: '#6B86FF',
+    backgroundColor: '#F0F4FF',
+  },
+  documentInfo: {
+    flex: 1,
+  },
+  documentName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  documentMeta: {
+    fontSize: 12,
+    color: '#666',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#DDD',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#6B86FF',
+    borderColor: '#6B86FF',
+  },
+  checkmark: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+    gap: 12,
+  },
+  cancelModalButton: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelModalButtonText: {
+    color: '#666',
+    fontWeight: '600',
+  },
+  selectButton: {
+    flex: 1,
+    backgroundColor: '#6B86FF',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  selectButtonDisabled: {
+    backgroundColor: '#CCC',
+  },
+  selectButtonText: {
+    color: 'white',
     fontWeight: '600',
   },
 });

@@ -44,6 +44,12 @@ export default function ScholarshipCreate(){
   const [stdPoint, setStdPoint] = useState('')
   const [weight, setWeight] = useState('')
   const [criteria, setCriteria] = useState([])
+  
+  // 제출서류
+  const [docName, setDocName] = useState('')
+  const [docKeywords, setDocKeywords] = useState('')
+  const [docRequired, setDocRequired] = useState(true)
+  const [requiredDocuments, setRequiredDocuments] = useState([])
 
   const totalWeight = criteria.reduce((s,c)=> s + Number(c.weight||0), 0)
 
@@ -91,9 +97,17 @@ export default function ScholarshipCreate(){
     setIsLoading(true)
     
     try {
+      // criteria를 requiredDocuments로 변환
+      const requiredDocuments = criteria.map(c => ({
+        name: c.name,
+        keywords: [c.name.toLowerCase()],
+        required: true
+      }))
+
       const scholarshipData = scholarshipUtils.transformForBackend({
         ...formData,
         criteria,
+        requiredDocuments,
         recruitmentStatus: 'OPEN'
       })
 

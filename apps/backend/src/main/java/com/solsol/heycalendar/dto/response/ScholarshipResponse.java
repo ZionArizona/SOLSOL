@@ -58,10 +58,20 @@ public class ScholarshipResponse {
 	// 평가기준
 	private List<CriteriaDto> criteria;
 
+	// 필수 제출서류
+	private List<RequiredDocumentDto> requiredDocuments;
+
 	// 메타
 	private String createdBy;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
+
+	@Getter @Builder @NoArgsConstructor @AllArgsConstructor
+	public static class RequiredDocumentDto {
+		private String name;
+		private List<String> keywords;
+		private Boolean required;
+	}
 
 	@Getter @Builder @NoArgsConstructor @AllArgsConstructor
 	public static class CriteriaDto {

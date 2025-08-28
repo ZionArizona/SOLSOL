@@ -60,11 +60,19 @@ public class ScholarshipRequest {
 
 	// 제출 서류/평가기준(동적 리스트)
 	private List<CriteriaItem> criteria;                   // name/std/weight
+	private List<RequiredDocumentItem> requiredDocuments; // name/keywords/required
 
 	@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 	public static class CriteriaItem {
 		@NotBlank private String name;
 		private Double std;                                // 기준점수 nullable
 		@NotNull @Min(0) @Max(100) private Integer weight; // 0~100
+	}
+
+	@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+	public static class RequiredDocumentItem {
+		@NotBlank private String name;
+		private List<String> keywords;                     // 키워드 배열
+		@NotNull private Boolean required;                // 필수 여부
 	}
 }

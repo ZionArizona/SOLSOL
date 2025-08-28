@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class ScholarshipService {
 	private final ScholarshipMapper mapper;
 	private final NotificationService notificationService;
 	private final UserMapper userMapper;
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	/* 목록 */
 	@Transactional(readOnly = true)
@@ -78,6 +81,7 @@ public class ScholarshipService {
 				.contactEmail(req.getContactEmail())
 				.officeLocation(req.getOfficeLocation())
 				.consultationHours(req.getConsultationHours())
+				.requiredDocuments(serializeRequiredDocuments(req.getRequiredDocuments()))
 				.createdBy(getCurrentUser())
 				.createdAt(LocalDateTime.now())
 				.build();
@@ -158,6 +162,7 @@ public class ScholarshipService {
 				.contactEmail(req.getContactEmail())
 				.officeLocation(req.getOfficeLocation())
 				.consultationHours(req.getConsultationHours())
+				.requiredDocuments(serializeRequiredDocuments(req.getRequiredDocuments()))
 				.createdBy(existing.getCreatedBy())
 				.createdAt(existing.getCreatedAt())
 				.build();
@@ -230,6 +235,38 @@ public class ScholarshipService {
 
 	private String getCurrentUser() { return "system"; }
 
+	// JSON 직렬화/역직렬화 헬퍼 메서드들
+	private String serializeRequiredDocuments(List<ScholarshipRequest.RequiredDocumentItem> documents) {
+		if (documents == null || documents.isEmpty()) {
+			return null;
+		}
+		try {
+			return objectMapper.writeValueAsString(documents);
+		} catch (Exception e) {
+			throw new RuntimeException("제출서류 JSON 직렬화 실패", e);
+		}
+	}
+
+	private List<ScholarshipResponse.RequiredDocumentDto> parseRequiredDocuments(String documentsJson) {
+		if (documentsJson == null || documentsJson.trim().isEmpty()) {
+			return new ArrayList<>();
+		}
+		try {
+			List<Map<String, Object>> rawList = objectMapper.readValue(documentsJson, 
+				new TypeReference<List<Map<String, Object>>>() {});
+			
+			return rawList.stream()
+				.map(map -> ScholarshipResponse.RequiredDocumentDto.builder()
+					.name((String) map.get("name"))
+					.keywords((List<String>) map.get("keywords"))
+					.required((Boolean) map.get("required"))
+					.build())
+				.collect(Collectors.toList());
+		} catch (Exception e) {
+			throw new RuntimeException("제출서류 JSON 파싱 실패", e);
+		}
+	}
+
 	private ScholarshipResponse toSummaryResponse(Scholarship s) {
 		return ScholarshipResponse.builder()
 				.id(s.getId())
@@ -286,6 +323,7 @@ public class ScholarshipService {
 								.weightPercent(c.getWeightPercent())
 								.build()
 				).collect(Collectors.toList()))
+				.requiredDocuments(parseRequiredDocuments(s.getRequiredDocuments()))
 				.createdBy(s.getCreatedBy())
 				.createdAt(s.getCreatedAt())
 				.updatedAt(s.getUpdatedAt())

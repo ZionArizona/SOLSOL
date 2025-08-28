@@ -4,6 +4,11 @@ import { apiClient, handleApiError } from './api';
 export interface ApplicationRequest {
   scholarshipId: number;
   reason?: string;
+  documents?: {
+    documentNm?: number;
+    fileUrl: string;
+    fileName: string;
+  }[];
 }
 
 export interface Application {

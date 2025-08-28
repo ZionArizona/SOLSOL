@@ -6,13 +6,14 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
     title:'', type:'', amount:'', picks:'', payMethod:'일시지급',
     startDate:'', endDate:'', eligibility:'', desc:'', categories:'',
     constraints:{ gradeLimit:'제한 없음', majorLimit:'', duplicateAllowed:true, minGpa:'' },
-    criteria:[], judge:{ mode:'서류심사', interviewDate:'', judgeStart:'', resultDate:'' },
+    criteria:[], requiredDocuments:[], judge:{ mode:'서류심사', interviewDate:'', judgeStart:'', resultDate:'' },
     contact:{ manager:'', phone:'', email:'', office:'', hours:'' },
     notice:{ title:'', content:'' },
     tag:'모집중', chips:''
   })
 
   const [cri, setCri] = useState({ name:'', std:'', weight:'' })
+  const [doc, setDoc] = useState({ name:'', keywords:'', required:true })
   const totalWeight = useMemo(()=> form.criteria.reduce((s,c)=>s+Number(c.weight||0),0), [form.criteria])
   const set = (k,v)=> setForm(prev => ({...prev, [k]:v}))
   const setPath = (path, v)=>{
@@ -41,6 +42,14 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
   }
   const removeCri = (i)=> setForm(f=>({...f, criteria:f.criteria.filter((_,idx)=>idx!==i)}))
 
+  const addDoc = ()=>{
+    if(!doc.name.trim()) return
+    const keywords = doc.keywords.split(',').map(s=>s.trim()).filter(Boolean)
+    setForm(f=>({...f, requiredDocuments:[...f.requiredDocuments, {name:doc.name.trim(), keywords, required:doc.required}]}))
+    setDoc({name:'', keywords:'', required:true})
+  }
+  const removeDoc = (i)=> setForm(f=>({...f, requiredDocuments:f.requiredDocuments.filter((_,idx)=>idx!==i)}))
+
   const submit = (e)=>{
     e.preventDefault()
     const payload = {
@@ -48,6 +57,7 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
       picks: parseInt(typeof form.picks === 'string' ? form.picks.replace(/[^0-9]/g, '') : form.picks) || 1,
       categories: form.categories.split(',').map(s=>s.trim()).filter(Boolean),
       chips: form.chips.split(',').map(s=>s.trim()).filter(Boolean),
+      requiredDocuments: form.requiredDocuments,
       progress: initial?.progress ?? 0,
       applied: initial?.applied ?? 0,
       amount: form.amount || initial?.amount || '',
@@ -132,7 +142,33 @@ export default function ScholarshipForm({initial, onSubmit, submitText='저장'}
         </div>
       </Section>
 
-      <Section title="제출 서류 및 평가 기준">
+      <Section title="제출 서류">
+        <div className="field-label">필요한 제출 서류를 추가하세요</div>
+        <div className="criteria-row">
+          <input className="ip flex1" placeholder="서류명 (예: 성적증명서)" value={doc.name} onChange={e=>setDoc({...doc, name:e.target.value})}/>
+          <input className="ip w150" placeholder="키워드 (쉼표구분)" value={doc.keywords} onChange={e=>setDoc({...doc, keywords:e.target.value})}/>
+          <div className="field" style={{width:'100px'}}>
+            <select className="ip" value={doc.required} onChange={e=>setDoc({...doc, required:e.target.value==='true'})}>
+              <option value={true}>필수</option>
+              <option value={false}>선택</option>
+            </select>
+          </div>
+          <button type="button" className="btn-add" onClick={addDoc}>추가</button>
+        </div>
+
+        <div className="criteria-list">
+          {form.requiredDocuments.length===0 && <div className="empty">추가된 서류가 없습니다.</div>}
+          {form.requiredDocuments.map((d,idx)=>(
+            <div className="chip" key={idx}>
+              <span className="name">{d.name}</span>
+              <span className="meta">키워드: {d.keywords?.join(', ') || '없음'} / {d.required ? '필수' : '선택'}</span>
+              <button type="button" className="del" onClick={()=>removeDoc(idx)}>삭제</button>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="평가 기준">
         <div className="criteria-row">
           <input className="ip flex1" placeholder="항목명" value={cri.name} onChange={e=>setCri({...cri, name:e.target.value})}/>
           <input className="ip w120" placeholder="기준" value={cri.std} onChange={e=>setCri({...cri, std:e.target.value})}/>

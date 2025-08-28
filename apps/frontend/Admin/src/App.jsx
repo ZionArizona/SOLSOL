@@ -4,6 +4,7 @@ import MainPage from "./pages/MainPage"
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import SubmissionManage from './pages/SubmissionManage'
+import DocumentApproval from './pages/DocumentApproval'
 import ScholarshipCreate from './pages/ScholarshipCreate'
 import ScholarshipManage from './pages/ScholarshipManage'
 import ScholarshipDetail from './pages/ScholarshipDetail'
@@ -25,6 +26,7 @@ export default function App(){
         
         {/* 관리자 권한 필요 페이지 */}
         <Route path="/admin/submissions" element={<AdminRoute><SubmissionManage/></AdminRoute>}/>
+        <Route path="/admin/document-approval" element={<AdminRoute><DocumentApproval/></AdminRoute>}/>
         <Route path="/admin/scholarships/regist" element={<AdminRoute><ScholarshipCreate/></AdminRoute>}/>
         <Route path="/admin/scholarships" element={<AdminRoute><ScholarshipManage/></AdminRoute>}/>
         <Route path="/admin/notices" element={<AdminRoute><NoticeManage/></AdminRoute>}/>

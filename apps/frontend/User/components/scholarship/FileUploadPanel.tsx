@@ -7,11 +7,20 @@ import Svg, { Path } from "react-native-svg";
 type FileItem = { name: string; uri: string };
 
 export const FileUploadPanel = ({
-  files, onAdd, onRemove,
-}: { files: FileItem[]; onAdd: (f: FileItem) => void; onRemove: (index: number) => void }) => {
+  files, onAdd, onRemove, onUploadPress
+}: { 
+  files: FileItem[]; 
+  onAdd: (f: FileItem) => void; 
+  onRemove: (index: number) => void;
+  onUploadPress?: () => void;
+}) => {
   const pickFile = async () => {
-    const res = await DocumentPicker.getDocumentAsync({ multiple: false, copyToCacheDirectory: true, type: "*/*" });
-    if (res.type === "success") onAdd({ name: res.name, uri: res.uri });
+    if (onUploadPress) {
+      onUploadPress();
+    } else {
+      const res = await DocumentPicker.getDocumentAsync({ multiple: false, copyToCacheDirectory: true, type: "*/*" });
+      if (res.type === "success") onAdd({ name: res.name, uri: res.uri });
+    }
   };
 
   return (

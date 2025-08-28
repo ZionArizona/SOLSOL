@@ -1,6 +1,7 @@
 package com.solsol.heycalendar.mapper;
 
 import com.solsol.heycalendar.entity.ApplicationDocument;
+import com.solsol.heycalendar.dto.response.ApplicationDocumentResponse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -25,6 +26,16 @@ public interface ApplicationDocumentMapper {
      * @return List of documents for the application
      */
     List<ApplicationDocument> findDocumentsByUserAndScholarship(
+            @Param("userNm") String userNm, 
+            @Param("scholarshipNm") String scholarshipNm);
+
+    /**
+     * Find documents by application (for admin)
+     * @param userNm User name
+     * @param scholarshipNm Scholarship name
+     * @return List of document responses for the application
+     */
+    List<ApplicationDocumentResponse> findDocumentsByApplication(
             @Param("userNm") String userNm, 
             @Param("scholarshipNm") String scholarshipNm);
 
@@ -67,6 +78,13 @@ public interface ApplicationDocumentMapper {
      * @return Number of affected rows
      */
     int insertDocument(ApplicationDocument document);
+
+    /**
+     * Insert a new application document
+     * @param document Application document to insert
+     * @return Number of affected rows
+     */
+    int insertApplicationDocument(ApplicationDocument document);
 
     /**
      * Update an existing document
