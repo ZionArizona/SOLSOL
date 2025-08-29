@@ -250,7 +250,7 @@ export default function ScholarshipApplyForm() {
       
       if (success) {
         if (isEditMode) {
-          router.back(); // 수정 완료 후 이전 페이지로
+          router.push('/MyScholarship/MyScholarship'); // 수정 완료 후 내 장학금 페이지로
         } else {
           // replace를 사용해서 뒤로가기 시 신청폼으로 돌아가지 않도록 함
           router.replace(`/Scholarship/SubmissionDone?scholarshipId=${scholarshipId}`);

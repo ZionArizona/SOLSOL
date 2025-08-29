@@ -49,7 +49,7 @@ export default function Sidebar({ isCollapsed, onToggle }){
         <div className="side-group">
           <Link to="/scholarships" style={{textDecoration: 'none'}}>
             <div 
-              className={`side-item ${isActive('/scholarships') ? 'active' : ''}`}
+              className={`side-item ${isActive('/scholarships') || isActive('/scholarships/regist') ? 'active' : ''}`}
               title={isCollapsed ? '장학금 등록 관리' : ''}
             >
               <span className="side-icon">📋</span>

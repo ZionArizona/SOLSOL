@@ -23,6 +23,7 @@ export default function ScholarshipDetail() {
   const [applicationLoading, setApplicationLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+  const [applicationReason, setApplicationReason] = useState<string | null>(null);
   
   const { markAsRead, deleteNotificationsByScholarship } = useWebSocket();
 
@@ -235,6 +236,7 @@ export default function ScholarshipDetail() {
           setIsBookmarked(bookmarkStatus);
           setHasApplied(!!applicationData);
           setApplicationStatus(applicationData?.state || null);
+          setApplicationReason(applicationData?.reason || null);
         } else {
           Alert.alert('오류', '장학금 정보를 찾을 수 없습니다.');
           router.back();
@@ -371,11 +373,29 @@ export default function ScholarshipDetail() {
                   {getApplicationStatusMessage()}
                 </InfoPanel.P>
                 {hasApplied && applicationStatus && (
-                  <InfoPanel.P muted>
-                    {applicationStatus === 'PENDING' && '심사 진행중입니다'}
-                    {applicationStatus === 'APPROVED' && '축하합니다! 선발되었습니다'}
-                    {applicationStatus === 'REJECTED' && '아쉽게도 탈락하였지만 재신청이 가능합니다'}
-                  </InfoPanel.P>
+                  <>
+                    <InfoPanel.P muted>
+                      {applicationStatus === 'PENDING' && '심사 진행중입니다'}
+                      {applicationStatus === 'APPROVED' && '축하합니다! 선발되었습니다'}
+                      {applicationStatus === 'REJECTED' && '아쉽게도 탈락하였지만 재신청이 가능합니다'}
+                    </InfoPanel.P>
+                    {applicationStatus === 'REJECTED' && applicationReason && (
+                      <InfoPanel.P style={{ 
+                        backgroundColor: '#FFF3CD', 
+                        padding: '12px', 
+                        borderRadius: '6px', 
+                        marginTop: '8px',
+                        borderLeft: '4px solid #FFC107'
+                      }}>
+                        <Text style={{ fontWeight: '600', color: '#856404', marginBottom: '4px' }}>
+                          관리자 메시지:
+                        </Text>
+                        <Text style={{ color: '#856404', lineHeight: 20 }}>
+                          {applicationReason}
+                        </Text>
+                      </InfoPanel.P>
+                    )}
+                  </>
                 )}
               </>
             }

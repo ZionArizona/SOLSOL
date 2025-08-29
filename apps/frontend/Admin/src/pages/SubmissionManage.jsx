@@ -15,6 +15,10 @@ export default function SubmissionManage(){
   const [scholarshipFilter, setScholarshipFilter] = useState('all') // 장학금 필터
   const [selectedApplication, setSelectedApplication] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 사이드바 상태
+  const [showRejectModal, setShowRejectModal] = useState(false) // 반려 모달 상태
+  const [rejectReason, setRejectReason] = useState('') // 반려 사유
+  const [pendingRejection, setPendingRejection] = useState(null) // 반려 대기 신청서
   const [stats, setStats] = useState([
     { label: '등록 서류', value: 0 },
     { label: '검토 대기', value: 0 },
@@ -73,15 +77,17 @@ export default function SubmissionManage(){
     ])
   }
 
-  const handleApproval = async (userNm, scholarshipNm, action) => {
+  const handleApproval = async (userNm, scholarshipNm, action, reason = null) => {
     try {
       if (action === 'approve') {
         await api.put(`/applications/${userNm}/${scholarshipNm}/approve`, {
-          reviewComment: '승인되었습니다.'
+          reason: '승인되었습니다.',
+          reviewedBy: 'admin'
         })
       } else {
         await api.put(`/applications/${userNm}/${scholarshipNm}/reject`, {
-          reviewComment: '검토 결과 반려되었습니다.'
+          reason: reason || '검토 결과 반려되었습니다.',
+          reviewedBy: 'admin'
         })
       }
       
@@ -91,6 +97,27 @@ export default function SubmissionManage(){
       console.error(`Failed to ${action} application:`, error)
       alert(`신청서 ${action === 'approve' ? '승인' : '반려'}에 실패했습니다.`)
     }
+  }
+
+  const handleRejectClick = (userNm, scholarshipNm) => {
+    setPendingRejection({ userNm, scholarshipNm })
+    setRejectReason('')
+    setShowRejectModal(true)
+  }
+
+  const handleRejectConfirm = async () => {
+    if (!pendingRejection) return
+    
+    if (!rejectReason.trim()) {
+      alert('반려 사유를 입력해주세요.')
+      return
+    }
+
+    await handleApproval(pendingRejection.userNm, pendingRejection.scholarshipNm, 'reject', rejectReason)
+    
+    setShowRejectModal(false)
+    setPendingRejection(null)
+    setRejectReason('')
   }
 
   const handleViewFile = async (doc) => {
@@ -167,7 +194,7 @@ export default function SubmissionManage(){
     userNm: application.userNm,
     scholarshipNm: application.scholarshipNm,
     onApprove: () => handleApproval(application.userNm, application.scholarshipNm, 'approve'),
-    onReject: () => handleApproval(application.userNm, application.scholarshipNm, 'reject')
+    onReject: () => handleRejectClick(application.userNm, application.scholarshipNm)
   })
 
   const filteredApplications = applications.filter(app => {
@@ -233,12 +260,19 @@ export default function SubmissionManage(){
     }
   }
 
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
+  }
+
   if (loading) {
     return (
       <>
         <Navbar/>
         <div className="admin-layout">
-          <Sidebar/>
+          <Sidebar 
+            isCollapsed={sidebarCollapsed}
+            onToggle={handleSidebarToggle}
+          />
           <main className="admin-main">
             <div style={{textAlign: 'center', padding: '50px'}}>
               로딩 중...
@@ -253,7 +287,10 @@ export default function SubmissionManage(){
     <>
       <Navbar/>
       <div className="admin-layout">
-        <Sidebar/>
+        <Sidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggle={handleSidebarToggle}
+        />
         <main className="admin-main">
           {/* 상단 우측 검색 및 필터 */}
           <div className="topbar">
@@ -394,7 +431,7 @@ export default function SubmissionManage(){
                 <button 
                   className="reject-btn-modal"
                   onClick={() => {
-                    handleApproval(selectedApplication.userNm, selectedApplication.scholarshipNm, 'reject')
+                    handleRejectClick(selectedApplication.userNm, selectedApplication.scholarshipNm)
                     setShowDetailModal(false)
                   }}
                 >
@@ -402,6 +439,69 @@ export default function SubmissionManage(){
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 반려 사유 입력 모달 */}
+      {showRejectModal && (
+        <div className="modal-overlay" onClick={() => setShowRejectModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>반려 사유 입력</h3>
+              <button className="close-btn" onClick={() => setShowRejectModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-section">
+                <label htmlFor="rejectReason"><strong>반려 사유:</strong></label>
+                <textarea
+                  id="rejectReason"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="반려 사유를 입력해주세요. 이 메시지는 신청자에게 전달됩니다."
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    marginTop: '8px',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel"
+                onClick={() => setShowRejectModal(false)}
+                style={{
+                  padding: '8px 16px',
+                  marginRight: '8px',
+                  backgroundColor: '#f5f5f5',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                취소
+              </button>
+              <button 
+                className="reject-btn-modal"
+                onClick={handleRejectConfirm}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                반려 처리
+              </button>
+            </div>
           </div>
         </div>
       )}

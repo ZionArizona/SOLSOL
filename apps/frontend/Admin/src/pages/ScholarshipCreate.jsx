@@ -9,6 +9,7 @@ export default function ScholarshipCreate(){
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [categories, setCategories] = useState([])
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 사이드바 상태
   
   // 필수 필드들에 대한 ref 생성
   const scholarshipNameRef = useRef()
@@ -175,11 +176,18 @@ export default function ScholarshipCreate(){
     }
   }
 
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
+  }
+
   return (
     <>
       <Navbar/>
       <div className="admin-layout">
-        <Sidebar/>
+        <Sidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggle={handleSidebarToggle}
+        />
 
         <main className="admin-main">
           <form className="form-panel" onSubmit={onSubmit}>
