@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
 import { UploadIcon } from "../shared/icons";
 import Svg, { Path } from "react-native-svg";
-import { uploadDocument, uploadDocumentRN } from "../../services/document.api";
+import { uploadDocument, uploadDocumentRN, uploadApplicationDocumentRN, uploadApplicationDocumentWeb } from "../../services/document.api";
 
 type FileItem = { name: string; uri: string; size?: number; type?: string };
 
@@ -28,9 +28,18 @@ export type DocumentUploadModalProps = {
     file: FileItem;
   }) => void;
   mode?: 'mybox' | 'scholarship'; // 저장 모드: MyBox 또는 장학금 신청용
+  scholarshipNm?: string; // 장학금 모드일 때 필요
+  documentNm?: string; // 장학금 모드일 때 필요
 };
 
-export const DocumentUploadModal = ({ visible, onClose, onUpload, mode = 'mybox' }: DocumentUploadModalProps) => {
+export const DocumentUploadModal = ({ 
+  visible, 
+  onClose, 
+  onUpload, 
+  mode = 'mybox', 
+  scholarshipNm,
+  documentNm 
+}: DocumentUploadModalProps) => {
   const [fileName, setFileName] = useState("");
   const [category, setCategory] = useState("기타");
   const [tags, setTags] = useState("");
@@ -108,7 +117,10 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload, mode = 'mybox'
           fileName: fileName.trim(),
           category,
           metaTags,
-          file: selectedFile
+          file: {
+            ...selectedFile,
+            webFile: actualWebFile // 웹용 실제 File 객체 전달
+          }
         });
         Alert.alert("성공", "서류가 추가되었습니다.");
       } else {

@@ -79,11 +79,24 @@ export default function SubmissionManage(){
 
   const handleViewFile = async (doc) => {
     try {
-      // 파일 URL이 S3 presigned URL인 경우 직접 새 창에서 열기
-      if (doc.fileUrl) {
-        window.open(doc.fileUrl, '_blank')
+      // 암호화된 장학금 신청 서류의 경우 presigned URL 생성
+      console.log('🔍 파일 보기 요청:', doc)
+      
+      const userNm = selectedApplication?.userNm
+      const scholarshipNm = selectedApplication?.scholarshipNm
+      const documentNm = doc.applicationDocumentNm
+      
+      if (!userNm || !scholarshipNm || !documentNm) {
+        alert('파일 정보가 부족합니다.')
+        return
+      }
+
+      const response = await api.get(`/applications/admin/documents/download-url?userNm=${userNm}&scholarshipNm=${scholarshipNm}&documentNm=${documentNm}`)
+      
+      if (response.success && response.data) {
+        window.open(response.data, '_blank')
       } else {
-        alert('파일을 불러올 수 없습니다.')
+        alert('파일 URL을 생성할 수 없습니다.')
       }
     } catch (error) {
       console.error('Failed to view file:', error)
@@ -93,10 +106,24 @@ export default function SubmissionManage(){
 
   const handleDownloadFile = async (doc) => {
     try {
-      if (doc.fileUrl) {
+      // 암호화된 장학금 신청 서류의 경우 presigned URL 생성
+      console.log('📥 파일 다운로드 요청:', doc)
+      
+      const userNm = selectedApplication?.userNm
+      const scholarshipNm = selectedApplication?.scholarshipNm
+      const documentNm = doc.applicationDocumentNm
+      
+      if (!userNm || !scholarshipNm || !documentNm) {
+        alert('파일 정보가 부족합니다.')
+        return
+      }
+
+      const response = await api.get(`/applications/admin/documents/download-url?userNm=${userNm}&scholarshipNm=${scholarshipNm}&documentNm=${documentNm}`)
+      
+      if (response.success && response.data) {
         // 파일 다운로드
         const link = document.createElement('a')
-        link.href = doc.fileUrl
+        link.href = response.data
         link.download = doc.originalFileName || `document_${doc.applicationDocumentNm}`
         link.target = '_blank'
         document.body.appendChild(link)
