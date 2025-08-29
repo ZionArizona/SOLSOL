@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text } from "react-native";
-import BG from "../../assets/images/SOLSOLBackground.png";
+import { ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text } from "react-native";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { NotificationTabs } from "../../components/notifications/NotificationTabs";
 import { NotificationCard, NotificationItem } from "../../components/notifications/NotificationCard";
 import { notificationApi, Notification, NotificationType } from "../../services/notification.api";
 import { useWebSocket } from "../../contexts/WebSocketContext";
+import { responsiveStyles, deviceInfo } from "../../styles/responsive";
+import { ResponsiveBackground } from "../../components/shared/ResponsiveBackground";
 
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<string>("전체");
@@ -319,25 +320,26 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+      <ResponsiveBackground>
         <StatusBar barStyle="dark-content" />
-        <View style={[styles.phone, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+        <View style={responsiveStyles.centeredWrapper}>
           <ActivityIndicator size="large" color="#6B86FF" />
         </View>
-      </ImageBackground>
+      </ResponsiveBackground>
     );
   }
 
   return (
-    <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+    <ResponsiveBackground>
       <StatusBar barStyle="dark-content" />
       <ScrollView 
-        contentContainerStyle={{ alignItems: "center", paddingBottom: 24 }}
+        contentContainerStyle={responsiveStyles.scrollContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.phone}>
+        <View style={deviceInfo.isTablet ? responsiveStyles.cardContainer : responsiveStyles.container}>
           <TopBar title="알림함" />
 
           {/* 알림 탭 */}
@@ -371,21 +373,23 @@ export default function NotificationsPage() {
           </View>
         </View>
       </ScrollView>
-    </ImageBackground>
+    </ResponsiveBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  phone: { width: 360, paddingVertical: 8 },
-  notificationList: { paddingHorizontal: 12, marginTop: 8 },
+  notificationList: { 
+    paddingHorizontal: deviceInfo.isTablet ? 16 : 12, 
+    marginTop: 8 
+  },
   emptyState: {
-    padding: 40,
+    padding: deviceInfo.isTablet ? 60 : 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: deviceInfo.isTablet ? 16 : 14,
     color: "#7C89A6",
     textAlign: 'center',
     fontWeight: '600',

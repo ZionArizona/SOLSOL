@@ -14,6 +14,7 @@ export default function DocumentApproval(){
   const [mileageInput, setMileageInput] = useState('')
   const [paymentStatus, setPaymentStatus] = useState({}) // applicationId -> 'PAID' or 'PENDING'
   const [isProcessing, setIsProcessing] = useState(false) // 중복 요청 방지
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 사이드바 상태
   const [stats, setStats] = useState([
     { label: 'APPROVED 신청서', value: 0 },
     { label: '마일리지 지급 대기', value: 0 },
@@ -279,12 +280,20 @@ export default function DocumentApproval(){
     }
   }
 
+  // 사이드바 토글 핸들러
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
+  }
+
   if (loading) {
     return (
       <>
         <Navbar/>
         <div className="admin-layout">
-          <Sidebar/>
+          <Sidebar 
+            isCollapsed={sidebarCollapsed}
+            onToggle={handleSidebarToggle}
+          />
           <main className="admin-main">
             <div style={{textAlign: 'center', padding: '50px'}}>
               <div>로딩 중...</div>
@@ -299,7 +308,10 @@ export default function DocumentApproval(){
     <>
       <Navbar/>
       <div className="admin-layout">
-        <Sidebar/>
+        <Sidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggle={handleSidebarToggle}
+        />
         <main className="admin-main">
           {/* 검색바 */}
           <div className="topbar">
