@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, Text, ActivityIndicator, Alert } from "react-native";
+import { ScrollView, StatusBar, StyleSheet, View, Text, ActivityIndicator, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import BG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { ConfirmInfoTable } from "../../components/scholarship/ConfirmInfoTable";
 import { PrimaryButton } from "../../components/scholarship/PrimaryButton";
 import Svg, { Circle, Path } from "react-native-svg";
 import { scholarshipApi, Scholarship } from "../../services/scholarship.api";
 import { responsiveStyles, deviceInfo } from "../../styles/responsive";
+import { ResponsiveBackground } from "../../components/shared/ResponsiveBackground";
 
 export default function SubmissionDone() {
   const { scholarshipId } = useLocalSearchParams<{ scholarshipId?: string }>();
@@ -41,16 +41,16 @@ export default function SubmissionDone() {
 
   if (loading) {
     return (
-      <ImageBackground source={BG} style={responsiveStyles.backgroundWrapper} resizeMode="cover">
+      <ResponsiveBackground>
         <StatusBar barStyle="dark-content" />
         <View style={responsiveStyles.centeredWrapper}>
           <ActivityIndicator size="large" color="#6B86FF" />
         </View>
-      </ImageBackground>
+      </ResponsiveBackground>
     );
   }
   return (
-    <ImageBackground source={BG} style={responsiveStyles.backgroundWrapper} resizeMode="cover">
+    <ResponsiveBackground>
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={responsiveStyles.scrollContainer}>
         <View style={deviceInfo.isTablet ? responsiveStyles.cardContainer : responsiveStyles.container}>
@@ -106,7 +106,7 @@ export default function SubmissionDone() {
           </LinearGradient>
         </View>
       </ScrollView>
-    </ImageBackground>
+    </ResponsiveBackground>
   );
 }
 

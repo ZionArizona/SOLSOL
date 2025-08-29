@@ -50,6 +50,7 @@ export const responsiveStyles = StyleSheet.create({
   // 백그라운드 래퍼 (태블릿에서 다른 스타일)
   backgroundWrapper: {
     flex: 1,
+    backgroundColor: '#F5F7FF', // 배경 이미지가 로드되지 않을 때의 fallback 색상
   },
   
   // 태블릿용 중앙 정렬 컨테이너
@@ -58,6 +59,21 @@ export const responsiveStyles = StyleSheet.create({
     justifyContent: screenWidth > 768 ? 'center' : 'flex-start',
     alignItems: 'center',
     paddingTop: screenWidth > 768 ? 40 : 0,
+  },
+  
+  // 안전한 배경 영역 (노치, 상태바 고려)
+  safeBackgroundArea: {
+    flex: 1,
+    paddingTop: screenWidth > 768 ? 0 : 20, // 상태바 높이 고려
+  },
+  
+  // 전체 화면 배경 컨테이너
+  fullScreenBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   }
 });
 

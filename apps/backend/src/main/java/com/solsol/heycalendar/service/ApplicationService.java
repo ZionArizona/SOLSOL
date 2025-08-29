@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import com.solsol.heycalendar.dto.request.MileageRequest;
 import com.solsol.heycalendar.service.MileageService;
+import com.solsol.heycalendar.util.CryptoUtil;
 
 /**
  * Service class for scholarship application management
@@ -43,6 +44,7 @@ public class ApplicationService {
     private final ApplicationDocumentMapper applicationDocumentMapper;
     private final S3Presigner s3Presigner;
     private final MileageService mileageService;
+    private final CryptoUtil cryptoUtil;
 
     @Value("${AWS_S3_BUCKET}")
     private String bucketName;
@@ -55,26 +57,18 @@ public class ApplicationService {
         log.debug("Fetching all applications with scholarship information");
         List<ApplicationResponse> applications = applicationMapper.findAllApplicationsWithScholarship();
         
-        // 각 application에 대해 관련 documents 조회 및 Presigned URL 생성
+        // 각 application에 대해 관련 documents 조회
         for (ApplicationResponse application : applications) {
-            List<ApplicationDocumentResponse> documents = applicationDocumentMapper.findDocumentsByApplication(
+            List<ApplicationDocument> documents = applicationDocumentMapper.findDocumentsByUserAndScholarship(
                 application.getUserNm(), String.valueOf(application.getScholarshipNm())
             );
             
-            // 각 document의 fileUrl을 Presigned URL로 변환
-            for (ApplicationDocumentResponse document : documents) {
-                if (document.getFileUrl() != null) {
-                    try {
-                        String presignedUrl = generateApplicationDocumentDownloadUrl(document.getFileUrl());
-                        document.setFileUrl(presignedUrl);
-                    } catch (Exception e) {
-                        log.warn("Failed to generate presigned URL for document: {}", document.getFileUrl(), e);
-                        // Presigned URL 생성 실패 시 원본 URL 유지
-                    }
-                }
-            }
+            // ApplicationDocument를 Response로 변환 (암호화된 상태 - presigned URL은 별도 API로 처리)
+            List<ApplicationDocumentResponse> documentResponses = documents.stream()
+                    .map(this::convertToApplicationDocumentResponse)
+                    .collect(Collectors.toList());
             
-            application.setDocuments(documents);
+            application.setDocuments(documentResponses);
         }
         
         return applications;
@@ -161,18 +155,8 @@ public class ApplicationService {
                 .map(this::convertToApplicationDocumentResponse)
                 .collect(Collectors.toList());
         
-        // Convert fileUrls to Presigned URLs
-        for (ApplicationDocumentResponse document : documentResponses) {
-            if (document.getFileUrl() != null) {
-                try {
-                    String presignedUrl = generateApplicationDocumentDownloadUrl(document.getFileUrl());
-                    document.setFileUrl(presignedUrl);
-                } catch (Exception e) {
-                    log.warn("Failed to generate presigned URL for document: {}", document.getFileUrl(), e);
-                    // Presigned URL 생성 실패 시 원본 URL 유지
-                }
-            }
-        }
+        // 암호화된 데이터이므로 presigned URL은 별도 API로 처리
+        // ApplicationController의 generateApplicationDocumentDownloadUrlForAdmin 사용
 
         return ApplicationDetailResponse.builder()
                 .userNm(applicationResponse.getUserNm())
@@ -229,21 +213,11 @@ public class ApplicationService {
         log.info("Application submitted successfully for user: {} and scholarship: {}", 
                 userNm, request.getScholarshipId());
 
-        // 제출서류 저장
+        // 제출서류 저장 - 이제는 별도의 API로 처리 (암호화 때문)
+        // DocumentService의 generateApplicationDocumentUploadUrl과 completeApplicationDocumentUpload 사용
         if (request.getDocuments() != null && !request.getDocuments().isEmpty()) {
-            for (ApplicationRequest.DocumentInfo docInfo : request.getDocuments()) {
-                ApplicationDocument document = ApplicationDocument.builder()
-                        .userNm(userNm)
-                        .scholarshipNm(request.getScholarshipId().toString())
-                        .fileUrl(docInfo.getFileUrl())
-                        .originalFileName(docInfo.getFileName())
-                        .uploadedAt(LocalDateTime.now())
-                        .build();
-                
-                applicationDocumentMapper.insertApplicationDocument(document);
-                log.info("document uploaded for application - User: {}, Scholarship: {}, File: {}",
-                        userNm, request.getScholarshipId(), docInfo.getFileName());
-            }
+            log.info("Documents should be uploaded via separate API - User: {}, Scholarship: {}",
+                    userNm, request.getScholarshipId());
         }
 
         // Return response with scholarship information
@@ -313,15 +287,15 @@ public class ApplicationService {
                     "' already exists for this application");
         }
 
+        // 이제는 DocumentService를 통해 암호화된 파일 저장을 처리해야 함
+        // 이 메소드는 deprecated - DocumentService의 메소드를 사용하세요
         ApplicationDocument document = ApplicationDocument.builder()
                 .applicationDocumentNm(request.getApplicationDocumentNm())
                 .userNm(request.getUserNm())
                 .scholarshipNm(request.getScholarshipNm())
-                .fileUrl(request.getFileUrl())
                 .uploadedAt(LocalDateTime.now())
-                .originalFileName(request.getOriginalFileName())
-                .fileSize(request.getFileSize())
                 .contentType(request.getContentType())
+                .fileSize(request.getFileSize())
                 .build();
 
         applicationDocumentMapper.insertDocument(document);
@@ -426,17 +400,41 @@ public class ApplicationService {
      * Convert ApplicationDocument entity to ApplicationDocumentResponse DTO
      */
     private ApplicationDocumentResponse convertToApplicationDocumentResponse(ApplicationDocument document) {
+        // 암호화된 파일명 복호화
+        String originalFileName = null;
+        if (document.getFileNameEnc() != null) {
+            try {
+                originalFileName = cryptoUtil.decrypt(new String(document.getFileNameEnc()));
+                log.debug("Decrypted filename: {} -> {}", document.getApplicationDocumentNm(), originalFileName);
+            } catch (Exception e) {
+                log.warn("Failed to decrypt filename for document: {}", document.getApplicationDocumentNm(), e);
+                originalFileName = "encrypted_file";
+            }
+        }
+        
+        // 암호화된 S3 ObjectKey 복호화 후 Presigned URL 생성
+        String fileUrl = null;
+        if (document.getObjectKeyEnc() != null) {
+            try {
+                String decryptedObjectKey = cryptoUtil.decrypt(new String(document.getObjectKeyEnc()));
+                fileUrl = generatePresignedUrlForObjectKey(decryptedObjectKey);
+                log.debug("Generated presigned URL for document: {}", document.getApplicationDocumentNm());
+            } catch (Exception e) {
+                log.warn("Failed to generate presigned URL for document: {}", document.getApplicationDocumentNm(), e);
+            }
+        }
+        
         return ApplicationDocumentResponse.builder()
                 .applicationDocumentNm(document.getApplicationDocumentNm())
                 .userNm(document.getUserNm())
                 .scholarshipNm(document.getScholarshipNm())
-                .fileUrl(document.getFileUrl())
+                .fileUrl(fileUrl)
                 .uploadedAt(document.getUploadedAt())
-                .originalFileName(document.getOriginalFileName())
+                .originalFileName(originalFileName)
                 .fileSize(document.getFileSize())
                 .contentType(document.getContentType())
                 .formattedFileSize(formatFileSize(document.getFileSize()))
-                .downloadUrl(document.getFileUrl()) // For now, same as fileUrl
+                .downloadUrl(null) // presigned URL로 별도 처리
                 .build();
     }
 
@@ -461,8 +459,40 @@ public class ApplicationService {
     }
 
     /**
-     * Generate presigned URL for application document download
+     * Generate presigned URL for S3 object key
      */
+    private String generatePresignedUrlForObjectKey(String objectKey) {
+        try {
+            log.info("🔄 Presigned URL 생성 시작 - Object Key: {}", objectKey);
+            
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(objectKey)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofMinutes(10)) // 10분 유효
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+            String presignedUrl = presignedRequest.url().toString();
+            
+            log.info("✅ Presigned URL 생성 완료: {}", presignedUrl.substring(0, Math.min(presignedUrl.length(), 100)) + "...");
+            return presignedUrl;
+            
+        } catch (Exception e) {
+            log.error("❌ Presigned URL 생성 실패 - Object Key: {}", objectKey, e);
+            throw new RuntimeException("Presigned URL 생성에 실패했습니다.", e);
+        }
+    }
+
+    /**
+     * Generate presigned URL for application document download
+     * @deprecated 이 메소드는 암호화되지 않은 fileUrl을 사용하므로 사용하지 마세요.
+     *             대신 DocumentService.generateApplicationDocumentDownloadUrl을 사용하세요.
+     */
+    @Deprecated
     public String generateApplicationDocumentDownloadUrl(String fileUrl) {
         try {
             log.info("🔄 Presigned URL 생성 시작 - 원본 URL: {}", fileUrl);

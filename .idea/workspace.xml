@@ -5,20 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9f61e35a-937c-4ee3-a48e-8ff75c0e3b17" name="변경" comment="">
-      <change beforePath="$PROJECT_DIR$/apps/frontend/Admin/src/components/Sidebar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/Admin/src/components/Sidebar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/DocumentApproval.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/DocumentApproval.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/ExchangeManage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/ExchangeManage.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/Scholarship-manage.css" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/Scholarship-manage.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/ScholarshipManage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/ScholarshipManage.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/exchange-manage.css" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/exchange-manage.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/submission.css" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/Admin/src/pages/submission.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/apps/frontend/User/app/MyScholarship/MyScholarship.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/User/app/MyScholarship/MyScholarship.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/apps/frontend/User/app/Notifications/Notifications.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/User/app/Notifications/Notifications.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/apps/frontend/User/app/Scholarship/SubmissionDone.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/User/app/Scholarship/SubmissionDone.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/apps/frontend/User/app/UserBasic/MyPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/User/app/UserBasic/MyPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/User/components/myScholarship/ScholarshipProgressCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/User/components/myScholarship/ScholarshipProgressCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/User/components/mypage/InfoEditPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/User/components/mypage/InfoEditPanel.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/frontend/User/components/scholarship/TopBar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/User/components/scholarship/TopBar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apps/frontend/User/styles/responsive.ts" beforeDir="false" afterPath="$PROJECT_DIR$/apps/frontend/User/styles/responsive.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,7 +62,7 @@
     "RequestMappingsPanelWidth0": "75",
     "RequestMappingsPanelWidth1": "75",
     "Spring Boot.HeycalendarApplication.executor": "Run",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "feature/test",
     "node.js.selected.package.tslint": "(autodetect)",
     "ts.external.directory.path": "C:\\Users\\SSAFY\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate 2025.1.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external"
   }

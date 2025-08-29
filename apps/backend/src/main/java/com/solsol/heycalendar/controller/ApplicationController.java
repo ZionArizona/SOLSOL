@@ -8,7 +8,10 @@ import com.solsol.heycalendar.dto.response.ApplicationDetailResponse;
 import com.solsol.heycalendar.dto.response.ApplicationDocumentResponse;
 import com.solsol.heycalendar.dto.response.ApplicationResponse;
 import com.solsol.heycalendar.entity.ApplicationState;
+import com.solsol.heycalendar.dto.request.DocumentUploadRequest;
+import com.solsol.heycalendar.dto.response.DocumentUploadResponse;
 import com.solsol.heycalendar.service.ApplicationService;
+import com.solsol.heycalendar.service.DocumentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +35,7 @@ import java.util.List;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
+    private final DocumentService documentService;
 
     @Operation(summary = "전체 장학금 신청 목록 조회", description = "시스템에 등록된 모든 장학금 신청 내역을 조회합니다.")
     @GetMapping
@@ -138,6 +142,65 @@ public class ApplicationController {
         log.info("Deleting document: {} for user: {} and scholarship: {}", documentNm, userNm, scholarshipNm);
         applicationService.deleteDocument(userNm, scholarshipNm, documentNm);
         return ResponseEntity.noContent().build();
+    }
+
+    /* === Document Upload APIs === */
+
+    @Operation(summary = "장학금 신청 서류 업로드 URL 생성", description = "장학금 신청 서류 업로드용 Presigned URL을 생성합니다.")
+    @PostMapping("/student/documents/upload-url")
+    public ResponseEntity<ApiResponse<DocumentUploadResponse>> generateApplicationDocumentUploadUrl(
+            @RequestHeader("user-nm") String userNm,
+            @RequestParam String scholarshipNm,
+            @Valid @RequestBody DocumentUploadRequest request) {
+        
+        DocumentUploadResponse response = documentService.generateApplicationDocumentUploadUrl(userNm, scholarshipNm, request);
+        return ResponseEntity.ok(new ApiResponse<>(true, "업로드 URL이 생성되었습니다.", "OK", response));
+    }
+
+    @Operation(summary = "장학금 신청 서류 업로드 완료", description = "장학금 신청 서류 업로드를 완료 처리합니다.")
+    @PostMapping("/student/documents/complete")
+    public ResponseEntity<ApiResponse<Void>> completeApplicationDocumentUpload(
+            @RequestHeader("user-nm") String userNm,
+            @RequestParam String scholarshipNm,
+            @RequestParam String documentNm,
+            @RequestBody Map<String, Object> request) {
+        
+        String objectKey = (String) request.get("objectKey");
+        String fileName = (String) request.get("fileName");
+        String contentType = (String) request.get("contentType");
+        Long fileSize = Long.valueOf(request.get("fileSize").toString());
+        String checksum = (String) request.get("checksum");
+        
+        DocumentUploadRequest uploadRequest = DocumentUploadRequest.builder()
+                .fileName(fileName)
+                .contentType(contentType)
+                .fileSize(fileSize)
+                .build();
+        
+        documentService.completeApplicationDocumentUpload(userNm, scholarshipNm, documentNm, objectKey, uploadRequest, checksum);
+        return ResponseEntity.ok(new ApiResponse<>(true, "업로드가 완료되었습니다.", "OK", null));
+    }
+
+    @Operation(summary = "장학금 신청 서류 다운로드 URL 생성 (학생용)", description = "장학금 신청 서류 다운로드용 Presigned URL을 생성합니다.")
+    @GetMapping("/student/documents/{documentNm}/download-url")
+    public ResponseEntity<ApiResponse<String>> generateApplicationDocumentDownloadUrl(
+            @RequestHeader("user-nm") String userNm,
+            @RequestParam String scholarshipNm,
+            @PathVariable String documentNm) {
+        
+        String downloadUrl = documentService.generateApplicationDocumentDownloadUrl(userNm, scholarshipNm, documentNm);
+        return ResponseEntity.ok(new ApiResponse<>(true, "다운로드 URL이 생성되었습니다.", "OK", downloadUrl));
+    }
+
+    @Operation(summary = "장학금 신청 서류 다운로드 URL 생성 (Admin용)", description = "Admin이 장학금 신청 서류를 조회할 때 사용하는 Presigned URL을 생성합니다.")
+    @GetMapping("/admin/documents/download-url")
+    public ResponseEntity<ApiResponse<String>> generateApplicationDocumentDownloadUrlForAdmin(
+            @RequestParam String userNm,
+            @RequestParam String scholarshipNm,
+            @RequestParam String documentNm) {
+        
+        String downloadUrl = documentService.generateApplicationDocumentDownloadUrl(userNm, scholarshipNm, documentNm);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Admin 다운로드 URL이 생성되었습니다.", "OK", downloadUrl));
     }
 
     /* === New User APIs with header authentication === */

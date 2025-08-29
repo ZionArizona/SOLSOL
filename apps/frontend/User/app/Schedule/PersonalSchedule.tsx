@@ -131,9 +131,17 @@ const PersonalSchedule: React.FC<Props> = ({ isVisible, selectedDate, onClose, o
       // 부모 컴포넌트에 저장된 일정 데이터 전달
       onSave({ title: title.trim(), start, end, notifyMinutes });
       
-      Alert.alert('성공', '일정이 저장되었습니다.', [
-        { text: '확인', onPress: onClose }
-      ]);
+      // 플랫폼별 처리
+      if (Platform.OS === 'web') {
+        // 웹에서는 Alert 후 바로 모달 닫기
+        alert('일정이 저장되었습니다.');
+        onClose();
+      } else {
+        // 네이티브에서는 기존 방식 유지
+        Alert.alert('성공', '일정이 저장되었습니다.', [
+          { text: '확인', onPress: onClose }
+        ]);
+      }
 
     } catch (error: any) {
       console.error('❌ 일정 저장 실패:', error);

@@ -19,11 +19,10 @@ public class ApplicationDocument {
     private String applicationDocumentNm; // Primary Key
     private String userNm;               // Foreign Key
     private String scholarshipNm;        // Foreign Key
-    private String fileUrl;              // URL/path to the uploaded file
-    private LocalDateTime uploadedAt;
-    
-    // Additional fields for better document management
-    private String originalFileName;     // Original name of the uploaded file
+    private byte[] objectKeyEnc;         // 암호화된 S3 객체 키
+    private byte[] fileNameEnc;          // 암호화된 파일명
+    private String contentType;          // MIME type of the file
     private Long fileSize;              // File size in bytes
-    private String contentType;         // MIME type of the file
+    private String checksumSha256;       // 파일 무결성 검증용 SHA-256 해시
+    private LocalDateTime uploadedAt;    // 업로드 시간
 }

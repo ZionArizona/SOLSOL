@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as DocumentPicker from "expo-document-picker";
 import { UploadIcon } from "../shared/icons";
 import Svg, { Path } from "react-native-svg";
-import { uploadDocument, uploadDocumentRN } from "../../services/document.api";
+import { uploadDocument, uploadDocumentRN, uploadApplicationDocumentRN, uploadApplicationDocumentWeb } from "../../services/document.api";
 
 type FileItem = { name: string; uri: string; size?: number; type?: string };
 
@@ -27,9 +27,19 @@ export type DocumentUploadModalProps = {
     metaTags: string[];
     file: FileItem;
   }) => void;
+  mode?: 'mybox' | 'scholarship'; // 저장 모드: MyBox 또는 장학금 신청용
+  scholarshipNm?: string; // 장학금 모드일 때 필요
+  documentNm?: string; // 장학금 모드일 때 필요
 };
 
-export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUploadModalProps) => {
+export const DocumentUploadModal = ({ 
+  visible, 
+  onClose, 
+  onUpload, 
+  mode = 'mybox', 
+  scholarshipNm,
+  documentNm 
+}: DocumentUploadModalProps) => {
   const [fileName, setFileName] = useState("");
   const [category, setCategory] = useState("기타");
   const [tags, setTags] = useState("");
@@ -100,40 +110,56 @@ export const DocumentUploadModal = ({ visible, onClose, onUpload }: DocumentUplo
     try {
       setUploading(true);
       
-      if (Platform.OS === 'web') {
-        // 웹 환경에서는 저장된 실제 File 객체 사용
-        if (!actualWebFile) {
-          Alert.alert("오류", "파일이 제대로 선택되지 않았습니다.");
-          return;
-        }
-        
-        await uploadDocument(actualWebFile, fileName.trim(), category);
-        Alert.alert("성공", "서류가 업로드되었습니다.");
+      if (mode === 'scholarship') {
+        // 장학금 신청 모드: MyBox에 저장하지 않고 바로 콜백 호출
+        const metaTags = tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+        onUpload({
+          fileName: fileName.trim(),
+          category,
+          metaTags,
+          file: {
+            ...selectedFile,
+            webFile: actualWebFile // 웹용 실제 File 객체 전달
+          }
+        });
+        Alert.alert("성공", "서류가 추가되었습니다.");
       } else {
-        // 모바일 환경에서는 React Native 업로드 함수 사용
-        if (!selectedFile.uri || !selectedFile.size || !selectedFile.type) {
-          Alert.alert("오류", "파일 정보가 불완전합니다.");
-          return;
+        // MyBox 모드: 기존대로 MyBox에 저장
+        if (Platform.OS === 'web') {
+          // 웹 환경에서는 저장된 실제 File 객체 사용
+          if (!actualWebFile) {
+            Alert.alert("오류", "파일이 제대로 선택되지 않았습니다.");
+            return;
+          }
+          
+          await uploadDocument(actualWebFile, fileName.trim(), category);
+          Alert.alert("성공", "서류가 MyBox에 업로드되었습니다.");
+        } else {
+          // 모바일 환경에서는 React Native 업로드 함수 사용
+          if (!selectedFile.uri || !selectedFile.size || !selectedFile.type) {
+            Alert.alert("오류", "파일 정보가 불완전합니다.");
+            return;
+          }
+
+          await uploadDocumentRN(
+            selectedFile.uri,
+            fileName.trim(),
+            selectedFile.type,
+            selectedFile.size,
+            category
+          );
+          Alert.alert("성공", "서류가 MyBox에 업로드되었습니다.");
         }
 
-        await uploadDocumentRN(
-          selectedFile.uri,
-          fileName.trim(),
-          selectedFile.type,
-          selectedFile.size,
-          category
-        );
-        Alert.alert("성공", "서류가 업로드되었습니다.");
+        // 성공 시 콜백 호출
+        const metaTags = tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
+        onUpload({
+          fileName: fileName.trim(),
+          category,
+          metaTags,
+          file: selectedFile
+        });
       }
-
-      // 성공 시 콜백 호출
-      const metaTags = tags.split(",").map(t => t.trim()).filter(t => t.length > 0);
-      onUpload({
-        fileName: fileName.trim(),
-        category,
-        metaTags,
-        file: selectedFile
-      });
 
       // Reset form
       setFileName("");

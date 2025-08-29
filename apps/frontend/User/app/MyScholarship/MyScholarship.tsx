@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text } from "react-native";
+import { ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text } from "react-native";
 import { router } from "expo-router";
-import BG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { MileagePanel } from "../../components/scholarship/MileagePanel";
 import { SummaryPanel } from "../../components/myScholarship/SummaryPanel";
@@ -12,6 +11,7 @@ import { applicationApi, Application } from "../../services/application.api";
 import { bookmarkApi } from "../../services/bookmark.api";
 import { mileageApi } from "../../services/mileage.api";
 import { responsiveStyles, deviceInfo } from "../../styles/responsive";
+import { ResponsiveBackground } from "../../components/shared/ResponsiveBackground";
 
 export default function MyScholarshipPage() {
   const [activeTab, setActiveTab] = useState("전체");
@@ -242,17 +242,17 @@ export default function MyScholarshipPage() {
 
   if (loading) {
     return (
-      <ImageBackground source={BG} style={responsiveStyles.backgroundWrapper} resizeMode="cover">
+      <ResponsiveBackground>
         <StatusBar barStyle="dark-content" />
         <View style={responsiveStyles.centeredWrapper}>
           <ActivityIndicator size="large" color="#6B86FF" />
         </View>
-      </ImageBackground>
+      </ResponsiveBackground>
     );
   }
 
   return (
-    <ImageBackground source={BG} style={responsiveStyles.backgroundWrapper} resizeMode="cover">
+    <ResponsiveBackground>
       <StatusBar barStyle="dark-content" />
       <ScrollView 
         contentContainerStyle={responsiveStyles.scrollContainer}
@@ -304,7 +304,7 @@ export default function MyScholarshipPage() {
           )}
         </View>
       </ScrollView>
-    </ImageBackground>
+    </ResponsiveBackground>
   );
 }
 

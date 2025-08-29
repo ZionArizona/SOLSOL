@@ -4,7 +4,9 @@ import com.solsol.heycalendar.dto.request.DocumentUploadRequest;
 import com.solsol.heycalendar.dto.response.DocumentUploadResponse;
 import com.solsol.heycalendar.dto.response.DocumentListResponse;
 import com.solsol.heycalendar.entity.Mybox;
+import com.solsol.heycalendar.entity.ApplicationDocument;
 import com.solsol.heycalendar.mapper.MyboxMapper;
+import com.solsol.heycalendar.mapper.ApplicationDocumentMapper;
 import com.solsol.heycalendar.util.CryptoUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class DocumentService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
     private final MyboxMapper myboxMapper;
+    private final ApplicationDocumentMapper applicationDocumentMapper;
     private final CryptoUtil cryptoUtil;
 
     @Value("${AWS_S3_BUCKET}")
@@ -61,9 +64,23 @@ public class DocumentService {
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
     /**
-     * 서류 업로드용 Presigned URL 생성
+     * 서류 업로드용 Presigned URL 생성 (MyBox용)
      */
     public DocumentUploadResponse generateDocumentUploadUrl(String userNm, DocumentUploadRequest request) {
+        return generateUploadUrl(userNm, request, "documents");
+    }
+
+    /**
+     * 장학금 신청 서류 업로드용 Presigned URL 생성
+     */
+    public DocumentUploadResponse generateApplicationDocumentUploadUrl(String userNm, String scholarshipNm, DocumentUploadRequest request) {
+        return generateUploadUrl(userNm, request, "documents");
+    }
+
+    /**
+     * 공통 업로드 URL 생성 메소드
+     */
+    private DocumentUploadResponse generateUploadUrl(String userNm, DocumentUploadRequest request, String folder) {
         // 파일 타입 검증
         if (!ALLOWED_DOCUMENT_TYPES.contains(request.getContentType())) {
             throw new IllegalArgumentException("지원하지 않는 파일 형식입니다.");
@@ -76,7 +93,7 @@ public class DocumentService {
 
         try {
             // S3 객체 키 생성
-            String objectKey = generateObjectKey(userNm, request.getFileName());
+            String objectKey = generateObjectKey(userNm, request.getFileName(), folder);
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
@@ -106,13 +123,12 @@ public class DocumentService {
     /**
      * S3 객체 키 생성
      */
-    private String generateObjectKey(String userNm, String originalFileName) {
+    private String generateObjectKey(String userNm, String originalFileName, String folder) {
         String timestamp = String.valueOf(System.currentTimeMillis());
         String uuid = UUID.randomUUID().toString().substring(0, 8);
         String extension = getFileExtension(originalFileName);
-        //return String.format("documents/%s/%s_%s%s", userNm, timestamp, uuid, extension);
-		return String.format("documents/%s/%s%s", uuid, timestamp, extension);
-	}
+        return String.format("%s/%s_%s%s", folder, uuid, timestamp, extension);
+    }
 
     /**
      * 파일 확장자 추출
@@ -125,10 +141,26 @@ public class DocumentService {
     }
 
     /**
-     * 서류 업로드 완료 처리 (DB 저장)
+     * 서류 업로드 완료 처리 (MyBox용)
      */
     @Transactional
     public void completeDocumentUpload(String userNm, String objectKey, DocumentUploadRequest request, String checksum) {
+        completeUpload(userNm, null, null, objectKey, request, checksum, "mybox");
+    }
+
+    /**
+     * 장학금 신청 서류 업로드 완료 처리
+     */
+    @Transactional
+    public void completeApplicationDocumentUpload(String userNm, String scholarshipNm, String documentNm, String objectKey, DocumentUploadRequest request, String checksum) {
+        completeUpload(userNm, scholarshipNm, documentNm, objectKey, request, checksum, "application");
+    }
+
+    /**
+     * 공통 업로드 완료 처리
+     */
+    @Transactional
+    private void completeUpload(String userNm, String scholarshipNm, String documentNm, String objectKey, DocumentUploadRequest request, String checksum, String mode) {
         // S3에서 파일 존재 확인
         if (!isFileExistsInS3(objectKey)) {
             throw new IllegalArgumentException("업로드된 파일을 찾을 수 없습니다.");
@@ -139,19 +171,35 @@ public class DocumentService {
             String encryptedObjectKey = cryptoUtil.encrypt(objectKey);
             String encryptedFileName = cryptoUtil.encrypt(request.getFileName());
 
-            // DB에 저장
-            Mybox mybox = Mybox.builder()
-                    .userNm(userNm)
-                    .objectKeyEnc(encryptedObjectKey.getBytes())
-                    .fileNameEnc(encryptedFileName.getBytes())
-                    .contentType(request.getContentType())
-                    .sizeBytes(request.getFileSize())
-                    .checksumSha256(checksum)
-                    .build();
+            // 모드에 따라 DB에 저장
+            if ("mybox".equals(mode)) {
+                Mybox mybox = Mybox.builder()
+                        .userNm(userNm)
+                        .objectKeyEnc(encryptedObjectKey.getBytes())
+                        .fileNameEnc(encryptedFileName.getBytes())
+                        .contentType(request.getContentType())
+                        .sizeBytes(request.getFileSize())
+                        .checksumSha256(checksum)
+                        .build();
 
-            myboxMapper.insertDocument(mybox);
+                myboxMapper.insertDocument(mybox);
+                log.info("MyBox 문서 업로드 완료 - userNm: {}, objectKey: {}", userNm, objectKey);
+            } else if ("application".equals(mode)) {
+                ApplicationDocument applicationDocument = ApplicationDocument.builder()
+                        .applicationDocumentNm(null) // AUTO_INCREMENT 사용
+                        .userNm(userNm)
+                        .scholarshipNm(scholarshipNm)
+                        .objectKeyEnc(encryptedObjectKey.getBytes())
+                        .fileNameEnc(encryptedFileName.getBytes())
+                        .contentType(request.getContentType())
+                        .fileSize(request.getFileSize())
+                        .checksumSha256(checksum)
+                        .uploadedAt(java.time.LocalDateTime.now())
+                        .build();
 
-            log.info("문서 업로드 완료 - userNm: {}, objectKey: {}", userNm, objectKey);
+                applicationDocumentMapper.insertApplicationDocument(applicationDocument); // useGeneratedKeys=true 메서드 사용
+                log.info("장학금 신청 서류 업로드 완료 - userNm: {}, scholarshipNm: {}, 생성된 documentNm: {}", userNm, scholarshipNm, applicationDocument.getApplicationDocumentNm());
+            }
 
         } catch (Exception e) {
             log.error("문서 업로드 완료 처리 실패 - userNm: {}, objectKey: {}", userNm, objectKey, e);
@@ -192,7 +240,7 @@ public class DocumentService {
     }
 
     /**
-     * 서류 다운로드 URL 생성
+     * MyBox 서류 다운로드 URL 생성
      */
     public String generateDownloadUrl(String userNm, Long documentId) {
         try {
@@ -222,6 +270,38 @@ public class DocumentService {
 
         } catch (Exception e) {
             log.error("다운로드 URL 생성 실패 - userNm: {}, documentId: {}", userNm, documentId, e);
+            throw new RuntimeException("다운로드 URL 생성에 실패했습니다.", e);
+        }
+    }
+
+    /**
+     * 장학금 신청 서류 다운로드 URL 생성
+     */
+    public String generateApplicationDocumentDownloadUrl(String userNm, String scholarshipNm, String documentNm) {
+        try {
+            ApplicationDocument document = applicationDocumentMapper.findDocumentByNameAndApplication(documentNm, userNm, scholarshipNm);
+            if (document == null) {
+                throw new IllegalArgumentException("서류를 찾을 수 없습니다.");
+            }
+
+            String objectKey = cryptoUtil.decrypt(new String(document.getObjectKeyEnc()));
+
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(objectKey)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofMinutes(10)) // 10분 유효
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+
+            return presignedRequest.url().toString();
+
+        } catch (Exception e) {
+            log.error("장학금 신청 서류 다운로드 URL 생성 실패 - userNm: {}, scholarshipNm: {}, documentNm: {}", userNm, scholarshipNm, documentNm, e);
             throw new RuntimeException("다운로드 URL 생성에 실패했습니다.", e);
         }
     }

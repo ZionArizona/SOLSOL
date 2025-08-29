@@ -1,6 +1,6 @@
-import React, { useMemo, useEffect, useState } from "react";
-import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, Platform, Text , TouchableOpacity, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, ImageBackground, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 // theme
 import { colors } from "../../theme/colors";
@@ -9,16 +9,37 @@ import { colors } from "../../theme/colors";
 import SOLSOLBackground from "../../assets/images/SOLSOLBackground.png";
 
 import { HeaderSection } from "../../components/home/HeaderSection";
-import { StudentCard } from "../../components/home/StudentCard";
-import { PromoBanner } from "../../components/home/PromoBanner";
 import { MileageCard } from "../../components/home/MileageCard";
+import { PromoBanner } from "../../components/home/PromoBanner";
+import { StudentCard } from "../../components/home/StudentCard";
 import { ThisWeekList } from "../../components/home/ThisWeekList";
-import { UserCircleIcon, MenuIcon } from "../../components/shared/icons";
+import { MenuIcon, UserCircleIcon } from "../../components/shared/icons";
 import { NotificationBell } from "../../components/shared/NotificationBell";
 import { useAuth } from "../../contexts/AuthContext";
-import { userApi } from "../../services/user.api";
-import { mileageApi } from "../../services/mileage.api";
 import { useWebSocket } from "../../contexts/WebSocketContext";
+import { mileageApi } from "../../services/mileage.api";
+import { userApi } from "../../services/user.api";
+
+// 학과 매핑 정보
+const DEPARTMENT_BY_ID: Record<number, string> = {
+  1: '경제학과',
+  2: '간호학과',
+  3: '디자인학과',
+  4: '빅데이터융합학과',
+  5: '소프트웨어공학과',
+  6: '식품공학과',
+  7: '인공지능학과',
+  8: '영어교육과',
+  9: '컴퓨터공학과',
+  10: '화학과',
+};
+
+const getDepartmentNameById = (id: number | string | null | undefined): string => {
+  if (id === null || id === undefined) return '컴퓨터공학과'; // 기본값 유지
+  const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+  if (!Number.isFinite(numId)) return '컴퓨터공학과';
+  return DEPARTMENT_BY_ID[numId as number] ?? '컴퓨터공학과';
+};
 
 export default function MainPage() {
   const { user } = useAuth();
@@ -94,16 +115,63 @@ export default function MainPage() {
     }
   }, [user]);
 
-  // 학과 정보 포맷팅
-  const getDepartmentInfo = () => {
-    if (!userInfo && !user) return "정보 없음";
-    
-    const info = userInfo || user;
-    const dept = info.deptName || info.deptNm || '학과 정보 없음';
-    const grade = info.grade ? `재학 ${info.grade}학년` : '';
-    
-    return grade ? `${dept}, ${grade}` : dept;
-  };
+
+
+const toNum = (v: unknown): number | null => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+};
+
+const CANDIDATE_KEYS: (keyof any)[] = [
+  // 숫자 ID일 가능성 높은 키
+  'deptId', 'departmentId', 'dept', 'deptNo', 'majorId',
+  // 숫자/문자 섞여 들어오는 키(여기가 포인트!)
+  'deptName', 'deptNm',
+  // 라벨로 올 수 있는 키
+  'departmentName', 'majorName', 'department',
+];
+
+const resolveDeptLabel = (info: any): string => {
+  for (const key of CANDIDATE_KEYS) {
+    const val = info?.[key];
+
+    // 1) 숫자/숫자문자면 -> 매핑
+    const n = toNum(val);
+    if (n && DEPARTMENT_BY_ID[n]) {
+      return DEPARTMENT_BY_ID[n];
+    }
+
+    // 2) 문자열 라벨이면 그대로
+    if (typeof val === 'string') {
+      const s = val.trim();
+      if (s.length > 0 && !/^\d+$/.test(s)) {
+        // 전부 숫자면 라벨이 아니라고 보고 패스, 아니면 라벨로 간주
+        return s;
+      }
+    }
+  }
+  return '학과 정보 없음';
+};
+
+
+
+
+const getDepartmentInfo = () => {
+  if (!userInfo && !user) return "정보 없음";
+  const info = userInfo || user;
+
+  const deptName = resolveDeptLabel(info);
+  const grade = info?.grade ? `재학 ${info.grade}학년` : '';
+
+  return grade ? `${deptName}, ${grade}` : deptName;
+};
+
+
 
   // 사용자 이름 가져오기
   const getUserName = () => {
@@ -175,7 +243,6 @@ export default function MainPage() {
 
           
           <View style={styles.block}>
-            <Text>Hey Calendar !</Text>
             <PromoBanner
               title={`신청부터 지금까지,\n헤이영 캘린더가\n다 챙겨드려요`}
               ctaLabel="나의 일정 바로가기"

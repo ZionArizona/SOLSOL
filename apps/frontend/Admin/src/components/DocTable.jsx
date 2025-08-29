@@ -14,7 +14,7 @@ function Files({list=[]}){
 
 function Row({r, onViewDetails}){
   return (
-    <div className="trow">
+    <div className="trow" onClick={() => onViewDetails(r)} style={{cursor: 'pointer'}}>
       <div className="cell-title">
         <div className="icon">📄</div>
         <div>
@@ -35,9 +35,8 @@ function Row({r, onViewDetails}){
         <div>{r.time.split(' ')[1]}</div>
       </div>
 
-      <div className="act" style={{gap:8}}>
+      <div className="act" style={{gap:8}} onClick={(e) => e.stopPropagation()}>
         <Badge status={r.status}/>
-        <button className="view-btn" onClick={() => onViewDetails(r)}>상세보기</button>
         {r.status === '검토 대기' && (
           <>
             <button className="approve-btn" onClick={r.onApprove}>승인</button>
@@ -57,7 +56,7 @@ export default function DocTable({rows=[], onViewDetails}){
         <div>제출 서류</div>
         <div>신청자</div>
         <div>제출 시간</div>
-        <div style={{textAlign:'right'}}>작업</div>
+        <div style={{textAlign:'right'}}>상태</div>
       </div>
 
       {rows.map(r => <Row key={r.id} r={r} onViewDetails={onViewDetails}/>)}
