@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
@@ -8,6 +8,19 @@ import './scholarship-create.css'
 export default function ScholarshipCreate(){
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
+  const [categories, setCategories] = useState([])
+  
+  // 필수 필드들에 대한 ref 생성
+  const scholarshipNameRef = useRef()
+  const amountRef = useRef()
+  const typeRef = useRef()
+  const recruitmentEndDateRef = useRef()
+  const evaluationStartDateRef = useRef()
+  const resultAnnouncementDateRef = useRef()
+  const eligibilityConditionRef = useRef()
+  const contactPersonNameRef = useRef()
+  const contactPhoneRef = useRef()
+  const contactEmailRef = useRef()
   
   // 기본 정보
   const [formData, setFormData] = useState({
@@ -16,7 +29,7 @@ export default function ScholarshipCreate(){
     type: '',
     numberOfRecipients: '',
     paymentMethod: 'LUMP_SUM',
-    recruitmentStartDate: '',
+    recruitmentStartDate: new Date().toISOString().split('T')[0],
     recruitmentEndDate: '',
     eligibilityCondition: '',
     description: '',
@@ -30,15 +43,11 @@ export default function ScholarshipCreate(){
     evaluationStartDate: '',
     resultAnnouncementDate: '',
     contactPersonName: '',
-    contactPhone: '',
+    contactPhone: '010-0000-0000',
     contactEmail: '',
-    officeLocation: '',
-    consultationHours: '',
-    noticeTitle: '',
-    noticeContent: ''
   })
 
-  // 제출서류/평가기준 동적 리스트
+  // 제출서류 동적 리스트
   const [reqName, setReqName] = useState('')
   const [weight, setWeight] = useState('')
   const [criteria, setCriteria] = useState([])
@@ -49,11 +58,39 @@ export default function ScholarshipCreate(){
   const [docRequired, setDocRequired] = useState(true)
   const [requiredDocuments, setRequiredDocuments] = useState([])
 
-  const totalWeight = criteria.reduce((s,c)=> s + Number(c.weight||0), 0)
 
+  // 컴포넌트 마운트 시 카테고리 목록 로드 및 사용자 정보 설정
+  useEffect(() => {
+    loadCategories()
+    
+    // 로그인된 사용자 정보 가져오기
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const user = JSON.parse(userData)
+      setFormData(prev => ({
+        ...prev,
+        contactPersonName: user.userNm || user.userName || '',
+        contactEmail: user.userId || ''
+      }))
+    }
+  }, [])
+
+  const loadCategories = async () => {
+    try {
+      const categoryList = await scholarshipApi.getCategories()
+      setCategories(categoryList)
+    } catch (error) {
+      console.error('카테고리 로드 실패:', error)
+    }
+  }
 
   const addCriteria = () => {
     if(!reqName.trim()) return
+    setCriteria(list => [...list, {
+      name: reqName.trim(),
+      weight: 0 // 가중치는 0으로 고정 (백엔드 필드명에 맞춤)
+    }])
+    setReqName('')
     setCriteria(list => [...list, {name:reqName.trim(), weight:weight||0}])
     setReqName(''); setWeight('')
   }
@@ -80,11 +117,27 @@ export default function ScholarshipCreate(){
   const onSubmit = async (e) => {
     e.preventDefault()
     
-    if (!formData.scholarshipName || !formData.amount || !formData.numberOfRecipients || 
-        !formData.type || !formData.recruitmentEndDate || !formData.evaluationStartDate ||
-        !formData.resultAnnouncementDate || !formData.eligibilityCondition ||
-        !formData.contactPersonName || !formData.contactPhone || !formData.contactEmail) {
-      alert('필수 항목을 모두 입력해주세요.')
+    // 필수 필드 검증 및 포커스
+    const requiredFields = [
+      { value: formData.scholarshipName, ref: scholarshipNameRef, name: '장학금명' },
+      { value: formData.amount, ref: amountRef, name: '마일리지 지급 금액' },
+      { value: formData.type, ref: typeRef, name: '장학금 종류' },
+      { value: formData.recruitmentEndDate, ref: recruitmentEndDateRef, name: '모집 종료일' },
+      { value: formData.evaluationStartDate, ref: evaluationStartDateRef, name: '심사 시작일' },
+      { value: formData.resultAnnouncementDate, ref: resultAnnouncementDateRef, name: '결과 발표일' },
+      { value: formData.eligibilityCondition, ref: eligibilityConditionRef, name: '지원 자격 조건' },
+      { value: formData.contactPersonName, ref: contactPersonNameRef, name: '관리자명' },
+      { value: formData.contactPhone, ref: contactPhoneRef, name: '연락처' },
+      { value: formData.contactEmail, ref: contactEmailRef, name: '이메일' }
+    ]
+    
+    const missingField = requiredFields.find(field => !field.value || field.value.trim() === '')
+    if (missingField) {
+      alert(`필수 항목을 입력해주세요: ${missingField.name}`)
+      if (missingField.ref && missingField.ref.current) {
+        missingField.ref.current.focus()
+        missingField.ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
       return
     }
 
@@ -92,11 +145,13 @@ export default function ScholarshipCreate(){
     
     try {
       // criteria를 requiredDocuments로 변환
+      console.log('📋 Current criteria before transform:', criteria);
       const requiredDocuments = criteria.map(c => ({
         name: c.name,
         keywords: [c.name.toLowerCase()],
         required: true
       }))
+      console.log('📋 Required documents:', requiredDocuments);
 
       const scholarshipData = scholarshipUtils.transformForBackend({
         ...formData,
@@ -104,6 +159,7 @@ export default function ScholarshipCreate(){
         requiredDocuments,
         recruitmentStatus: 'OPEN'
       })
+      console.log('📋 Final scholarship data being sent:', scholarshipData);
 
       const result = await scholarshipApi.createScholarship(scholarshipData)
       
@@ -136,14 +192,16 @@ export default function ScholarshipCreate(){
               <Grid2>
                 <Field label="장학금명 *">
                   <input 
+                    ref={scholarshipNameRef}
                     className="ip" 
                     placeholder="장학명을 입력하세요"
                     value={formData.scholarshipName}
                     onChange={(e) => handleInputChange('scholarshipName', e.target.value)}
                   />
                 </Field>
-                <Field label="장학금 지급 금액 *">
+                <Field label="마일리지 지급 금액 *">
                   <input 
+                    ref={amountRef}
                     className="ip" 
                     type="number"
                     placeholder="금액을 입력하세요 (마일리지)"
@@ -156,6 +214,7 @@ export default function ScholarshipCreate(){
               <Grid2>
                 <Field label="장학금 종류 *">
                   <select 
+                    ref={typeRef}
                     className="ip"
                     value={formData.type}
                     onChange={(e) => handleInputChange('type', e.target.value)}
@@ -167,11 +226,11 @@ export default function ScholarshipCreate(){
                     <option value="OTHER">기타</option>
                   </select>
                 </Field>
-                <Field label="선발 인원 *">
+                <Field label="선발 인원">
                   <input 
                     className="ip" 
                     type="number"
-                    placeholder="선발 인원을 입력하세요"
+                    placeholder="선발 인원을 입력하세요 (빈 값 가능)"
                     value={formData.numberOfRecipients}
                     onChange={(e) => handleInputChange('numberOfRecipients', e.target.value)}
                   />
@@ -215,6 +274,7 @@ export default function ScholarshipCreate(){
                 </Field>
                 <Field label="모집 종료일 *">
                   <input 
+                    ref={recruitmentEndDateRef}
                     className="ip" 
                     type="date"
                     value={formData.recruitmentEndDate}
@@ -225,6 +285,7 @@ export default function ScholarshipCreate(){
 
               <Field label="지원 자격 조건 *">
                 <input 
+                  ref={eligibilityConditionRef}
                   className="ip" 
                   placeholder="지원 자격 조건을 입력하세요"
                   value={formData.eligibilityCondition}
@@ -304,10 +365,10 @@ export default function ScholarshipCreate(){
               </Grid2>
             </Section>
 
-            {/* ===== 제출 서류 및 평가 기준 ===== */}
-            <Section title="제출 서류 및 평가 기준">
+            {/* ===== 제출 서류 ===== */}
+            <Section title="제출 서류">
               <div className="criteria-row">
-                <input className="ip flex1" placeholder="항목을 입력하세요 (예: 성적증명서, 봉사시간) "
+                <input className="ip flex1" placeholder="서류명을 입력하세요 (예: 성적증명서, 자기소개서)"
                        value={reqName} onChange={e=>setReqName(e.target.value)} />
                 <div className="w120 with-suffix">
                   <input className="ip" placeholder="가중치" value={weight} onChange={e=>setWeight(e.target.value)} />
@@ -317,7 +378,7 @@ export default function ScholarshipCreate(){
               </div>
 
               <div className="criteria-list">
-                {criteria.length===0 && <div className="empty">추가된 항목이 없습니다. (가중치 합계 100%가 되도록 설정해 주세요)</div>}
+                {criteria.length===0 && <div className="empty">추가된 서류가 없습니다.</div>}
                 {criteria.map((c,idx)=>(
                   <div className="chip" key={idx}>
                     <span className="name">{c.name}</span>
@@ -326,50 +387,37 @@ export default function ScholarshipCreate(){
                   </div>
                 ))}
               </div>
-
-              <div className={`weight-note ${totalWeight===100?'ok':''}`}>
-                가중치 합계: <b>{totalWeight}%</b> {totalWeight===100 ? '(OK)' : '(100%가 되도록 설정)'}
-              </div>
             </Section>
 
             {/* ===== 심사 관련 ===== */}
             <Section title="심사 관련">
-              <Grid2>
-                <Field label="심사 방식 *">
-                  <div className="radios">
-                    <label>
-                      <input 
-                        type="radio" 
-                        name="judge" 
-                        value="DOCUMENT_REVIEW"
-                        checked={formData.evaluationMethod === 'DOCUMENT_REVIEW'}
-                        onChange={(e) => handleInputChange('evaluationMethod', e.target.value)}
-                      /> 서류심사
-                    </label>
-                    <label>
-                      <input 
-                        type="radio" 
-                        name="judge" 
-                        value="DOCUMENT_INTERVIEW"
-                        checked={formData.evaluationMethod === 'DOCUMENT_INTERVIEW'}
-                        onChange={(e) => handleInputChange('evaluationMethod', e.target.value)}
-                      /> 서류심사 + 면접심사
-                    </label>
-                  </div>
-                </Field>
-                <Field label="면접 예정일">
-                  <input 
-                    className="ip" 
-                    type="date"
-                    value={formData.interviewDate}
-                    onChange={(e) => handleInputChange('interviewDate', e.target.value)}
-                  />
-                </Field>
-              </Grid2>
+              <Field label="심사 방식 *">
+                <div className="radios">
+                  <label>
+                    <input 
+                      type="radio" 
+                      name="judge" 
+                      value="DOCUMENT_REVIEW"
+                      checked={formData.evaluationMethod === 'DOCUMENT_REVIEW'}
+                      onChange={(e) => handleInputChange('evaluationMethod', e.target.value)}
+                    /> 서류심사
+                  </label>
+                  <label>
+                    <input 
+                      type="radio" 
+                      name="judge" 
+                      value="DOCUMENT_INTERVIEW"
+                      checked={formData.evaluationMethod === 'DOCUMENT_INTERVIEW'}
+                      onChange={(e) => handleInputChange('evaluationMethod', e.target.value)}
+                    /> 서류심사 + 면접심사
+                  </label>
+                </div>
+              </Field>
 
               <Grid2>
                 <Field label="심사 시작일 *">
                   <input 
+                    ref={evaluationStartDateRef}
                     className="ip" 
                     type="date"
                     value={formData.evaluationStartDate}
@@ -378,6 +426,7 @@ export default function ScholarshipCreate(){
                 </Field>
                 <Field label="결과 발표일 *">
                   <input 
+                    ref={resultAnnouncementDateRef}
                     className="ip" 
                     type="date"
                     value={formData.resultAnnouncementDate}
@@ -385,21 +434,32 @@ export default function ScholarshipCreate(){
                   />
                 </Field>
               </Grid2>
+
+              <Field label="면접 예정일">
+                <input 
+                  className="ip" 
+                  type="date"
+                  value={formData.interviewDate}
+                  onChange={(e) => handleInputChange('interviewDate', e.target.value)}
+                />
+              </Field>
             </Section>
 
             {/* ===== 문의처 정보 ===== */}
             <Section title="문의처 정보">
               <Grid2>
-                <Field label="담당자명 *">
+                <Field label="관리자명 *">
                   <input 
+                    ref={contactPersonNameRef}
                     className="ip" 
-                    placeholder="담당자 이름을 입력하세요"
+                    placeholder="관리자 이름을 입력하세요"
                     value={formData.contactPersonName}
                     onChange={(e) => handleInputChange('contactPersonName', e.target.value)}
                   />
                 </Field>
                 <Field label="연락처 *">
                   <input 
+                    ref={contactPhoneRef}
                     className="ip" 
                     placeholder="010-0000-0000"
                     value={formData.contactPhone}
@@ -411,60 +471,18 @@ export default function ScholarshipCreate(){
               <Grid2>
                 <Field label="이메일 *">
                   <input 
+                    ref={contactEmailRef}
                     className="ip" 
                     type="email"
-                    placeholder="contact@university.ac.kr"
+                    placeholder="관리자 이메일을 입력하세요"
                     value={formData.contactEmail}
                     onChange={(e) => handleInputChange('contactEmail', e.target.value)}
                   />
                 </Field>
-                <Field label="사무실 위치">
-                  <input 
-                    className="ip" 
-                    placeholder="예: 학생회관 2층 201호"
-                    value={formData.officeLocation}
-                    onChange={(e) => handleInputChange('officeLocation', e.target.value)}
-                  />
-                </Field>
+                <div/>
               </Grid2>
-
-              <Field label="상담 가능 시간">
-                <input 
-                  className="ip" 
-                  placeholder="예: 평일 09:00~18:00 (점심 12:00~13:00 제외)"
-                  value={formData.consultationHours}
-                  onChange={(e) => handleInputChange('consultationHours', e.target.value)}
-                />
-              </Field>
             </Section>
 
-            {/* ===== 공지사항 ===== */}
-            <Section title="공지사항">
-              <Field label="공지사항 제목">
-                <input 
-                  className="ip" 
-                  placeholder="공지사항 제목을 입력하세요"
-                  value={formData.noticeTitle}
-                  onChange={(e) => handleInputChange('noticeTitle', e.target.value)}
-                />
-              </Field>
-
-              <Field label="공지사항 내용">
-                <textarea 
-                  className="ta" 
-                  rows={5} 
-                  placeholder="공지사항 내용을 입력하세요"
-                  value={formData.noticeContent}
-                  onChange={(e) => handleInputChange('noticeContent', e.target.value)}
-                />
-              </Field>
-
-              <Field label="첨부 이미지">
-                <div className="dropzone">
-                  클릭하여 이미지를 업로드하세요<br/>JPG, PNG 파일만 업로드 가능합니다
-                </div>
-              </Field>
-            </Section>
 
             <div className="submit-row">
               <button className="btn-primary" type="submit" disabled={isLoading}>

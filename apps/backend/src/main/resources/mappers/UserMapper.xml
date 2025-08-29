@@ -8,6 +8,7 @@
     <!-- 공통 컬럼 리스트 -->
     <sql id="User_Columns">
         `userNm`,
+        `userMileage`,
         `accountNm`,
         `userId`,
         `password`,
@@ -27,6 +28,7 @@
     <!-- ResultMap: ENUM과 LocalDateTime 자동 매핑(기본 TypeHandler 사용) -->
     <resultMap id="UserResultMap" type="com.solsol.heycalendar.domain.User">
         <id     property="userNm"      column="userNm"/>
+        <result property="userMileage" column="userMileage"/>
         <result property="accountNm"   column="accountNm"/>
         <result property="userId"      column="userId"/>
         <result property="password"    column="password"/>
@@ -176,5 +178,23 @@
         FROM `users`
         WHERE state = 'ENROLLED'
     </select>
+
+    <!-- 마일리지 절대값으로 업데이트 -->
+    <update id="updateUserMileage">
+        UPDATE `users`
+        SET 
+            `userMileage` = #{mileageAmount},
+            `updatedAt` = CURRENT_TIMESTAMP
+        WHERE `userNm` = #{userNm}
+    </update>
+
+    <!-- 마일리지 추가 (기존 값에 더하기) -->
+    <update id="addUserMileage">
+        UPDATE `users`
+        SET 
+            `userMileage` = COALESCE(`userMileage`, 0) + #{mileageAmount},
+            `updatedAt` = CURRENT_TIMESTAMP
+        WHERE `userNm` = #{userNm}
+    </update>
 
 </mapper>

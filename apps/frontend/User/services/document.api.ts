@@ -193,7 +193,8 @@ export const deleteDocument = async (documentId: number): Promise<void> => {
     const token = await getAuthToken();
     console.log('🔑 토큰 확인:', token ? '있음' : '없음');
     
-    const url = `${BASE_URL.replace('/api', '')}/api/student/documents/${documentId}`;
+    //const url = `${BASE_URL.replace('/api', '')}/api/student/documents/${documentId}`;
+    const url = `${BASE_URL}/student/documents/${documentId}`;
     console.log('🌐 삭제 요청 URL:', url);
     
     const response = await fetch(url, {

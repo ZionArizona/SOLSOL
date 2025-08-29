@@ -206,3 +206,37 @@
 .reject-btn-modal:hover{
   background:#757575;
 }
+
+/* 상태 배지 스타일 */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.status-badge.approved {
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  color: #0369a1;
+}
+
+.status-badge.rejected {
+  background: #fef2f2;
+  border: 1px solid #f87171;
+  color: #dc2626;
+}
+
+.status-badge.paid {
+  background: #f0fdf4;
+  border: 1px solid #16a34a;
+  color: #15803d;
+}
+
+.status-badge.pending-payment {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #d97706;
+}

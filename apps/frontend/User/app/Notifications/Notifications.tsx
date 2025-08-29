@@ -8,7 +8,7 @@ import { notificationApi, Notification, NotificationType } from "../../services/
 import { useWebSocket } from "../../contexts/WebSocketContext";
 
 export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState<string>("읽지않음");
+  const [activeTab, setActiveTab] = useState<string>("전체");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,6 +52,18 @@ export default function NotificationsPage() {
             displayType: "scholarship", 
             actionLabel: "결과 확인", 
             actionRoute: "/MyScholarship/MyScholarship" 
+          };
+        case NotificationType.MILEAGE_DEPOSIT:
+          return { 
+            displayType: "scholarship", 
+            actionLabel: "마일리지 확인", 
+            actionRoute: "/MyPage/MyPage" 
+          };
+        case NotificationType.ACCOUNT_TRANSFER:
+          return { 
+            displayType: "scholarship", 
+            actionLabel: "계좌 확인", 
+            actionRoute: "/MyPage/MyPage" 
           };
         case NotificationType.SCHEDULE:
           return { 
@@ -292,12 +304,10 @@ export default function NotificationsPage() {
       switch (activeTab) {
         case "장학금":
           return notification.type === "scholarship";
-        case "일정":
-          return notification.type === "schedule";
         case "마감임박":
           return notification.type === "deadline";
-        case "읽지않음":
-          return !notification.isRead;
+        case "내 일정":
+          return notification.type === "schedule";
         default:
           return true;
       }
@@ -332,7 +342,7 @@ export default function NotificationsPage() {
 
           {/* 알림 탭 */}
           <NotificationTabs
-            tabs={["읽지않음", "전체", "장학금", "일정", "마감임박"]}
+            tabs={["전체", "장학금", "마감임박", "내 일정"]}
             active={activeTab}
             onChange={setActiveTab}
           />
@@ -351,9 +361,7 @@ export default function NotificationsPage() {
             ) : (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>
-                  {activeTab === "읽지않음" 
-                    ? "새로운 알림이 없습니다." 
-                    : activeTab === "전체"
+                  {activeTab === "전체"
                     ? "알림이 없습니다."
                     : `${activeTab} 알림이 없습니다.`
                   }

@@ -85,14 +85,20 @@ export default function MyScholarshipPage() {
     try {
       setLoading(true);
 
-      const [applicationData, mileageData] = await Promise.all([
+      // 사용자 정보를 먼저 가져와서 마일리지 포함하여 가져오기
+      const [applicationData, userInfoData] = await Promise.all([
         applicationApi.getMyApplications(),
-        mileageApi.getUserMileage(),
+        import('../../services/user.api').then(({ userApi }) => 
+          userApi.getMyInfo().catch(e => {
+            console.log('👤 MyScholarship: userApi failed:', e);
+            return null;
+          })
+        ),
         loadBookmarkedScholarships()
       ]);
 
       console.log('📋 Application data loaded:', applicationData);
-      console.log('💰 Mileage data loaded:', mileageData);
+      console.log('👤 User info data loaded:', userInfoData);
 
       if (applicationData && Array.isArray(applicationData)) {
         setApplications(applicationData);
@@ -100,9 +106,31 @@ export default function MyScholarshipPage() {
         setApplications([]);
       }
 
-      if (mileageData) {
-        setCurrentMileage(mileageData.availableMileage || 0);
+      // 마일리지 설정 - 사용자 정보에서 우선 가져오기
+      let mileageValue = 0;
+      
+      // 1차: 사용자 정보에서 직접 가져오기
+      if (userInfoData && userInfoData.userMileage !== null && userInfoData.userMileage !== undefined) {
+        mileageValue = userInfoData.userMileage;
+        console.log('💰 MyScholarship: Got mileage from user data:', mileageValue);
+      } else {
+        // 2차: fallback으로 mileageApi 시도
+        try {
+          console.log('💰 MyScholarship: Trying fallback mileage API...');
+          const mileageData = await mileageApi.getUserMileage();
+          console.log('💰 MyScholarship: Fallback mileage data:', mileageData);
+          
+          if (mileageData && (mileageData.availableMileage || mileageData.totalMileage || mileageData.userMileage)) {
+            mileageValue = mileageData.availableMileage || mileageData.totalMileage || mileageData.userMileage || 0;
+            console.log('💰 MyScholarship: Got mileage from fallback API:', mileageValue);
+          }
+        } catch (mileageError) {
+          console.log('💰 MyScholarship: Fallback mileage API failed:', mileageError);
+        }
       }
+      
+      console.log('💰 MyScholarship: Final mileage value:', mileageValue);
+      setCurrentMileage(mileageValue);
     } catch (error) {
       console.error('데이터 로드 실패:', error);
       setApplications([]);
@@ -143,27 +171,53 @@ export default function MyScholarshipPage() {
     };
   };
 
+  // 북마크된 장학금을 ProgressCard 형태로 변환
+  const convertBookmarkToProgressCard = (scholarship: any) => {
+    return {
+      id: scholarship.id?.toString() || scholarship.scholarshipId?.toString() || Math.random().toString(),
+      title: scholarship.scholarshipName || scholarship.title || `장학금 ${scholarship.id}`,
+      amount: `${scholarship.amount?.toLocaleString() || '미정'}원`,
+      date: `마감일: ${scholarship.recruitmentEndDate ? new Date(scholarship.recruitmentEndDate).toLocaleDateString('ko-KR') : '미정'}`,
+      steps: ["등록", "신청가능", "마감"],
+      currentStep: scholarship.recruitmentStatus === 'OPEN' ? 2 : 
+                  scholarship.recruitmentStatus === 'CLOSED' ? 3 : 1,
+      status: scholarship.recruitmentStatus === 'OPEN' ? "신청가능" : 
+             scholarship.recruitmentStatus === 'CLOSED' ? "마감" : "등록됨",
+      type: "bookmark" // 북마크된 장학금임을 표시
+    };
+  };
+
   // 탭별 필터링된 데이터
   const getFilteredData = () => {
     switch (activeTab) {
       case "찜목록":
         console.log('🔖 Processing bookmarked scholarships:', bookmarkedScholarships);
         console.log('🔖 Number of bookmarked scholarships:', bookmarkedScholarships.length);
-        return bookmarkedScholarships.map(scholarship => {
-          console.log('🔖 Processing scholarship:', scholarship);
-          return {
-            id: scholarship.id?.toString() || scholarship.scholarshipId?.toString() || Math.random().toString(),
-            title: scholarship.scholarshipName || scholarship.title || `장학금 ${scholarship.id}`,
-            amount: `${scholarship.amount?.toLocaleString() || '미정'}원`,
-            date: `마감일: ${scholarship.recruitmentEndDate ? new Date(scholarship.recruitmentEndDate).toLocaleDateString('ko-KR') : '미정'}`,
-            steps: ["등록", "신청가능", "마감"],
-            currentStep: scholarship.recruitmentStatus === 'OPEN' ? 2 : 
-                        scholarship.recruitmentStatus === 'CLOSED' ? 3 : 1,
-            status: scholarship.recruitmentStatus === 'OPEN' ? "신청가능" : 
-                   scholarship.recruitmentStatus === 'CLOSED' ? "마감" : "등록됨",
-          };
-        });
+        return bookmarkedScholarships.map(convertBookmarkToProgressCard);
+      
+      case "전체":
+        // 전체 탭에서는 신청한 장학금 + 찜한 장학금 모두 표시
+        const applicationCards = applications.map(app => ({
+          ...convertToProgressCard(app),
+          type: "application" // 신청한 장학금임을 표시
+        }));
+        
+        const bookmarkCards = bookmarkedScholarships.map(scholarship => ({
+          ...convertBookmarkToProgressCard(scholarship),
+          type: "bookmark" // 북마크된 장학금임을 표시
+        }));
+        
+        // 중복 제거 (같은 장학금을 신청하고 찜했을 수도 있음)
+        const allCards = [...applicationCards, ...bookmarkCards];
+        const uniqueCards = allCards.filter((card, index, self) => 
+          index === self.findIndex(c => c.id === card.id)
+        );
+        
+        console.log('📊 전체 탭 - 신청:', applicationCards.length, '찜:', bookmarkCards.length, '전체(중복제거):', uniqueCards.length);
+        return uniqueCards;
+      
       default:
+        // 다른 상태별 탭들은 신청한 장학금만 표시
         return applications.filter(application => {
           const { status } = getApplicationStatus(application);
           

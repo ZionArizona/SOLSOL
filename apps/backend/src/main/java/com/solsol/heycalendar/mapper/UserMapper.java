@@ -36,4 +36,8 @@ public interface UserMapper {
 	int insertUser(User user);
 	
 	List<String> findAllActiveUserNames();
+	
+	// 마일리지 관련 메서드
+	int updateUserMileage(@Param("userNm") String userNm, @Param("mileageAmount") Integer mileageAmount);
+	int addUserMileage(@Param("userNm") String userNm, @Param("mileageAmount") Integer mileageAmount);
 }

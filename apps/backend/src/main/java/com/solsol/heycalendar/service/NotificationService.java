@@ -194,6 +194,32 @@ public class NotificationService {
     }
     
     /**
+     * 환전 완료 알림 발송
+     */
+    public void sendExchangeCompletedNotification(String userNm, Integer amount) {
+        log.info("Sending exchange completed notification - userNm: {}, amount: {}", userNm, amount);
+        
+        String title = "마일리지 환전이 완료되었습니다";
+        String message = String.format("%d 마일리지가 성공적으로 계좌로 환전되었습니다.", amount);
+        String actionRoute = "/Menu/AccountView"; // 계좌 보기 페이지
+        
+        createNotification(userNm, NotificationType.SCHEDULE, title, message, null, actionRoute);
+    }
+
+    /**
+     * 환전 거절 알림 발송
+     */
+    public void sendExchangeRejectedNotification(String userNm, Integer amount) {
+        log.info("Sending exchange rejected notification - userNm: {}, amount: {}", userNm, amount);
+        
+        String title = "마일리지 환전이 거절되었습니다";
+        String message = String.format("%d 마일리지 환전 신청이 거절되었습니다. 관리자에게 문의해주세요.", amount);
+        String actionRoute = "/Menu/AccountView"; // 계좌 보기 페이지
+        
+        createNotification(userNm, NotificationType.SCHEDULE, title, message, null, actionRoute);
+    }
+
+    /**
      * 모든 사용자에게 브로드캐스트 알림 전송
      */
     public void broadcastNotification(Notification notification) {
