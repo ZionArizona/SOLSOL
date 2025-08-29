@@ -39,8 +39,11 @@ export default function ScholarshipApply() {
     if (isNaN(end.getTime())) return "날짜 정보 오류";
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    
     const diffTime = end.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) return "마감됨";
     if (diffDays === 0) return "오늘 마감";

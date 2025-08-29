@@ -5,17 +5,23 @@ import { ChevronLeftIcon, HomeIcon, MenuIcon } from "../shared/icons";
 import { NotificationBell } from "../shared/NotificationBell";
 import { deviceInfo } from "../../styles/responsive";
 
-export const TopBar = ({ title }: { title: string }) => {
+export const TopBar = ({ title, onBackPress }: { title: string; onBackPress?: () => void }) => {
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      console.log('Back button pressed, can go back:', router.canGoBack());
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.push("/");
+      }
+    }
+  };
+
   return (
     <View style={styles.wrap}>
-      <TouchableOpacity activeOpacity={0.8} onPress={() => {
-        console.log('Back button pressed, can go back:', router.canGoBack());
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.push("/");
-        }
-      }}>
+      <TouchableOpacity activeOpacity={0.8} onPress={handleBackPress}>
         <ChevronLeftIcon size={deviceInfo.isTablet ? 26 : 22} />
       </TouchableOpacity>
       <Text style={styles.title}>{title}</Text>
