@@ -167,43 +167,22 @@ export default function ScholarshipApplyForm() {
               });
               
               if (file.uri.startsWith('mybox://')) {
-                // MyBox 파일인 경우: Presigned URL 생성해서 S3에서 S3로 복사
+                // MyBox 파일인 경우: 암호화된 데이터를 그대로 복사
                 try {
-                  console.log(`📁 MyBox 파일 처리 시작: ${file.name}`);
-                  const documentId = parseInt(file.uri.replace('mybox://', ''));
+                  console.log(`📁 MyBox 파일 복사 시작: ${file.name}`);
+                  const myboxDocumentId = parseInt(file.uri.replace('mybox://', ''));
                   
-                  // MyBox 파일의 다운로드 URL 생성
-                  const { generateDownloadUrl } = await import('../../services/document.api');
-                  const downloadUrl = await generateDownloadUrl(documentId);
-                  console.log(`🔗 MyBox 다운로드 URL 생성 완료: ${file.name}`);
-                  
-                  // MyBox 파일을 fetch로 다운로드
-                  const response = await fetch(downloadUrl);
-                  if (!response.ok) {
-                    throw new Error(`MyBox 파일 다운로드 실패: ${response.status}`);
-                  }
-                  
-                  const fileBlob = await response.blob();
-                  const webFile = new File([fileBlob], file.name, { 
-                    type: file.type || 'application/octet-stream' 
-                  });
-                  
-                  console.log(`📥 MyBox 파일 다운로드 완료: ${file.name}, size: ${webFile.size}`);
-                  
-                  // 다운받은 파일을 장학금 신청용으로 업로드
-                  const { uploadApplicationDocumentWeb } = await import('../../services/document.api');
-                  await uploadApplicationDocumentWeb(
-                    webFile,
-                    file.name,
-                    'scholarship',
+                  // MyBox 파일을 ApplicationDocument로 복사 (암호화된 데이터 그대로)
+                  const { copyMyBoxFileToApplicationDocument } = await import('../../services/document.api');
+                  const documentNm = await copyMyBoxFileToApplicationDocument(
                     scholarshipId,
-                    (i + 1).toString()
+                    myboxDocumentId
                   );
                   
-                  console.log(`✅ MyBox 파일 장학금용으로 업로드 완료: ${file.name}`);
+                  console.log(`✅ MyBox 파일 복사 완료: ${file.name}, documentNm: ${documentNm}`);
                 } catch (error) {
-                  console.error(`❌ MyBox 파일 처리 실패: ${file.name}`, error);
-                  Alert.alert('오류', `MyBox 파일 "${file.name}" 처리에 실패했습니다.`);
+                  console.error(`❌ MyBox 파일 복사 실패: ${file.name}`, error);
+                  Alert.alert('오류', `MyBox 파일 "${file.name}" 복사에 실패했습니다.`);
                   continue;
                 }
               } else {

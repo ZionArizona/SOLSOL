@@ -308,4 +308,33 @@ public class ApplicationController {
                     .body(new ApiResponse<>(false, "서류 반려에 실패했습니다.", "INTERNAL_ERROR", null));
         }
     }
+
+    @Operation(summary = "MyBox 파일을 ApplicationDocument로 복사", description = "사용자의 MyBox에 있는 파일을 장학금 신청 서류로 복사합니다.")
+    @PostMapping("/student/documents/copy-from-mybox")
+    public ResponseEntity<ApiResponse<Map<String, String>>> copyMyBoxFileToApplicationDocument(
+            @RequestHeader("user-nm") String userNm,
+            @RequestBody Map<String, Object> request) {
+        try {
+            String scholarshipNm = (String) request.get("scholarshipNm");
+            Integer myboxDocumentId = (Integer) request.get("myboxDocumentId");
+            
+            log.info("Copying MyBox file to ApplicationDocument - user: {}, scholarship: {}, myboxDocumentId: {}", 
+                    userNm, scholarshipNm, myboxDocumentId);
+            
+            String documentNm = documentService.copyMyBoxFileToApplicationDocument(userNm, scholarshipNm, myboxDocumentId.longValue());
+            
+            Map<String, String> result = Map.of("documentNm", documentNm);
+            
+            return ResponseEntity.ok(new ApiResponse<>(true, "MyBox 파일이 장학금 신청 서류로 복사되었습니다.", "OK", result));
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request for MyBox file copy: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), "INVALID_REQUEST", null));
+        } catch (Exception e) {
+            log.error("Failed to copy MyBox file to ApplicationDocument", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "MyBox 파일 복사에 실패했습니다.", "INTERNAL_ERROR", null));
+        }
+    }
 }

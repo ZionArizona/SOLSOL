@@ -343,6 +343,73 @@ public class DocumentService {
     }
 
     /**
+     * MyBox 파일을 ApplicationDocument로 복사 (암호화된 데이터 그대로)
+     */
+    @Transactional
+    public String copyMyBoxFileToApplicationDocument(String userNm, String scholarshipNm, Long myboxDocumentId) {
+        try {
+            log.info("MyBox 파일 복사 시작 - userNm: {}, scholarshipNm: {}, myboxDocumentId: {}", userNm, scholarshipNm, myboxDocumentId);
+            
+            // 디버깅: 해당 사용자의 모든 MyBox 문서 조회
+            List<Mybox> userDocuments = myboxMapper.findByUserNm(userNm);
+            log.info("📋 사용자 {}의 MyBox 문서 목록 ({} 개):", userNm, userDocuments.size());
+            for (Mybox doc : userDocuments) {
+                log.info("  - ID: {}, contentType: {}, sizeBytes: {}", doc.getId(), doc.getContentType(), doc.getSizeBytes());
+            }
+            
+            // 1. MyBox 문서 조회
+            log.info("🔍 ID {} 문서를 사용자 {}로 조회 중...", myboxDocumentId, userNm);
+            Mybox myboxDocument = myboxMapper.findByIdAndUserNm(myboxDocumentId, userNm);
+            if (myboxDocument == null) {
+                log.error("❌ MyBox 문서 조회 실패 - ID: {}, 사용자: {}", myboxDocumentId, userNm);
+                throw new IllegalArgumentException("MyBox에서 해당 문서를 찾을 수 없습니다. ID: " + myboxDocumentId + ", 사용자: " + userNm);
+            }
+            log.info("✅ MyBox 문서 조회 성공 - ID: {}, contentType: {}", myboxDocument.getId(), myboxDocument.getContentType());
+            
+            // 2. 고유한 documentNm 생성
+            String documentNm = generateUniqueDocumentName(userNm, scholarshipNm);
+            
+            // 3. ApplicationDocument에 복사 (암호화된 데이터 그대로)
+            ApplicationDocument applicationDocument = ApplicationDocument.builder()
+                    .applicationDocumentNm(null) // AUTO_INCREMENT 사용
+                    .userNm(userNm)
+                    .scholarshipNm(scholarshipNm)
+                    .objectKeyEnc(myboxDocument.getObjectKeyEnc()) // 암호화된 데이터 그대로 복사
+                    .fileNameEnc(myboxDocument.getFileNameEnc()) // 암호화된 데이터 그대로 복사
+                    .contentType(myboxDocument.getContentType())
+                    .fileSize(myboxDocument.getSizeBytes())
+                    .checksumSha256(myboxDocument.getChecksumSha256())
+                    .uploadedAt(java.time.LocalDateTime.now())
+                    .build();
+            
+            applicationDocumentMapper.insertDocument(applicationDocument);
+            
+            // 4. 복호화한 파일명으로 로깅
+            try {
+                String originalFileName = cryptoUtil.decrypt(new String(myboxDocument.getFileNameEnc()));
+                log.info("✅ MyBox 파일 복사 완료 - documentNm: {}, 원본 파일명: {}", documentNm, originalFileName);
+            } catch (Exception e) {
+                log.info("✅ MyBox 파일 복사 완료 - documentNm: {} (파일명 복호화 실패)", documentNm);
+            }
+            
+            return documentNm;
+            
+        } catch (Exception e) {
+            log.error("❌ MyBox 파일 복사 실패 - userNm: {}, scholarshipNm: {}, myboxDocumentId: {}", userNm, scholarshipNm, myboxDocumentId, e);
+            throw new RuntimeException("MyBox 파일 복사에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 고유한 document 이름 생성
+     */
+    private String generateUniqueDocumentName(String userNm, String scholarshipNm) {
+        long timestamp = System.currentTimeMillis();
+        String uuid = UUID.randomUUID().toString().substring(0, 8);
+        return String.format("mybox_%s_%s_%s", userNm, timestamp, uuid);
+    }
+
+    /**
      * S3에서 파일 존재 확인
      */
     private boolean isFileExistsInS3(String key) {

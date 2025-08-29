@@ -88,11 +88,10 @@ export default function ScholarshipCreate(){
     if(!reqName.trim()) return
     setCriteria(list => [...list, {
       name: reqName.trim(),
-      weight: 0 // 가중치는 0으로 고정 (백엔드 필드명에 맞춤)
+      weight: weight || 0 // 사용자가 입력한 가중치 사용
     }])
     setReqName('')
-    setCriteria(list => [...list, {name:reqName.trim(), weight:weight||0}])
-    setReqName(''); setWeight('')
+    setWeight('')
   }
   const removeCriteria = (idx) => {
     setCriteria(list => list.filter((_,i)=> i!==idx))

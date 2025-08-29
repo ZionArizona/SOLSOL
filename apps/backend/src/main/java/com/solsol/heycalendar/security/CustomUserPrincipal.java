@@ -57,7 +57,7 @@ public class CustomUserPrincipal implements UserDetails {
 
 	@Override
 	public String getUsername() {
-		return userName;
+		return userNm;  // 학번 반환 (MyBox에서 userNm으로 사용하기 위해)
 	}
 
 	@Override
