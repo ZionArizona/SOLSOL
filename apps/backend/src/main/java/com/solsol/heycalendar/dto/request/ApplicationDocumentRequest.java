@@ -18,12 +18,12 @@ import jakarta.validation.constraints.Size;
 @AllArgsConstructor
 public class ApplicationDocumentRequest {
     
-    @NotBlank(message = "Document name is required")
-    @Size(max = 100, message = "Document name must not exceed 100 characters")
+    @NotBlank(message = "document name is required")
+    @Size(max = 100, message = "document name must not exceed 100 characters")
     private String applicationDocumentNm;
     
-    @NotBlank(message = "User name is required")
-    @Size(max = 100, message = "User name must not exceed 100 characters")
+    @NotBlank(message = "user name is required")
+    @Size(max = 100, message = "user name must not exceed 100 characters")
     private String userNm;
     
     @NotBlank(message = "Scholarship name is required")

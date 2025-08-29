@@ -47,7 +47,7 @@
     <select id="findByUserId" parameterType="string" resultMap="UserResultMap">
         SELECT
         <include refid="User_Columns"/>
-        FROM `User`
+        FROM `users`
         WHERE `userId` = #{userId}
         LIMIT 1
     </select>
@@ -56,14 +56,14 @@
     <select id="findByUserNm" parameterType="string" resultMap="UserResultMap">
         SELECT
         <include refid="User_Columns"/>
-        FROM `User`
+        FROM `users`
         WHERE `userNm` = #{userNm}
         LIMIT 1
     </select>
 
     <!-- 비밀번호 해시 수정 -->
     <update id="updatePasswordByUserId">
-        UPDATE `User`
+        UPDATE `users`
         SET
             `password` = #{encodedPassword},
             `updatedAt` = CURRENT_TIMESTAMP
@@ -72,7 +72,7 @@
 
     <!-- 비밀번호 재설정용 코드 저장 -->
     <update id="updateUserKeyByUserId">
-        UPDATE `User`
+        UPDATE `users`
         SET
             `userKey` = #{userKey},
             `updatedAt` = CURRENT_TIMESTAMP
@@ -81,7 +81,7 @@
 
     <!-- 비밀번호 재설정 완료 후 코드 제거 -->
     <update id="clearUserKeyByUserId">
-        UPDATE `User`
+        UPDATE `users`
         SET
             `userKey` = NULL,
             `updatedAt` = CURRENT_TIMESTAMP
@@ -92,14 +92,14 @@
     <select id="findByUserKey" parameterType="string" resultMap="UserResultMap">
         SELECT
         <include refid="User_Columns"/>
-        FROM `User`
+        FROM `users`
         WHERE `userKey` = #{userKey}
         LIMIT 1
     </select>
 
     <!-- 🔹 userKey로 토큰 제거 -->
     <update id="clearUserKeyByUserKey">
-        UPDATE `User`
+        UPDATE `users`
         SET
             `userKey` = NULL,
             `updatedAt` = CURRENT_TIMESTAMP
@@ -108,7 +108,7 @@
 
     <!-- 🔹 신한은행 유저키와 계좌번호 저장 -->
     <update id="updateUserKeyAndAccountByUserId">
-        UPDATE `User`
+        UPDATE `users`
         SET
             `userKey` = #{userKey},
             `accountNm` = #{accountNm},
@@ -118,7 +118,7 @@
 
     <!-- 🔹 사용자 정보 수정 -->
     <update id="updateUserInfo">
-        UPDATE `User`
+        UPDATE `users`
         SET
             `updatedAt` = CURRENT_TIMESTAMP
             <if test="request.userName != null and request.userName != ''">
@@ -141,7 +141,7 @@
 
     <!-- 🔹 회원가입 시 사용자 등록 -->
     <insert id="insertUser" parameterType="com.solsol.heycalendar.domain.User">
-        INSERT INTO `User` (
+        INSERT INTO `users` (
             `userNm`,
             `userId`,
             `password`,
@@ -173,7 +173,7 @@
     <!-- 활성 사용자의 userNm 목록 조회 (알림용) -->
     <select id="findAllActiveUserNames" resultType="string">
         SELECT userNm 
-        FROM `User` 
+        FROM `users`
         WHERE state = 'ENROLLED'
     </select>
 

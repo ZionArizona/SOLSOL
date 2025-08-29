@@ -74,9 +74,9 @@
         FROM application a
         JOIN scholarship s ON a.scholarshipNm = s.id
         LEFT JOIN User u ON a.userNm = u.userNm
-        LEFT JOIN Department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
-        LEFT JOIN College c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
-        LEFT JOIN University univ ON u.univNm = univ.univNm
+        LEFT JOIN department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
+        LEFT JOIN college c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
+        LEFT JOIN university univ ON u.univNm = univ.univNm
         WHERE a.userNm = #{userNm} AND a.scholarshipNm = #{scholarshipNm}
     </select>
 
@@ -169,9 +169,9 @@
         FROM application a
         JOIN scholarship s ON a.scholarshipNm = s.id
         LEFT JOIN User u ON a.userNm = u.userNm
-        LEFT JOIN Department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
-        LEFT JOIN College c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
-        LEFT JOIN University univ ON u.univNm = univ.univNm
+        LEFT JOIN department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
+        LEFT JOIN college c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
+        LEFT JOIN university univ ON u.univNm = univ.univNm
         WHERE a.userNm = #{userNm}
         ORDER BY a.applied_at DESC
     </select>
@@ -192,9 +192,9 @@
         FROM application a
         JOIN scholarship s ON a.scholarshipNm = s.id
         LEFT JOIN User u ON a.userNm = u.userNm
-        LEFT JOIN Department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
-        LEFT JOIN College c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
-        LEFT JOIN University univ ON u.univNm = univ.univNm
+        LEFT JOIN department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
+        LEFT JOIN college c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
+        LEFT JOIN university univ ON u.univNm = univ.univNm
         ORDER BY a.applied_at DESC
     </select>
 
@@ -214,9 +214,9 @@
         FROM application a
         JOIN scholarship s ON a.scholarshipNm = s.id
         LEFT JOIN User u ON a.userNm = u.userNm
-        LEFT JOIN Department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
-        LEFT JOIN College c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
-        LEFT JOIN University univ ON u.univNm = univ.univNm
+        LEFT JOIN department d ON u.deptNm = d.deptNm AND u.collegeNm = d.collegeNm AND u.univNm = d.univNm
+        LEFT JOIN college c ON d.collegeNm = c.collegeNm AND d.univNm = c.univNm
+        LEFT JOIN university univ ON u.univNm = univ.univNm
         WHERE a.scholarshipNm = #{scholarshipNm}
         ORDER BY a.applied_at DESC
     </select>

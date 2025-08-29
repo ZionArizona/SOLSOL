@@ -22,15 +22,15 @@ public class UniversityRequest {
      * University identifier
      * Required for creation, used as primary key
      */
-    @NotBlank(message = "University ID cannot be blank")
-    @Size(max = 50, message = "University ID cannot exceed 50 characters")
+    @NotBlank(message = "university ID cannot be blank")
+    @Size(max = 50, message = "university ID cannot exceed 50 characters")
     private String univNm;
     
     /**
      * University display name
      */
-    @NotBlank(message = "University name cannot be blank")
-    @Size(max = 200, message = "University name cannot exceed 200 characters")
+    @NotBlank(message = "university name cannot be blank")
+    @Size(max = 200, message = "university name cannot exceed 200 characters")
     private String univName;
     
     /**

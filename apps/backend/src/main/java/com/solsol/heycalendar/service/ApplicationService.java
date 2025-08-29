@@ -241,7 +241,7 @@ public class ApplicationService {
                         .build();
                 
                 applicationDocumentMapper.insertApplicationDocument(document);
-                log.info("Document uploaded for application - User: {}, Scholarship: {}, File: {}", 
+                log.info("document uploaded for application - User: {}, Scholarship: {}, File: {}",
                         userNm, request.getScholarshipId(), docInfo.getFileName());
             }
         }
@@ -309,7 +309,7 @@ public class ApplicationService {
         ApplicationDocument existingDocument = applicationDocumentMapper.findDocumentByNameAndApplication(
                 request.getApplicationDocumentNm(), request.getUserNm(), request.getScholarshipNm());
         if (existingDocument != null) {
-            throw new IllegalStateException("Document with name '" + request.getApplicationDocumentNm() + 
+            throw new IllegalStateException("document with name '" + request.getApplicationDocumentNm() +
                     "' already exists for this application");
         }
 
@@ -325,7 +325,7 @@ public class ApplicationService {
                 .build();
 
         applicationDocumentMapper.insertDocument(document);
-        log.info("Document uploaded successfully: {} for user: {} and scholarship: {}", 
+        log.info("document uploaded successfully: {} for user: {} and scholarship: {}",
                 request.getApplicationDocumentNm(), request.getUserNm(), request.getScholarshipNm());
 
         return convertToApplicationDocumentResponse(document);
@@ -359,11 +359,11 @@ public class ApplicationService {
         ApplicationDocument document = applicationDocumentMapper.findDocumentByNameAndApplication(
                 documentNm, userNm, scholarshipNm);
         if (document == null) {
-            throw new IllegalArgumentException("Document not found: " + documentNm);
+            throw new IllegalArgumentException("document not found: " + documentNm);
         }
 
         applicationDocumentMapper.deleteDocument(documentNm, userNm, scholarshipNm);
-        log.info("Document deleted successfully: {} for user: {} and scholarship: {}", documentNm, userNm, scholarshipNm);
+        log.info("document deleted successfully: {} for user: {} and scholarship: {}", documentNm, userNm, scholarshipNm);
     }
 
     /**
@@ -388,7 +388,7 @@ public class ApplicationService {
             throw new IllegalArgumentException("Scholarship name is required for eligibility validation");
         }
         
-        log.debug("Eligibility validation passed for user: {} and scholarship: {}", userNm, scholarshipNm);
+        log.debug("eligibility validation passed for user: {} and scholarship: {}", userNm, scholarshipNm);
     }
 
     /**

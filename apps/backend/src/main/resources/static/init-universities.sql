@@ -1,7 +1,7 @@
 -- 대학교 목록 추가 SQL
 -- 제공된 대학교 목록만 삽입
 
-INSERT INTO `University` (`univNm`, `univName`, `mileageRatio`) VALUES 
+INSERT INTO `university` (`univNm`, `univName`, `mileageRatio`) VALUES
 (1, 'ICT폴리텍대학', 0.7),
 (2, '강동대학교', 0.7),
 (3, '강서대학교', 0.7),
@@ -123,7 +123,7 @@ ON DUPLICATE KEY UPDATE
     `mileageRatio` = VALUES(`mileageRatio`);
 
 -- 각 대학교에 대한 기본 College 추가 (일반학부)
-INSERT INTO `College` (`collegeNm`, `univNm`, `name`) VALUES 
+INSERT INTO `college` (`collegeNm`, `univNm`, `name`) VALUES
 (1, 1, '일반학부'),
 (1, 2, '일반학부'),
 (1, 3, '일반학부'),
@@ -243,8 +243,8 @@ INSERT INTO `College` (`collegeNm`, `univNm`, `name`) VALUES
 ON DUPLICATE KEY UPDATE 
     `name` = VALUES(`name`);
 
--- 각 대학교에 대한 기본 Department 추가 (일반학과)
-INSERT INTO `Department` (`deptNm`, `collegeNm`, `univNm`, `Deptname`) VALUES 
+-- 각 대학교에 대한 기본 department 추가 (일반학과)
+INSERT INTO `department` (`deptNm`, `collegeNm`, `univNm`, `Deptname`) VALUES
 (1, 1, 1, '일반학과'),
 (1, 1, 2, '일반학과'),
 (1, 1, 3, '일반학과'),

@@ -29,7 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
 		User user = userMapper.findByUserId(userId)
-			.orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
+			.orElseThrow(() -> new UsernameNotFoundException("user not found: " + userId));
 
 		return CustomUserPrincipal.create(user);
 	}
