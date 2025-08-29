@@ -29,7 +29,7 @@ public interface MyboxMapper {
             SELECT id, userNm, object_key_enc as objectKeyEnc, file_name_enc as fileNameEnc, 
                    content_type as contentType, size_bytes as sizeBytes, checksum_sha256 as checksumSha256,
                    created_at as createdAt, updated_at as updatedAt
-            FROM Mybox 
+            FROM mybox 
             WHERE id = #{id} AND userNm = #{userNm}
             """)
     Mybox findByIdAndUserNm(@Param("id") Long id, @Param("userNm") String userNm);
