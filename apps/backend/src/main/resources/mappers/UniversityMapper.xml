@@ -31,14 +31,14 @@
     <!-- Find all universities -->
     <select id="findAll" resultMap="universityResultMap">
         SELECT univNm, univName, mileageRatio
-        FROM University
+        FROM university
         ORDER BY univName
     </select>
 
     <!-- Find university by ID -->
     <select id="findById" parameterType="string" resultMap="universityResultMap">
         SELECT univNm, univName, mileageRatio
-        FROM University
+        FROM university
         WHERE univNm = #{univNm}
     </select>
 
@@ -52,22 +52,22 @@
             c.name as college_name,
             d.deptNm,
             d.name as dept_name
-        FROM University u
+        FROM university u
         LEFT JOIN College c ON u.univNm = c.univNm
-        LEFT JOIN Department d ON c.collegeNm = d.collegeNm AND c.univNm = d.univNm
+        LEFT JOIN department d ON c.collegeNm = d.collegeNm AND c.univNm = d.univNm
         WHERE u.univNm = #{univNm}
         ORDER BY c.name, d.name
     </select>
 
     <!-- Insert university -->
     <insert id="insert" parameterType="com.solsol.heycalendar.domain.University">
-        INSERT INTO University (univNm, univName, mileageRatio)
+        INSERT INTO university (univNm, univName, mileageRatio)
         VALUES (#{univNm}, #{univName}, #{field2})
     </insert>
 
     <!-- Update university -->
     <update id="update" parameterType="com.solsol.heycalendar.domain.University">
-        UPDATE University
+        UPDATE university
         SET univName = #{univName},
             mileageRatio = #{field2}
         WHERE univNm = #{univNm}
@@ -75,14 +75,14 @@
 
     <!-- Delete university by ID -->
     <delete id="deleteById" parameterType="string">
-        DELETE FROM University
+        DELETE FROM university
         WHERE univNm = #{univNm}
     </delete>
 
     <!-- Check if university exists -->
     <select id="existsById" parameterType="string" resultType="boolean">
         SELECT COUNT(*) > 0
-        FROM University
+        FROM university
         WHERE univNm = #{univNm}
     </select>
 

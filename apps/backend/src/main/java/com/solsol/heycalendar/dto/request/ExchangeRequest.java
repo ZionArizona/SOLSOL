@@ -18,7 +18,7 @@ import jakarta.validation.constraints.Positive;
 @AllArgsConstructor
 public class ExchangeRequest {
     
-    @NotBlank(message = "User name is required")
+    @NotBlank(message = "user name is required")
     private String userNm;
     
     @NotNull(message = "Amount is required")

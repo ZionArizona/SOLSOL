@@ -3,7 +3,7 @@
 
 <mapper namespace="com.solsol.heycalendar.mapper.EligibilityMapper">
 
-	<!-- Eligibility 결과 매핑 -->
+	<!-- eligibility 결과 매핑 -->
 	<resultMap id="eligibilityResultMap" type="com.solsol.heycalendar.domain.Eligibility">
 		<id property="eligibilityNm" column="eligibility_nm"/>
 		<result property="scholarshipNm" column="scholarship_nm"/>

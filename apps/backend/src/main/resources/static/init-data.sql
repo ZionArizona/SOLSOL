@@ -2,7 +2,7 @@
 -- 테스트용 기본 데이터
 
 -- 1. University 데이터
-INSERT INTO `University` (`univNm`, `univName`, `mileageRatio`) VALUES 
+INSERT INTO `university` (`univNm`, `univName`, `mileageRatio`) VALUES
 (1, '서울대학교', 1.0),
 (2, '연세대학교', 0.9),
 (3, '고려대학교', 0.9),
@@ -10,7 +10,7 @@ INSERT INTO `University` (`univNm`, `univName`, `mileageRatio`) VALUES
 (5, '성균관대학교', 0.85);
 
 -- 2. College 데이터
-INSERT INTO `College` (`collegeNm`, `univNm`, `name`) VALUES 
+INSERT INTO `college` (`collegeNm`, `univNm`, `name`) VALUES
 (1, 1, '공과대학'),
 (2, 1, '자연과학대학'),
 (3, 1, '인문대학'),
@@ -22,8 +22,8 @@ INSERT INTO `College` (`collegeNm`, `univNm`, `name`) VALUES
 (4, 2, '경영대학'),
 (1, 3, '공과대학');
 
--- 3. Department 데이터
-INSERT INTO `Department` (`deptNm`, `collegeNm`, `univNm`, `Deptname`) VALUES 
+-- 3. department 데이터
+INSERT INTO `department` (`deptNm`, `collegeNm`, `univNm`, `Deptname`) VALUES
 (1, 1, 1, '컴퓨터공학과'),
 (2, 1, 1, '전기전자공학과'),
 (3, 1, 1, '기계공학과'),
@@ -36,14 +36,14 @@ INSERT INTO `Department` (`deptNm`, `collegeNm`, `univNm`, `Deptname`) VALUES
 (10, 5, 1, '경영학과');
 
 -- 디폴트 학과 (테스트용)
-INSERT INTO `Department` (`deptNm`, `collegeNm`, `univNm`, `Deptname`) VALUES 
+INSERT INTO `department` (`deptNm`, `collegeNm`, `univNm`, `Deptname`) VALUES
 (999, 999, 999, '미지정학과')
 ON DUPLICATE KEY UPDATE `Deptname` = '미지정학과';
 
-INSERT INTO `College` (`collegeNm`, `univNm`, `name`) VALUES 
+INSERT INTO `college` (`collegeNm`, `univNm`, `name`) VALUES
 (999, 999, '미지정단과대')
 ON DUPLICATE KEY UPDATE `name` = '미지정단과대';
 
-INSERT INTO `University` (`univNm`, `univName`, `mileageRatio`) VALUES 
+INSERT INTO `university` (`univNm`, `univName`, `mileageRatio`) VALUES
 (999, '미지정대학교', 0.5)
 ON DUPLICATE KEY UPDATE `univName` = '미지정대학교';

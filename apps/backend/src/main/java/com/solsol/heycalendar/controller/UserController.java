@@ -37,7 +37,7 @@ public class UserController {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         UserInfoResponse userInfo = userService.getUserInfo(principal.getUserId());
         
-        return ResponseEntity.ok(new ApiResponse<>(true, "User info retrieved successfully.", "OK", userInfo));
+        return ResponseEntity.ok(new ApiResponse<>(true, "user info retrieved successfully.", "OK", userInfo));
     }
 
     @Operation(
@@ -51,7 +51,7 @@ public class UserController {
         CustomUserPrincipal principal = (CustomUserPrincipal) authentication.getPrincipal();
         UserInfoResponse updatedInfo = userService.updateUserInfo(principal.getUserId(), request);
         
-        return ResponseEntity.ok(new ApiResponse<>(true, "User info updated successfully.", "OK", updatedInfo));
+        return ResponseEntity.ok(new ApiResponse<>(true, "user info updated successfully.", "OK", updatedInfo));
     }
 
     @Operation(

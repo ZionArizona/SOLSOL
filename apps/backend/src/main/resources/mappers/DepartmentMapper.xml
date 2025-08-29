@@ -3,7 +3,7 @@
 
 <mapper namespace="com.solsol.heycalendar.mapper.DepartmentMapper">
 
-    <!-- Result Map for Department -->
+    <!-- Result Map for department -->
     <resultMap id="departmentResultMap" type="com.solsol.heycalendar.domain.Department">
         <id property="deptNm" column="dept_nm"/>
         <result property="collegeNm" column="college_nm"/>
@@ -14,7 +14,7 @@
     <!-- Find departments by college ID -->
     <select id="findByCollegeId" resultMap="departmentResultMap">
         SELECT dept_nm, college_nm, univ_nm, name
-        FROM Department
+        FROM department
         WHERE college_nm = #{collegeNm} AND univ_nm = #{univNm}
         ORDER BY name
     </select>
@@ -22,7 +22,7 @@
     <!-- Find departments by university ID -->
     <select id="findByUniversityId" parameterType="string" resultMap="departmentResultMap">
         SELECT dept_nm, college_nm, univ_nm, name
-        FROM Department
+        FROM department
         WHERE univ_nm = #{univNm}
         ORDER BY name
     </select>
@@ -30,45 +30,45 @@
     <!-- Find department by ID -->
     <select id="findById" resultMap="departmentResultMap">
         SELECT dept_nm, college_nm, univ_nm, name
-        FROM Department
+        FROM department
         WHERE dept_nm = #{deptNm} AND college_nm = #{collegeNm} AND univ_nm = #{univNm}
     </select>
 
     <!-- Insert department -->
     <insert id="insert" parameterType="com.solsol.heycalendar.domain.Department">
-        INSERT INTO Department (dept_nm, college_nm, univ_nm, name)
+        INSERT INTO department (dept_nm, college_nm, univ_nm, name)
         VALUES (#{deptNm}, #{collegeNm}, #{univNm}, #{name})
     </insert>
 
     <!-- Update department -->
     <update id="update" parameterType="com.solsol.heycalendar.domain.Department">
-        UPDATE Department
+        UPDATE department
         SET name = #{name}
         WHERE dept_nm = #{deptNm} AND college_nm = #{collegeNm} AND univ_nm = #{univNm}
     </update>
 
     <!-- Delete department by ID -->
     <delete id="deleteById">
-        DELETE FROM Department
+        DELETE FROM department
         WHERE dept_nm = #{deptNm} AND college_nm = #{collegeNm} AND univ_nm = #{univNm}
     </delete>
 
     <!-- Delete departments by college ID -->
     <delete id="deleteByCollegeId">
-        DELETE FROM Department
+        DELETE FROM department
         WHERE college_nm = #{collegeNm} AND univ_nm = #{univNm}
     </delete>
 
     <!-- Delete departments by university ID -->
     <delete id="deleteByUniversityId" parameterType="string">
-        DELETE FROM Department
+        DELETE FROM department
         WHERE univ_nm = #{univNm}
     </delete>
 
     <!-- Check if department exists -->
     <select id="existsById" resultType="boolean">
         SELECT COUNT(*) > 0
-        FROM Department
+        FROM department
         WHERE dept_nm = #{deptNm} AND college_nm = #{collegeNm} AND univ_nm = #{univNm}
     </select>
 

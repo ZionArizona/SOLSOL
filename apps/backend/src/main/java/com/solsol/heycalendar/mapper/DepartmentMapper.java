@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * MyBatis Mapper Interface for Department operations
+ * MyBatis Mapper Interface for department operations
  */
 @Mapper
 public interface DepartmentMapper {
@@ -32,17 +32,17 @@ public interface DepartmentMapper {
     /**
      * Find department by ID
      * 
-     * @param deptNm Department identifier
-     * @param collegeNm College identifier
-     * @param univNm University identifier
-     * @return Department if found, null otherwise
+     * @param deptNm department identifier
+     * @param collegeNm college identifier
+     * @param univNm university identifier
+     * @return department if found, null otherwise
      */
     Department findById(@Param("deptNm") String deptNm, @Param("collegeNm") String collegeNm, @Param("univNm") String univNm);
     
     /**
      * Insert new department
      * 
-     * @param department Department to insert
+     * @param department department to insert
      * @return Number of affected rows
      */
     int insert(Department department);
@@ -50,7 +50,7 @@ public interface DepartmentMapper {
     /**
      * Update existing department
      * 
-     * @param department Department to update
+     * @param department department to update
      * @return Number of affected rows
      */
     int update(Department department);
@@ -58,10 +58,10 @@ public interface DepartmentMapper {
     /**
      * Delete department by ID
      * 
-     * @param deptNm Department identifier
-     * @param collegeNm College identifier
-     * @param univNm University identifier
-     * @return Number of affected rows
+     * @param deptNm department identifier
+     * @param collegeNm college identifier
+     * @param univNm university identifier
+     * @return number of affected rows
      */
     int deleteById(@Param("deptNm") String deptNm, @Param("collegeNm") String collegeNm, @Param("univNm") String univNm);
     
@@ -85,7 +85,7 @@ public interface DepartmentMapper {
     /**
      * Check if department exists
      * 
-     * @param deptNm Department identifier
+     * @param deptNm department identifier
      * @param collegeNm College identifier
      * @param univNm University identifier
      * @return true if exists, false otherwise

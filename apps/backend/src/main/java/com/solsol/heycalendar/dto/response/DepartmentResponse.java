@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Department Response DTO
+ * department Response DTO
  * 
  * Used for returning department information in API responses.
  */
@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DepartmentResponse {
     /**
-     * Department identifier
+     * department identifier
      */
     private String deptNm;
     
@@ -31,7 +31,7 @@ public class DepartmentResponse {
     private String univNm;
     
     /**
-     * Department display name
+     * department display name
      */
     private String name;
 }
