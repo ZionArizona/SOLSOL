@@ -21,33 +21,24 @@ import { mileageApi } from "../../services/mileage.api";
 import { userApi } from "../../services/user.api";
 
 // 학과 매핑 정보
-const departments = [
-  { label: '경제학과', value: 1 },
-  { label: '간호학과', value: 2 },
-  { label: '디자인학과', value: 3 },
-  { label: '빅데이터융합학과', value: 4 },
-  { label: '소프트웨어공학과', value: 5 },
-  { label: '식품공학과', value: 6 },
-  { label: '인공지능학과', value: 7 },
-  { label: '영어교육과', value: 8 },
-  { label: '컴퓨터공학과', value: 9 },
-  { label: '화학과', value: 10 }
-];
+const DEPARTMENT_BY_ID: Record<number, string> = {
+  1: '경제학과',
+  2: '간호학과',
+  3: '디자인학과',
+  4: '빅데이터융합학과',
+  5: '소프트웨어공학과',
+  6: '식품공학과',
+  7: '인공지능학과',
+  8: '영어교육과',
+  9: '컴퓨터공학과',
+  10: '화학과',
+};
 
-// 정수 ID를 학과명으로 변환하는 함수
 const getDepartmentNameById = (id: number | string | null | undefined): string => {
-  if (id === null || id === undefined) {
-    return '컴퓨터공학과'; // 기본값
-  }
-  
+  if (id === null || id === undefined) return '컴퓨터공학과'; // 기본값 유지
   const numId = typeof id === 'string' ? parseInt(id, 10) : id;
-  
-  if (isNaN(numId)) {
-    return '컴퓨터공학과'; // 잘못된 값일 때 기본값
-  }
-  
-  const department = departments.find(dept => dept.value === numId);
-  return department ? department.label : '알 수 없는 학과';
+  if (!Number.isFinite(numId)) return '컴퓨터공학과';
+  return DEPARTMENT_BY_ID[numId as number] ?? '컴퓨터공학과';
 };
 
 export default function MainPage() {
@@ -124,24 +115,28 @@ export default function MainPage() {
     }
   }, [user]);
 
-  // 학과 정보 포맷팅
-  const getDepartmentInfo = () => {
-    if (!userInfo && !user) return "정보 없음";
-    
-    const info = userInfo || user;
-    
-    // 학과 ID가 있으면 매핑된 학과명 사용, 없으면 기존 방식
-    let dept = '';
-    if (info.dept || info.deptId || info.department) {
-      dept = getDepartmentNameById(info.dept || info.deptId || info.department);
-    } else {
-      dept = info.deptName || info.deptNm || '학과 정보 없음';
-    }
-    
-    const grade = info.grade ? `재학 ${info.grade}학년` : '';
-    
-    return grade ? `${dept}, ${grade}` : dept;
-  };
+
+const getDepartmentInfo = () => {
+  if (!userInfo && !user) return "정보 없음";
+  const info = userInfo || user;
+
+  // ✅ deptId 우선 사용. 없으면 기존 필드(dept, deptNm, deptName 등) 순서대로 보조.
+  let deptName = '';
+  if (info.deptId !== undefined && info.deptId !== null) {
+    deptName = getDepartmentNameById(info.deptId);
+  } else if (info.dept !== undefined && info.dept !== null) {
+    // 일부 백엔드가 dept에 숫자ID를 주는 경우도 있어 동일 헬퍼로 처리
+    deptName = getDepartmentNameById(info.dept);
+  } else {
+    // 최후 보루: 이미 문자열 학과명이 들어온 경우
+    deptName = info.deptName || info.deptNm || '학과 정보 없음';
+  }
+
+  const grade = info.grade ? `재학 ${info.grade}학년` : '';
+  return grade ? `${deptName}, ${grade}` : deptName;
+};
+
+
 
   // 사용자 이름 가져오기
   const getUserName = () => {
