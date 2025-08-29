@@ -57,8 +57,9 @@ public class ApplicationService {
         log.debug("Fetching all applications with scholarship information");
         List<ApplicationResponse> applications = applicationMapper.findAllApplicationsWithScholarship();
         
-        // 각 application에 대해 관련 documents 조회
+        // 각 application에 대해 관련 documents 및 마일리지 지급 상태 조회
         for (ApplicationResponse application : applications) {
+            // Documents 조회
             List<ApplicationDocument> documents = applicationDocumentMapper.findDocumentsByUserAndScholarship(
                 application.getUserNm(), String.valueOf(application.getScholarshipNm())
             );
@@ -69,6 +70,13 @@ public class ApplicationService {
                     .collect(Collectors.toList());
             
             application.setDocuments(documentResponses);
+            
+            // 마일리지 지급 상태 확인
+            boolean mileagePaid = mileageService.isMileagePaid(
+                application.getUserNm(), 
+                application.getScholarshipNm()
+            );
+            application.setMileagePaid(mileagePaid);
         }
         
         return applications;
@@ -158,6 +166,15 @@ public class ApplicationService {
         // 암호화된 데이터이므로 presigned URL은 별도 API로 처리
         // ApplicationController의 generateApplicationDocumentDownloadUrlForAdmin 사용
 
+        // 마일리지 지급 상태 확인
+        boolean mileagePaid = false;
+        try {
+            Long scholarshipId = Long.parseLong(scholarshipNm);
+            mileagePaid = mileageService.isMileagePaid(userNm, scholarshipId);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid scholarshipNm format: {}", scholarshipNm);
+        }
+
         return ApplicationDetailResponse.builder()
                 .userNm(applicationResponse.getUserNm())
                 .scholarshipNm(applicationResponse.getScholarshipNm() != null ? applicationResponse.getScholarshipNm().toString() : null)
@@ -171,6 +188,10 @@ public class ApplicationService {
                 .collegeName(applicationResponse.getCollegeName())
                 .universityName(applicationResponse.getUniversityName())
                 .scholarshipName(applicationResponse.getScholarshipName())
+                .scholarshipAmount(applicationResponse.getScholarshipAmount())
+                .scholarshipType(applicationResponse.getScholarshipType())
+                .scholarshipDescription(applicationResponse.getScholarshipDescription())
+                .mileagePaid(mileagePaid)
                 .documents(documentResponses)
                 .build();
     }
@@ -566,16 +587,16 @@ public class ApplicationService {
             applicationMapper.updateApplication(application);
             log.info("✅ 신청서 상태를 APPROVED로 변경 완료");
             
-            // 마일리지 지급
+            // 마일리지 지급 (장학금별 중복 체크)
             if (mileage > 0) {
-                MileageRequest mileageRequest = MileageRequest.builder()
-                        .userNm(userNm)
-                        .amount(mileage)
-                        .description("서류 승인 - " + scholarshipNm)
-                        .build();
-                
-                mileageService.addMileage(mileageRequest);
-                log.info("💰 마일리지 지급 완료 - User: {}, Amount: {}", userNm, mileage);
+                try {
+                    Long scholarshipId = Long.parseLong(scholarshipNm);
+                    mileageService.addScholarshipMileage(userNm, scholarshipId, mileage, "서류 승인 - " + scholarshipNm);
+                    log.info("💰 마일리지 지급 완료 - User: {}, Amount: {}", userNm, mileage);
+                } catch (IllegalArgumentException e) {
+                    log.warn("⚠️ 마일리지 지급 실패: {}", e.getMessage());
+                    throw e; // 중복 지급 등의 경우 예외를 다시 던져서 프론트엔드에서 처리
+                }
             }
             
             log.info("🎉 서류 승인 및 마일리지 지급 완료");

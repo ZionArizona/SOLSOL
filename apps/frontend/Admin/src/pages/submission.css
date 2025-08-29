@@ -38,7 +38,7 @@
 }
 
 /* 통계 카드 */
-.stat-wrap{ display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin:8px 0 14px; }
+.stat-wrap{ display:grid; grid-template-columns: repeat(4,1fr); gap:8px; margin:8px 0 14px; }
 .stat{
   background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
   box-shadow:var(--shadow); padding:16px 14px;
@@ -239,6 +239,14 @@
   display: none;
 }
 
+/* 태블릿용 반응형 */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .stat-wrap{ 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px; 
+  }
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .admin-layout{
@@ -284,7 +292,7 @@
     padding: 12px;
   }
   
-  /* 통계 카드를 2x2 그리드로 */
+  /* 통계 카드를 2x3 그리드로 (모바일에서 5개 카드) */
   .stat-wrap{ 
     grid-template-columns: repeat(2, 1fr); 
     gap: 8px; 

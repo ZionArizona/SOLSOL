@@ -12,6 +12,7 @@ export default function SubmissionManage(){
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('all')
+  const [scholarshipFilter, setScholarshipFilter] = useState('all') // 장학금 필터
   const [selectedApplication, setSelectedApplication] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [stats, setStats] = useState([
@@ -174,13 +175,33 @@ export default function SubmissionManage(){
       app.scholarshipName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.userName?.toLowerCase().includes(searchQuery.toLowerCase())
     
-    if (activeTab === 'all') return matchesSearch
-    if (activeTab === 'pending') return matchesSearch && (app.applicationState === 'PENDING' || app.state === 'PENDING')
-    if (activeTab === 'approved') return matchesSearch && (app.applicationState === 'APPROVED' || app.state === 'APPROVED')
-    if (activeTab === 'rejected') return matchesSearch && (app.applicationState === 'REJECTED' || app.state === 'REJECTED')
+    // 장학금 필터링
+    const matchesScholarship = scholarshipFilter === 'all' || 
+      app.scholarshipNm?.toString() === scholarshipFilter
     
-    return matchesSearch
+    let matchesTab = true
+    if (activeTab === 'pending') matchesTab = (app.applicationState === 'PENDING' || app.state === 'PENDING')
+    else if (activeTab === 'approved') matchesTab = (app.applicationState === 'APPROVED' || app.state === 'APPROVED')
+    else if (activeTab === 'rejected') matchesTab = (app.applicationState === 'REJECTED' || app.state === 'REJECTED')
+    
+    return matchesSearch && matchesScholarship && matchesTab
   })
+
+  // 장학금 목록 생성 (필터링용) - 신청자 수와 함께 표시
+  const scholarshipOptions = applications.reduce((acc, app) => {
+    const key = app.scholarshipNm?.toString()
+    if (key && !acc.some(item => item.value === key)) {
+      // 해당 장학금의 신청자 수 계산
+      const applicantCount = applications.filter(a => a.scholarshipNm?.toString() === key).length
+      
+      acc.push({
+        value: key,
+        label: `${app.scholarshipName} (${applicantCount}명)`,
+        name: app.scholarshipName
+      })
+    }
+    return acc
+  }, []).sort((a, b) => a.label.localeCompare(b.label))
 
   const tabs = [
     { key:'all', label:`전체 (${applications.length})`, active: activeTab === 'all' },
@@ -234,14 +255,34 @@ export default function SubmissionManage(){
       <div className="admin-layout">
         <Sidebar/>
         <main className="admin-main">
-          {/* 상단 우측 검색 */}
+          {/* 상단 우측 검색 및 필터 */}
           <div className="topbar">
             <input 
               className="search" 
-              placeholder="장학금명으로 검색" 
+              placeholder="장학금명 또는 신청자명으로 검색" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            <select
+              value={scholarshipFilter}
+              onChange={(e) => setScholarshipFilter(e.target.value)}
+              className="scholarship-filter"
+              style={{
+                padding: '8px 12px',
+                marginLeft: '10px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '14px',
+                minWidth: '200px'
+              }}
+            >
+              <option value="all">모든 장학금</option>
+              {scholarshipOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <button className="search-btn" onClick={handleSearch}>검색</button>
           </div>
 

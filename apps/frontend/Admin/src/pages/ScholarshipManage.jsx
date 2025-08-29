@@ -12,6 +12,7 @@ import './Scholarship-manage.css'
 export default function ScholarshipManage(){
   const [scholarships, setScholarships] = useState([])
   const [filteredScholarships, setFilteredScholarships] = useState([])
+  const [applicationCounts, setApplicationCounts] = useState({}) // 장학금별 지원자 수
   const [stats, setStats] = useState([
     { label: '전체 장학금', value: 0 },
     { label: '모집 중', value: 0 },
@@ -46,6 +47,7 @@ export default function ScholarshipManage(){
         const list = Array.isArray(result.data) ? result.data : [];
         setScholarships(list);
         setFilteredScholarships(list);
+        await fetchApplicationCounts(list); // 지원자 수 조회
         calculateStats(list);
         return; // 정상 종료 (alert 없음)
       }
@@ -55,11 +57,6 @@ export default function ScholarshipManage(){
         '장학금 목록 요청이 실패했습니다. 잠시 후 다시 시도해주세요.';
       alert(msg);
 
-      // if (result.success) {
-      //   setScholarships(result.data)
-      //   setFilteredScholarships(result.data)
-      //   calculateStats(result.data)
-      // }
     } catch (error) {
       console.error('Failed to fetch scholarships:', error)
       alert('서버와 통신에 실패했습니다. 네트워크 상태를 확인해주세요.');
@@ -68,15 +65,47 @@ export default function ScholarshipManage(){
     }
   }
 
-  const calculateStats = (data) => {
+  const fetchApplicationCounts = async (scholarshipList) => {
+    try {
+      // 모든 신청서 데이터를 가져와서 장학금별로 집계
+      const applicationsResult = await api.get('/applications')
+      if (applicationsResult.success && Array.isArray(applicationsResult.data)) {
+        const counts = {}
+        applicationsResult.data.forEach(application => {
+          const scholarshipId = application.scholarshipNm?.toString()
+          if (scholarshipId) {
+            counts[scholarshipId] = (counts[scholarshipId] || 0) + 1
+          }
+        })
+        setApplicationCounts(counts)
+      }
+    } catch (error) {
+      console.error('Failed to fetch application counts:', error)
+      setApplicationCounts({})
+    }
+  }
+
+  const calculateStats = async (data) => {
     const total = data.length
     const recruiting = data.filter(s => s.recruitmentStatus === 'OPEN').length
+    
+    // 총 지원자 수 계산 - 각 장학금별 신청자 수를 합산
+    let totalApplications = 0
+    try {
+      // 모든 신청서 데이터를 가져와서 카운트
+      const applicationsResult = await api.get('/applications')
+      if (applicationsResult.success && Array.isArray(applicationsResult.data)) {
+        totalApplications = applicationsResult.data.length
+      }
+    } catch (error) {
+      console.error('Failed to fetch applications for stats:', error)
+    }
     
     setStats([
       { label: '전체 장학금', value: total },
       { label: '모집 중', value: recruiting },
       { label: '내가 등록한 장학금', value: total },
-      { label: '총 지원자수', value: 0 },
+      { label: '총 지원자수', value: totalApplications },
     ])
   }
 
@@ -198,13 +227,16 @@ export default function ScholarshipManage(){
       actualTag = '모집완료'
     }
     
+    // 실제 지원자 수 조회
+    const applicationCount = applicationCounts[scholarship.id?.toString()] || 0
+    
     return {
       id: scholarship.id,
       title: scholarship.scholarshipName,
       tag: actualTag,
       amount: `${scholarship.amount?.toLocaleString() || 0}원`,
       picks: `${scholarship.numberOfRecipients || 0}명`,
-      applied: '0명',
+      applied: `${applicationCount}명`, // 실제 지원자 수 사용
       status: actualStatus,
       progress: actualStatus === '모집중' ? 50 : 0,
       method: scholarship.evaluationMethod === 'DOCUMENT_INTERVIEW' ? '서류 + 면접' : '서류 심사',

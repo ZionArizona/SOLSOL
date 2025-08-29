@@ -9,17 +9,18 @@ export default function DocumentApproval(){
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('all')
+  const [scholarshipFilter, setScholarshipFilter] = useState('all') // 장학금 필터
   const [selectedDocument, setSelectedDocument] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [mileageInput, setMileageInput] = useState('')
-  const [paymentStatus, setPaymentStatus] = useState({}) // applicationId -> 'PAID' or 'PENDING'
+  const [paymentStatus, setPaymentStatus] = useState({}) // 로컬 상태 (실제 데이터는 서버에서 관리)
   const [isProcessing, setIsProcessing] = useState(false) // 중복 요청 방지
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 사이드바 상태
   const [stats, setStats] = useState([
-    { label: 'APPROVED 신청서', value: 0 },
     { label: '마일리지 지급 대기', value: 0 },
     { label: '마일리지 지급 완료', value: 0 },
     { label: '총 지급 예정 금액', value: 0 },
+    { label: '총 지급 완료 금액', value: 0 },
   ])
 
   useEffect(() => {
@@ -98,15 +99,24 @@ export default function DocumentApproval(){
 
   const calculateStats = (data) => {
     const totalApproved = data.length // APPROVED 상태만 필터링했으므로
-    const paidCount = Object.values(paymentStatus).filter(status => status === 'PAID').length
+    const paidCount = data.filter(app => app.mileagePaid).length // 서버에서 받아온 실제 지급 상태 사용
     const pendingPayment = totalApproved - paidCount
-    const totalAmount = data.reduce((sum, app) => sum + (app.scholarshipAmount || 0), 0)
+    
+    // 아직 지급되지 않은 마일리지만 계산 (지급 예정 금액)
+    const pendingAmount = data
+      .filter(app => !app.mileagePaid) // 아직 지급되지 않은 것만
+      .reduce((sum, app) => sum + (app.scholarshipAmount || 0), 0)
+    
+    // 이미 지급된 마일리지 총액
+    const paidAmount = data
+      .filter(app => app.mileagePaid) // 이미 지급된 것만
+      .reduce((sum, app) => sum + (app.scholarshipAmount || 0), 0)
 
     setStats([
-      { label: 'APPROVED 신청서', value: totalApproved },
       { label: '마일리지 지급 대기', value: pendingPayment },
       { label: '마일리지 지급 완료', value: paidCount },
-      { label: '총 지급 예정 금액', value: `${totalAmount.toLocaleString()}원` },
+      { label: '총 지급 예정 금액', value: `${pendingAmount.toLocaleString()}원` },
+      { label: '총 지급 완료 금액', value: `${paidAmount.toLocaleString()}원` },
     ])
   }
 
@@ -117,13 +127,33 @@ export default function DocumentApproval(){
     
     // 이 페이지는 APPROVED 상태만 보여주는 페이지이므로 탭 필터링 로직 단순화
     const matchesTab = activeTab === 'all' || 
-      (activeTab === 'paid' && paymentStatus[doc.applicationId] === 'PAID') ||
-      (activeTab === 'pending' && paymentStatus[doc.applicationId] !== 'PAID')
+      (activeTab === 'paid' && doc.mileagePaid) ||
+      (activeTab === 'pending' && !doc.mileagePaid)
     
-    return matchesSearch && matchesTab
+    // 장학금 필터링
+    const matchesScholarship = scholarshipFilter === 'all' || 
+      doc.scholarshipNm?.toString() === scholarshipFilter
+    
+    return matchesSearch && matchesTab && matchesScholarship
   })
 
-  const paidCount = documents.filter(doc => paymentStatus[doc.applicationId] === 'PAID').length
+  // 장학금 목록 생성 (필터링용) - 지원자 수와 함께 표시
+  const scholarshipOptions = documents.reduce((acc, doc) => {
+    const key = doc.scholarshipNm?.toString()
+    if (key && !acc.some(item => item.value === key)) {
+      // 해당 장학금의 지원자 수 계산
+      const applicantCount = documents.filter(d => d.scholarshipNm?.toString() === key).length
+      
+      acc.push({
+        value: key,
+        label: `${doc.scholarshipName} (${applicantCount}명)`,
+        name: doc.scholarshipName
+      })
+    }
+    return acc
+  }, []).sort((a, b) => a.label.localeCompare(b.label))
+
+  const paidCount = documents.filter(doc => doc.mileagePaid).length
   const pendingCount = documents.length - paidCount
 
   const tabs = [
@@ -142,21 +172,23 @@ export default function DocumentApproval(){
       const result = await api.get(`/applications/${document.userNm}/${document.scholarshipNm}`)
       console.log('📊 Detailed application data:', result)
       
-      // 백엔드에서 부족한 데이터가 있다면 로컬 documents 데이터로 보완
+      // 백엔드에서 받아온 데이터를 그대로 사용하되, 누락된 필드만 보완
       const enrichedDocument = {
         ...result,
-        // 기존 documents 배열에서 해당 문서의 정보로 보완
+        // 기존 documents 배열에서 해당 문서의 정보로 보완 (백엔드 데이터 우선)
         scholarshipName: result.scholarshipName || document.scholarshipName || '정보 없음',
         userName: result.userName || document.userName || document.userNm,
-        // 스키마에서 확인한 필드들 추가
-        scholarshipType: result.scholarshipType || result.type || '성적 장학금',
-        scholarshipAmount: result.scholarshipAmount || result.amount || 100000,
-        paymentMethod: result.paymentMethod || '일시 지급',
-        scholarshipDescription: result.scholarshipDescription || result.description || '우수한 성적을 거둔 학생에게 지급하는 장학금',
+        // 백엔드에서 받아온 장학금 정보를 그대로 사용
+        scholarshipType: result.scholarshipType || '정보 없음',
+        scholarshipAmount: result.scholarshipAmount || 0, // 백엔드에서 받아온 실제 장학금 금액 사용
+        scholarshipDescription: result.scholarshipDescription || '정보 없음',
+        // 기타 필드들
         studentId: result.studentId || document.studentId || result.userNm,
-        departmentName: result.departmentName || result.deptName || '컴퓨터공학과',
-        collegeName: result.collegeName || '공과대학',
-        universityName: result.universityName || result.univName || '싸피대학교'
+        departmentName: result.departmentName || result.deptName || '정보 없음',
+        collegeName: result.collegeName || '정보 없음',
+        universityName: result.universityName || result.univName || '정보 없음',
+        // 마일리지 지급 상태는 백엔드에서 받아온 값 사용
+        mileagePaid: result.mileagePaid || false
       }
       
       console.log('✨ Enriched document data:', enrichedDocument)
@@ -172,6 +204,12 @@ export default function DocumentApproval(){
   const handleApproveDocument = async () => {
     if (isProcessing) {
       console.log('🚫 Approval blocked - already processing')
+      return
+    }
+
+    // 이미 마일리지가 지급된 경우 차단
+    if (selectedDocument.mileagePaid) {
+      alert('이미 마일리지가 지급된 신청서입니다.')
       return
     }
 
@@ -200,25 +238,22 @@ export default function DocumentApproval(){
       if (response.success) {
         alert(`서류가 승인되었으며 ${mileage} 마일리지가 지급되었습니다.`)
         
-        // 지급 완료 상태 업데이트
-        setPaymentStatus(prev => ({
-          ...prev,
-          [selectedDocument.applicationId]: 'PAID'
-        }))
-        
         setShowDetailModal(false)
         setMileageInput('')
         
-        // 강제로 데이터 새로고침
-        setTimeout(() => {
-          fetchDocuments(true)
-        }, 500)
+        // 서버에서 최신 데이터를 받아오기 위해 즉시 새로고침
+        fetchDocuments(true)
       } else {
         alert(response.message || '서류 승인에 실패했습니다.')
       }
     } catch (error) {
       console.error('Failed to approve document:', error)
-      alert('서류 승인에 실패했습니다.')
+      // 중복 지급 에러 메시지 처리
+      if (error.response?.data?.message?.includes('이미 지급')) {
+        alert('이미 마일리지가 지급된 신청서입니다.')
+      } else {
+        alert('서류 승인에 실패했습니다.')
+      }
     } finally {
       setIsProcessing(false)
     }
@@ -313,7 +348,7 @@ export default function DocumentApproval(){
           onToggle={handleSidebarToggle}
         />
         <main className="admin-main">
-          {/* 검색바 */}
+          {/* 검색바 및 필터 */}
           <div className="topbar">
             <input
               type="text"
@@ -322,6 +357,26 @@ export default function DocumentApproval(){
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            <select
+              value={scholarshipFilter}
+              onChange={(e) => setScholarshipFilter(e.target.value)}
+              className="scholarship-filter"
+              style={{
+                padding: '8px 12px',
+                marginLeft: '10px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '14px',
+                minWidth: '200px'
+              }}
+            >
+              <option value="all">모든 장학금</option>
+              {scholarshipOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <button className="search-btn" onClick={handleSearch}>검색</button>
           </div>
 
@@ -449,9 +504,9 @@ export default function DocumentApproval(){
                 <p>
                   <strong>마일리지 지급 상태:</strong>
                   <span className={`status-badge ${
-                    paymentStatus[selectedDocument.applicationId] === 'PAID' ? 'paid' : 'pending-payment'
+                    selectedDocument.mileagePaid ? 'paid' : 'pending-payment'
                   }`}>
-                    {paymentStatus[selectedDocument.applicationId] === 'PAID' ? '지급 완료' : '지급 대기'}
+                    {selectedDocument.mileagePaid ? '지급 완료' : '지급 대기'}
                   </span>
                 </p>
               </div>
@@ -515,7 +570,7 @@ export default function DocumentApproval(){
                     <button
                       type="button"
                       onClick={() => setMileageInput(selectedDocument.scholarshipAmount.toString())}
-                      disabled={paymentStatus[selectedDocument.applicationId] === 'PAID'}
+                      disabled={selectedDocument.mileagePaid}
                       style={{
                         padding: '6px 12px',
                         backgroundColor: '#4f46e5',
@@ -524,7 +579,7 @@ export default function DocumentApproval(){
                         borderRadius: '4px',
                         fontSize: '12px',
                         cursor: 'pointer',
-                        opacity: paymentStatus[selectedDocument.applicationId] === 'PAID' ? '0.5' : '1'
+                        opacity: selectedDocument.mileagePaid ? '0.5' : '1'
                       }}
                     >
                       기본 금액으로 설정
@@ -535,25 +590,25 @@ export default function DocumentApproval(){
                 <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
                   <input
                     type="number"
-                    placeholder={paymentStatus[selectedDocument.applicationId] === 'PAID' ? "마일리지 지급 완료" : "지급할 마일리지 입력"}
-                    value={paymentStatus[selectedDocument.applicationId] === 'PAID' ? '' : mileageInput}
+                    placeholder={selectedDocument.mileagePaid ? "마일리지 지급 완료" : "지급할 마일리지 입력"}
+                    value={selectedDocument.mileagePaid ? '' : mileageInput}
                     onChange={(e) => setMileageInput(e.target.value)}
-                    disabled={paymentStatus[selectedDocument.applicationId] === 'PAID'}
+                    disabled={selectedDocument.mileagePaid}
                     style={{
                       padding: '8px 12px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '6px',
                       flex: 1,
                       fontSize: '14px',
-                      backgroundColor: paymentStatus[selectedDocument.applicationId] === 'PAID' ? '#f9fafb' : 'white',
-                      cursor: paymentStatus[selectedDocument.applicationId] === 'PAID' ? 'not-allowed' : 'text'
+                      backgroundColor: selectedDocument.mileagePaid ? '#f9fafb' : 'white',
+                      cursor: selectedDocument.mileagePaid ? 'not-allowed' : 'text'
                     }}
                     min="0"
                   />
                   <span style={{color: '#6b7280', fontSize: '14px'}}>마일리지</span>
                 </div>
                 <p style={{fontSize: '12px', color: '#6b7280'}}>
-                  {paymentStatus[selectedDocument.applicationId] === 'PAID' 
+                  {selectedDocument.mileagePaid 
                     ? "* 마일리지 지급이 완료되었습니다."
                     : "* 승인 시 입력한 마일리지가 사용자에게 지급됩니다."
                   }
@@ -561,7 +616,7 @@ export default function DocumentApproval(){
               </div>
             </div>
             <div className="modal-footer">
-              {paymentStatus[selectedDocument.applicationId] === 'PAID' ? (
+              {selectedDocument.mileagePaid ? (
                 <div style={{
                   width: '100%', 
                   textAlign: 'center', 
@@ -579,10 +634,10 @@ export default function DocumentApproval(){
                   <button 
                     className="reject-btn-modal" 
                     onClick={handleRejectDocument}
-                    disabled={paymentStatus[selectedDocument.applicationId] === 'PAID'}
+                    disabled={selectedDocument.mileagePaid}
                     style={{
-                      opacity: paymentStatus[selectedDocument.applicationId] === 'PAID' ? '0.5' : '1',
-                      cursor: paymentStatus[selectedDocument.applicationId] === 'PAID' ? 'not-allowed' : 'pointer'
+                      opacity: selectedDocument.mileagePaid ? '0.5' : '1',
+                      cursor: selectedDocument.mileagePaid ? 'not-allowed' : 'pointer'
                     }}
                   >
                     반려
@@ -590,10 +645,10 @@ export default function DocumentApproval(){
                   <button 
                     className="approve-btn-modal" 
                     onClick={handleApproveDocument}
-                    disabled={paymentStatus[selectedDocument.applicationId] === 'PAID'}
+                    disabled={selectedDocument.mileagePaid}
                     style={{
-                      opacity: paymentStatus[selectedDocument.applicationId] === 'PAID' ? '0.5' : '1',
-                      cursor: paymentStatus[selectedDocument.applicationId] === 'PAID' ? 'not-allowed' : 'pointer'
+                      opacity: selectedDocument.mileagePaid ? '0.5' : '1',
+                      cursor: selectedDocument.mileagePaid ? 'not-allowed' : 'pointer'
                     }}
                   >
                     마일리지 지급

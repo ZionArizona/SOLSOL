@@ -78,7 +78,50 @@ public class MileageService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        mileageMapper.insert(mileage);
         return convertMileageToResponse(mileage);
+    }
+    
+    /**
+     * Add mileage to user for specific scholarship
+     *
+     * @param userNm User name
+     * @param scholarshipNm Scholarship ID
+     * @param amount Mileage amount
+     * @param reason Reason for mileage award
+     * @return Created mileage response
+     */
+    @Transactional
+    public MileageResponse addScholarshipMileage(String userNm, Long scholarshipNm, Integer amount, String reason) {
+        // Check if mileage already paid for this scholarship
+        if (mileageMapper.existsByUserNmAndScholarshipNm(userNm, scholarshipNm)) {
+            throw new IllegalArgumentException("마일리지가 이미 지급되었습니다.");
+        }
+        
+        userMapper.addUserMileage(userNm, amount);
+        log.info("Added {} scholarship mileage to user: {} for scholarship: {}", amount, userNm, scholarshipNm);
+
+        Mileage mileage = Mileage.builder()
+                .userNm(userNm)
+                .amount(amount)
+                .scholarshipNm(scholarshipNm)
+                .reason(reason != null ? reason : "장학금 마일리지 지급")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        mileageMapper.insert(mileage);
+        return convertMileageToResponse(mileage);
+    }
+    
+    /**
+     * Check if mileage has been paid for specific scholarship
+     *
+     * @param userNm User name
+     * @param scholarshipNm Scholarship ID
+     * @return true if mileage already paid, false otherwise
+     */
+    public boolean isMileagePaid(String userNm, Long scholarshipNm) {
+        return mileageMapper.existsByUserNmAndScholarshipNm(userNm, scholarshipNm);
     }
 
     /**
