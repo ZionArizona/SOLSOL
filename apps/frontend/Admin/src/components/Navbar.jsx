@@ -58,8 +58,10 @@ export default function Navbar(){
         <nav style={{display:'flex',gap:'28px',fontWeight:600,color:'#4b5563',alignItems:'center'}}>
           {user ? (
             <>
-              <Link to="/admin/submissions" style={{textDecoration:'none',color:'#4b5563'}}>서류관리</Link>
-              <Link to="/admin/scholarships" style={{textDecoration:'none',color:'#4b5563'}}>장학금관리</Link>
+              <Link to="/submissions" style={{textDecoration:'none',color:'#4b5563'}}>신청 관리</Link>
+              <Link to="/document-approval" style={{textDecoration:'none',color:'#4b5563'}}>서류 검토</Link>
+              <Link to="/scholarships" style={{textDecoration:'none',color:'#4b5563'}}>장학금 등록</Link>
+              <Link to="/notices" style={{textDecoration:'none',color:'#4b5563'}}>공지사항</Link>
               <span style={{color:'#666'}}>{user.userNm || user.userName}님</span>
               <button 
                 onClick={handleLogout}

@@ -185,7 +185,7 @@ export default function SubmissionManage(){
           <div className="topbar">
             <input 
               className="search" 
-              placeholder="학과명, 학번, 서류명으로 검색..." 
+              placeholder="장학금명으로 검색" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
