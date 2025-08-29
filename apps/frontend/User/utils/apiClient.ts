@@ -1,6 +1,7 @@
 import tokenManager from './tokenManager';
+import { BASE_URL } from '../services/api';
 
-const API_BASE = 'http://localhost:8080';
+//const API_BASE = 'http://localhost:8080';
 
 interface RequestOptions extends RequestInit {
   skipAuth?: boolean; // 인증 헤더 스킵 옵션
@@ -14,22 +15,33 @@ class ApiClient {
   async request(endpoint: string, options: RequestOptions = {}): Promise<Response> {
     const { skipAuth = false, ...fetchOptions } = options;
     
+    const url = `${BASE_URL}${endpoint}`;
+    
     // 기본 헤더 설정
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...fetchOptions.headers,
-    };
+    // const headers: HeadersInit = {
+    //   'Content-Type': 'application/json',
+    //   ...fetchOptions.headers,
+    // };
+
+    const headers = new Headers(fetchOptions.headers);
+    headers.set('Content-Type', 'application/json');
 
     // 인증이 필요한 요청인 경우 토큰 추가
+    // if (!skipAuth) {
+    //   const accessToken = await tokenManager.getAccessToken();
+    //   if (accessToken) {
+    //     headers['Authorization'] = `Bearer ${accessToken}`;
+    //   }
+    // }
     if (!skipAuth) {
       const accessToken = await tokenManager.getAccessToken();
       if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
+        headers.set('Authorization', `Bearer ${accessToken}`);
       }
     }
 
     // 요청 실행
-    let response = await fetch(`${API_BASE}${endpoint}`, {
+    let response = await fetch(url, {
       ...fetchOptions,
       headers,
     });
@@ -45,11 +57,13 @@ class ApiClient {
         // 새 토큰으로 재시도
         const newAccessToken = await tokenManager.getAccessToken();
         if (newAccessToken) {
-          headers['Authorization'] = `Bearer ${newAccessToken}`;
-          response = await fetch(`${API_BASE}${endpoint}`, {
-            ...fetchOptions,
-            headers,
-          });
+          // headers['Authorization'] = `Bearer ${newAccessToken}`;
+          // response = await fetch(url, {
+          //   ...fetchOptions,
+          //   headers,
+          // });
+          headers.set('Authorization', `Bearer ${newAccessToken}`);
+          response = await fetch(url, { ...fetchOptions, headers });
         }
       }
     }
@@ -85,7 +99,7 @@ class ApiClient {
         return false;
       }
 
-      const response = await fetch(`${API_BASE}/api/auth/refresh`, {
+      const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

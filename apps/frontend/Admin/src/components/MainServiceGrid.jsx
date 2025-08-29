@@ -39,13 +39,13 @@ export default function ServiceGrid(){
           </div>
 
           <div style={box.grid}>
-            <Card title="제출 서류 반려/승인" body1="신청한 장학금"
-                  body2="서류들을 한 눈에." linkTo="/admin/submissions"/>
-            <Card title="장학금 관리" body1="진행 중인 장학금"
-                  body2="목록을 한 눈에." linkTo="/admin/scholarships"/>
+            <Card title="장학금 신청 관리" body1="신청한 장학금"
+                  body2="승인/반려를 한 눈에." linkTo="/submissions"/>
+            <Card title="서류 검토 및 마일리지" body1="제출된 서류"
+                  body2="검토 및 마일리지 지급." linkTo="/document-approval"/>
             <div style={box.bottomLeft}>
-              <Card title="공지사항 관리" body1="장학금 관련"
-                    body2="공지사항을 한 눈에." linkTo="/admin/announcements"/>
+              <Card title="장학금 등록 관리" body1="장학금 생성"
+                    body2="및 관리를 한 눈에." linkTo="/scholarships"/>
             </div>
             {/* 우하단 비워두고 마스코트 겹치기 */}
           </div>

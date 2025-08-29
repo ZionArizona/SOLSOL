@@ -1,16 +1,40 @@
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import tokenManager from '../utils/tokenManager';
-import { Platform } from 'react-native';
 
 // API Base URL
 //export const BASE_URL = 'http://localhost:8080/api'; 
-export const BASE_URL = __DEV__
-  ? (
-      Platform.OS === 'android'
-        ? 'http://10.0.2.2:8080/api'   // Android 에뮬레이터 → 로컬 호스트 접근
-        : 'http://localhost:8080/api'  // iOS 시뮬레이터
-    )
-  : 'https://heycalendar.store/api';   // 실제 배포(앱 빌드/실기기)
+// const BASE_URL = __DEV__
+//   ? (
+//       Platform.OS === 'android'
+//         ? 'http://10.0.2.2:8080/api'   // Android 에뮬레이터 → 로컬 호스트 접근
+//         : 'http://localhost:8080/api'  // iOS 시뮬레이터
+//     )
+//   : 'https://heycalendar.store/api';   // 실제 배포(앱 빌드/실기기)
+
+const ENV_ORIGIN = process.env.EXPO_PUBLIC_API_ORIGIN;
+
+const isWeb = Platform.OS === 'web';
+const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+
+const PROD_ORIGIN =
+  isWeb
+    ? (ENV_ORIGIN || (typeof window !== 'undefined' ? window.location.origin : 'https://heycalendar.store'))
+    : (ENV_ORIGIN || 'https://heycalendar.store');
+
+
+export const BASE_URL = isDev
+  ? (Platform.OS === 'android'
+      ? 'http://10.0.2.2:8080/api'
+      : 'http://localhost:8080/api')
+  : `${PROD_ORIGIN}/api`;
+// export const BASE_URL = __DEV__
+//   ? (
+//       Platform.OS === 'android'
+//         ? 'http://10.0.2.2:8080/api'   // Android 에뮬레이터 → 로컬 호스트 접근
+//         : 'http://localhost:8080/api'  // iOS 시뮬레이터
+//     )
+//   : 'https://heycalendar.store/api';   // 실제 배포(앱 빌드/실기기)
+
 
 // API Response 타입 정의
 export interface ApiResponse<T = any> {
@@ -60,8 +84,11 @@ class ApiClient {
       const payload = tokenManager.decodeAccessToken(token);
       if (!payload) return null;
       
+      console.log('🔍 JWT Payload:', payload);
       // 토큰에서 사용자명 추출
-      return payload.sub || payload.userName || payload.userId || null;
+      const userNm = payload.sub || payload.userName || payload.userId || null;
+      console.log('👤 Extracted userNm:', userNm);
+      return userNm;
     } catch (error) {
       console.error('JWT 토큰 디코딩 오류:', error);
       return null;
@@ -151,6 +178,7 @@ class ApiClient {
 
       // 401 Unauthorized - 토큰 갱신 시도
       if (response.status === 401) {
+        console.log('❌ 401 Unauthorized error occurred');
         const refreshSuccess = await this.refreshTokenIfNeeded();
         if (refreshSuccess) {
           // 토큰 갱신 성공 - 요청 재시도

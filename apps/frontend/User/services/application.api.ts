@@ -4,6 +4,11 @@ import { apiClient, handleApiError } from './api';
 export interface ApplicationRequest {
   scholarshipId: number;
   reason?: string;
+  documents?: {
+    documentNm?: number;
+    fileUrl: string;
+    fileName: string;
+  }[];
 }
 
 export interface Application {
@@ -46,9 +51,9 @@ export const applicationApi = {
       
       if (response.success && response.data) {
         console.log('✅ Using success response structure');
-        if (response.data.data && Array.isArray(response.data.data)) {
+        if (response.data && Array.isArray(response.data)) {
           console.log('✅ Data is in data.data array');
-          return response.data.data;
+          return response.data;
         } else if (Array.isArray(response.data)) {
           console.log('✅ Data is direct array');
           return response.data;
@@ -73,8 +78,8 @@ export const applicationApi = {
       const response = await apiClient.get<Application[]>(`/applications/my/status/${status}`);
       
       if (response.success && response.data) {
-        if (response.data.data && Array.isArray(response.data.data)) {
-          return response.data.data;
+        if (response.data && Array.isArray(response.data)) {
+          return response.data;
         } else if (Array.isArray(response.data)) {
           return response.data;
         }

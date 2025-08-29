@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 import jakarta.validation.Valid;
 import java.util.List;
 
@@ -193,5 +195,54 @@ public class ApplicationController {
         applicationService.deleteApplication(userNm, scholarshipId.toString());
         
         return ResponseEntity.ok(new ApiResponse<>(true, "신청이 취소되었습니다.", "OK", null));
+    }
+
+    @Operation(summary = "서류 승인 및 마일리지 지급", description = "제출된 서류를 승인하고 마일리지를 지급합니다.")
+    @PostMapping("/documents/approve")
+    public ResponseEntity<ApiResponse<Void>> approveDocument(@RequestBody Map<String, Object> request) {
+        try {
+            String userNm = (String) request.get("userNm");
+            String scholarshipNm = (String) request.get("scholarshipNm");
+            Integer mileage = (Integer) request.get("mileage");
+            
+            log.info("Approving document - User: {}, Scholarship: {}, Mileage: {}", userNm, scholarshipNm, mileage);
+            
+            applicationService.approveApplicationDocument(userNm, scholarshipNm, mileage);
+            
+            return ResponseEntity.ok(new ApiResponse<>(true, "서류가 승인되었으며 마일리지가 지급되었습니다.", "OK", null));
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request for document approval: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), "INVALID_REQUEST", null));
+        } catch (Exception e) {
+            log.error("Failed to approve document", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "서류 승인에 실패했습니다.", "INTERNAL_ERROR", null));
+        }
+    }
+
+    @Operation(summary = "서류 반려", description = "제출된 서류를 반려합니다.")
+    @PostMapping("/documents/reject")
+    public ResponseEntity<ApiResponse<Void>> rejectDocument(@RequestBody Map<String, Object> request) {
+        try {
+            String userNm = (String) request.get("userNm");
+            String scholarshipNm = (String) request.get("scholarshipNm");
+            
+            log.info("Rejecting document - User: {}, Scholarship: {}", userNm, scholarshipNm);
+            
+            applicationService.rejectApplicationDocument(userNm, scholarshipNm);
+            
+            return ResponseEntity.ok(new ApiResponse<>(true, "서류가 반려되었습니다.", "OK", null));
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request for document rejection: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), "INVALID_REQUEST", null));
+        } catch (Exception e) {
+            log.error("Failed to reject document", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "서류 반려에 실패했습니다.", "INTERNAL_ERROR", null));
+        }
     }
 }

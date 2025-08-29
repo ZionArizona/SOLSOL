@@ -34,7 +34,7 @@ public class DocumentService {
     private final MyboxMapper myboxMapper;
     private final CryptoUtil cryptoUtil;
 
-    @Value("${cloud.aws.s3.bucket}")
+    @Value("${AWS_S3_BUCKET}")
     private String bucketName;
 
     // 지원하는 파일 타입
@@ -110,8 +110,9 @@ public class DocumentService {
         String timestamp = String.valueOf(System.currentTimeMillis());
         String uuid = UUID.randomUUID().toString().substring(0, 8);
         String extension = getFileExtension(originalFileName);
-        return String.format("documents/%s/%s_%s%s", userNm, timestamp, uuid, extension);
-    }
+        //return String.format("documents/%s/%s_%s%s", userNm, timestamp, uuid, extension);
+		return String.format("documents/%s/%s%s", uuid, timestamp, extension);
+	}
 
     /**
      * 파일 확장자 추출

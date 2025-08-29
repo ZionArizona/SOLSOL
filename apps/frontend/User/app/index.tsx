@@ -7,6 +7,15 @@ import MainPage from './UserBasic/MainPage';
 import MyCalendar from './Schedule/MyCalendar';
 import { useAuth } from '../contexts/AuthContext';
 
+if (typeof window !== 'undefined') {
+  const _fetch = window.fetch;
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : (input as URL).toString();
+    console.log('🕵️ fetch ->', url);
+    return _fetch(input, init);
+  };
+}
+
 export default function App() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [showLoginPage, setShowLoginPage] = useState(false);

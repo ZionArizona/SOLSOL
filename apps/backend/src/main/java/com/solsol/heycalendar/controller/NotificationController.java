@@ -4,6 +4,7 @@ import com.solsol.heycalendar.common.ApiResponse;
 import com.solsol.heycalendar.domain.Notification;
 import com.solsol.heycalendar.domain.NotificationType;
 import com.solsol.heycalendar.service.NotificationService;
+import com.solsol.heycalendar.service.DeadlineReminderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.List;
 public class NotificationController {
     
     private final NotificationService notificationService;
+    private final DeadlineReminderService deadlineReminderService;
 
     /**
      * 사용자의 모든 알림 조회
@@ -190,6 +192,21 @@ public class NotificationController {
             log.error("Error creating new scholarship notification", e);
             return ResponseEntity.internalServerError()
                 .body(ApiResponse.error("NOTIFICATION_ERROR", "알림 생성 중 오류가 발생했습니다."));
+        }
+    }
+
+    /**
+     * 마감임박 알림 시스템 수동 실행 (테스트용)
+     */
+    @PostMapping("/deadline-reminders/check")
+    public ResponseEntity<ApiResponse<String>> checkDeadlineReminders() {
+        try {
+            deadlineReminderService.manualCheckDeadlineReminders();
+            return ResponseEntity.ok(ApiResponse.success("마감임박 알림 체크를 완료했습니다.", "SUCCESS"));
+        } catch (Exception e) {
+            log.error("Error checking deadline reminders", e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("NOTIFICATION_ERROR", "마감임박 알림 체크 중 오류가 발생했습니다."));
         }
     }
 }

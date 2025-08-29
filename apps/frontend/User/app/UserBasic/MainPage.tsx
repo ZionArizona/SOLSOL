@@ -13,19 +13,28 @@ import { StudentCard } from "../../components/home/StudentCard";
 import { PromoBanner } from "../../components/home/PromoBanner";
 import { MileageCard } from "../../components/home/MileageCard";
 import { ThisWeekList } from "../../components/home/ThisWeekList";
-import { UserCircleIcon, MenuIcon, BellIcon } from "../../components/shared/icons";
+import { UserCircleIcon, MenuIcon } from "../../components/shared/icons";
+import { NotificationBell } from "../../components/shared/NotificationBell";
 import { useAuth } from "../../contexts/AuthContext";
 import { userApi } from "../../services/user.api";
 import { mileageApi } from "../../services/mileage.api";
+import { useWebSocket } from "../../contexts/WebSocketContext";
 
 export default function MainPage() {
   const { user } = useAuth();
   const [userInfo, setUserInfo] = useState<any>(null);
   const [mileage, setMileage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // WebSocket 실시간 알림
+  const { unreadCount, isConnected } = useWebSocket();
 
   const handleScholarshipPress = () => {
     router.push("/Scholarship/ScholarshipApply");
+  };
+
+  const handleCalendarPress = () => {
+    router.push("/Schedule/MyCalendar");
   };
 
   // 사용자 정보 및 마일리지 데이터 로드
@@ -120,13 +129,7 @@ export default function MainPage() {
               >
                 <MenuIcon size={20} />
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.headerButton} 
-                onPress={() => router.push("/Notifications/Notifications")}
-                activeOpacity={0.8}
-              >
-                <BellIcon size={20} />
-              </TouchableOpacity>
+              <NotificationBell size={20} />
               <TouchableOpacity 
                 style={styles.profileButton} 
                 onPress={() => router.push("/UserBasic/MyPage")}
@@ -158,7 +161,7 @@ export default function MainPage() {
             <PromoBanner
               title={`신청부터 지금까지,\n헤이영 캘린더가\n다 챙겨드려요`}
               ctaLabel="나의 일정 바로가기"
-              onPressCTA={() => {}}
+              onPressCTA={handleCalendarPress}
               page={0}
               total={3}
             />
@@ -211,6 +214,36 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 4,
+  },
+  notificationContainer: {
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#FF4D4F',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  connectionIndicator: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#52C41A',
   },
   profileButton: {
     padding: 4,

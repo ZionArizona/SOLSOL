@@ -52,7 +52,8 @@ export default function LoginPage(){
           userNm: decoded.userNm, // 실명 추가
           role: decoded.role
         }))
-        navigate('/')
+        // navigate('/')
+        navigate('/main')
       } else {
         alert('로그인에 실패했습니다: ' + (result.message || '알 수 없는 오류'))
       }

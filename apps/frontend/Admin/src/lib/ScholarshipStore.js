@@ -283,7 +283,13 @@ export const scholarshipUtils = {
     console.log('🔄 transformForBackend 입력 데이터:', formData);
     
     // Enum 매핑 함수들
-    const getTypeEnum = (typeLabel) => {
+    const getTypeEnum = (typeValue) => {
+      // 이미 영어 enum 값인 경우 그대로 반환
+      if (['ACADEMIC', 'FINANCIAL_AID', 'ACTIVITY', 'OTHER'].includes(typeValue)) {
+        return typeValue;
+      }
+      
+      // 한국어 레이블인 경우 변환
       const typeMap = {
         '성적우수': 'ACADEMIC',
         '생활지원': 'FINANCIAL_AID', 
@@ -291,24 +297,36 @@ export const scholarshipUtils = {
         '활동우수': 'ACTIVITY',
         '기타': 'OTHER'
       }
-      return typeMap[typeLabel] || 'OTHER'
+      return typeMap[typeValue] || 'OTHER'
     }
     
-    const getPaymentMethodEnum = (payMethodLabel) => {
+    const getPaymentMethodEnum = (payMethodValue) => {
+      // 이미 영어 enum 값인 경우 그대로 반환
+      if (['LUMP_SUM', 'INSTALLMENT'].includes(payMethodValue)) {
+        return payMethodValue;
+      }
+      
+      // 한국어 레이블인 경우 변환
       const payMap = {
         '일시지급': 'LUMP_SUM',
         '분할지급': 'INSTALLMENT'
       }
-      return payMap[payMethodLabel] || 'LUMP_SUM'
+      return payMap[payMethodValue] || 'LUMP_SUM'
     }
     
-    const getEvaluationMethodEnum = (methodLabel) => {
+    const getEvaluationMethodEnum = (methodValue) => {
+      // 이미 영어 enum 값인 경우 그대로 반환
+      if (['DOCUMENT_REVIEW', 'DOCUMENT_INTERVIEW'].includes(methodValue)) {
+        return methodValue;
+      }
+      
+      // 한국어 레이블인 경우 변환
       const methodMap = {
         '서류심사': 'DOCUMENT_REVIEW',
         '서류 심사': 'DOCUMENT_REVIEW',
         '서류 + 면접': 'DOCUMENT_INTERVIEW'
       }
-      return methodMap[methodLabel] || 'DOCUMENT_REVIEW'
+      return methodMap[methodValue] || 'DOCUMENT_REVIEW'
     }
     
     const result = {
@@ -348,7 +366,11 @@ export const scholarshipUtils = {
       // 공지
       noticeTitle: formData.notice?.title || formData.noticeTitle || null,
       noticeContent: formData.notice?.content || formData.noticeContent || null,
-      noticeImageUrl: formData.notice?.imageUrl || formData.noticeImageUrl || null
+      noticeImageUrl: formData.notice?.imageUrl || formData.noticeImageUrl || null,
+      
+      // 평가 기준 및 제출서류
+      criteria: formData.criteria || [],
+      requiredDocuments: formData.requiredDocuments || []
     };
     
     console.log('🔄 transformForBackend 출력 데이터:', result);

@@ -1,8 +1,11 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, ImageBackground, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { BASE_URL } from '../../services/api';
+import tokenManager from '../../utils/tokenManager';
+import { useAuth } from '../../contexts/AuthContext';
 
-const API_BASE = 'http://localhost:8080';
+// API_BASE는 services/api.ts의 BASE_URL 사용
 
 // 115개 대학교 목록 (value는 백엔드로 전송될 정수 ID)
 const universities = [ { label: 'ICT폴리텍대학', value: 1 }, { label: '강동대학교', value: 2 }, { label: '강서대학교', value: 3 }, { label: '강원도립대학교', value: 4 }, { label: '경기과학기술대학교', value: 5 }, { label: '경기대학교', value: 6 },{ label: '경남정보대학교', value: 7 }, { label: '경안대학원대학교', value: 8 }, { label: '광주대학교', value: 9 }, { label: '광주보건대학교', value: 10 }, { label: '국립목포대학교', value: 11 }, { label: '국제뇌교육대학원대학교', value: 12 }, { label: '김천대학교', value: 13 }, { label: '남서울대학교', value: 14 },
@@ -35,6 +38,7 @@ const departments = [
 ];
 
 export default function RegistPage() {
+  const { login } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -80,7 +84,7 @@ export default function RegistPage() {
       
       console.log('📤 최종 전송 데이터:', JSON.stringify(requestData, null, 2));
       
-      const res = await fetch(`${API_BASE}/api/auth/signup`, {
+      const res = await fetch(`${BASE_URL.replace('/api', '')}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData),
@@ -109,17 +113,72 @@ export default function RegistPage() {
         throw new Error(raw || `HTTP ${res.status}`);
       }
 
-      console.log('✅ 성공 조건 통과 - Alert 표시 시작');
-      Alert.alert('회원가입 성공 !', '', [
-        {
-          text: '확인',
-          onPress: () => {
-            console.log('✅ Alert 확인 버튼 클릭 - 로그인 페이지로 이동');
-            router.replace('/UserBasic/LoginPage');
-          },
-        },
-      ]);
-      console.log('✅ Alert 설정 완료');
+      console.log('✅ 회원가입 성공 - 자동 로그인 시도');
+      
+      // 자동 로그인 시도
+      try {
+        const loginRes = await fetch(`${BASE_URL.replace('/api', '')}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: email.trim(),
+            password: pw,
+          }),
+        });
+
+        const loginData = await loginRes.json();
+        console.log('🔐 로그인 응답:', loginData);
+
+        if (loginData.success && loginData.data) {
+          // 토큰 저장
+          await tokenManager.saveTokens({
+            accessToken: loginData.data.accessToken,
+            refreshToken: loginData.data.refreshToken,
+          });
+          
+          // AuthContext의 login 함수 호출 (AuthTokens 객체로 전달)
+          await login({
+            accessToken: loginData.data.accessToken,
+            refreshToken: loginData.data.refreshToken,
+          });
+          
+          console.log('✅ 자동 로그인 성공');
+          
+          // 바로 메인 페이지로 이동
+          console.log('✅ 메인 페이지로 이동 시작');
+          router.replace('/UserBasic/MainPage');
+          
+          // 이동 후 알림 표시
+          setTimeout(() => {
+            Alert.alert(
+              '회원가입 성공!', 
+              '자동으로 로그인되었습니다.'
+            );
+          }, 500);
+        } else {
+          // 자동 로그인 실패 시 로그인 페이지로 이동
+          console.log('⚠️ 자동 로그인 실패 - 로그인 페이지로 이동');
+          router.replace('/UserBasic/LoginPage');
+          
+          setTimeout(() => {
+            Alert.alert(
+              '회원가입 성공!',
+              '로그인 페이지로 이동합니다.'
+            );
+          }, 500);
+        }
+      } catch (loginError) {
+        console.log('⚠️ 자동 로그인 중 오류:', loginError);
+        // 자동 로그인 실패해도 회원가입은 성공했으므로 로그인 페이지로 이동
+        router.replace('/UserBasic/LoginPage');
+        
+        setTimeout(() => {
+          Alert.alert(
+            '회원가입 성공!',
+            '로그인 페이지로 이동합니다.'
+          );
+        }, 500);
+      }
     } catch (e: any) {
       Alert.alert('가입 실패', e?.message || '잠시 후 다시 시도해주세요.');
     } finally {

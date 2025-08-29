@@ -17,17 +17,17 @@
         <id property="id" column="id"/>
         <result property="scholarshipName" column="scholarship_name"/>
         <result property="description" column="description"/>
-        <result property="type" column="type" javaType="com.solsol.heycalendar.domain.ScholarshipType" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="type" column="type"/>
         <result property="amount" column="amount"/>
         <result property="numberOfRecipients" column="number_of_recipients"/>
-        <result property="paymentMethod" column="payment_method" javaType="com.solsol.heycalendar.domain.PaymentMethod" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="paymentMethod" column="payment_method"/>
         <result property="recruitmentStartDate" column="recruitment_start_date"/>
         <result property="recruitmentEndDate" column="recruitment_end_date"/>
         <result property="evaluationStartDate" column="evaluation_start_date"/>
         <result property="interviewDate" column="interview_date"/>
         <result property="resultAnnouncementDate" column="result_announcement_date"/>
-        <result property="evaluationMethod" column="evaluation_method" javaType="com.solsol.heycalendar.domain.EvaluationMethod" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
-        <result property="recruitmentStatus" column="recruitment_status" javaType="com.solsol.heycalendar.domain.RecruitmentStatus" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="evaluationMethod" column="evaluation_method"/>
+        <result property="recruitmentStatus" column="recruitment_status"/>
         <result property="eligibilityCondition" column="eligibility_condition"/>
         <result property="gradeRestriction" column="grade_restriction"/>
         <result property="majorRestriction" column="major_restriction"/>

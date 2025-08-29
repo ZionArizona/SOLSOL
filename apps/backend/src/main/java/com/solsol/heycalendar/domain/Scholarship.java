@@ -51,6 +51,9 @@ public class Scholarship {
 	private String officeLocation;                  // 사무실 위치
 	private String consultationHours;               // 상담 가능 시간(문자열)
 
+	// 제출서류 (JSON 배열로 저장)
+	private String requiredDocuments;               // JSON array string
+
 	// 메타
 	private String createdBy;
 	private LocalDateTime createdAt;

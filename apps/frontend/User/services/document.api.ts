@@ -1,6 +1,9 @@
 import tokenManager from '../utils/tokenManager';
+import { BASE_URL } from './api';
+import * as FileSystem from 'expo-file-system';
 
-const API_BASE = 'http://localhost:8080'; 
+
+// API_BASE는 services/api.ts의 BASE_URL 사용 
 
 // 토큰 가져오기
 const getAuthToken = async (): Promise<string> => {
@@ -67,7 +70,7 @@ const calculateSHA256 = async (file: File): Promise<string> => {
 // 서류 업로드 URL 생성
 export const generateUploadUrl = async (request: DocumentUploadRequest): Promise<DocumentUploadResponse> => {
   const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents/upload-url`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/student/documents/upload-url`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -96,6 +99,8 @@ export const uploadFileToS3 = async (uploadUrl: string, file: File, contentType:
   });
 
   if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    console.error('S3 error body:', text);
     throw new Error('파일 업로드에 실패했습니다.');
   }
 };
@@ -109,7 +114,7 @@ export const completeUpload = async (data: {
   checksum: string;
 }): Promise<void> => {
   const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents/complete`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/student/documents/complete`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -127,7 +132,7 @@ export const completeUpload = async (data: {
 // 내 서류 목록 조회
 export const getMyDocuments = async (): Promise<DocumentItem[]> => {
   const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/student/documents`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -146,7 +151,7 @@ export const getMyDocuments = async (): Promise<DocumentItem[]> => {
 // 서류 다운로드 URL 생성
 export const generateDownloadUrl = async (documentId: number): Promise<string> => {
   const token = await getAuthToken();
-  const response = await fetch(`${API_BASE}/api/student/documents/${documentId}/download-url`, {
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/student/documents/${documentId}/download-url`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -170,7 +175,7 @@ export const deleteDocument = async (documentId: number): Promise<void> => {
     const token = await getAuthToken();
     console.log('🔑 토큰 확인:', token ? '있음' : '없음');
     
-    const url = `${API_BASE}/api/student/documents/${documentId}`;
+    const url = `${BASE_URL.replace('/api', '')}/api/student/documents/${documentId}`;
     console.log('🌐 삭제 요청 URL:', url);
     
     const response = await fetch(url, {
@@ -250,21 +255,31 @@ export const uploadDocumentRN = async (
 };
 
 // React Native용 S3 업로드
-export const uploadFileToS3RN = async (uploadUrl: string, fileUri: string, contentType: string): Promise<void> => {
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': contentType,
-    },
-    body: {
-      uri: fileUri,
-      type: contentType,
-      name: fileUri.split('/').pop() || 'file',
-    } as any,
-  });
+// export const uploadFileToS3RN = async (uploadUrl: string, fileUri: string, contentType: string): Promise<void> => {
+//   const response = await fetch(uploadUrl, {
+//     method: 'PUT',
+//     headers: {
+//       'Content-Type': contentType,
+//     },
+//     body: {
+//       uri: fileUri,
+//       type: contentType,
+//       name: fileUri.split('/').pop() || 'file',
+//     } as any,
+//   });
 
-  if (!response.ok) {
-    throw new Error('파일 업로드에 실패했습니다.');
+//   if (!response.ok) {
+//     throw new Error('파일 업로드에 실패했습니다.');
+//   }
+// };
+export const uploadFileToS3RN = async (uploadUrl: string, fileUri: string, contentType: string) => {
+  const res = await FileSystem.uploadAsync(uploadUrl, fileUri, {
+    httpMethod: 'PUT',
+    headers: { 'Content-Type': contentType },
+    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+  });
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`S3 업로드 실패 (HTTP ${res.status}): ${res.body}`);
   }
 };
 

@@ -10,24 +10,24 @@ export default function Sidebar(){
       <div className="side-title">서류 관리 시스템</div>
 
       <div className="side-group">
-        <Link to="/admin/submissions" style={{textDecoration: 'none'}}>
-          <div className={`side-item ${isActive('/admin/submissions') ? 'active' : ''}`}>
-            <span className="side-dot"/> 제출 서류 관리
+        <Link to="/submissions" style={{textDecoration: 'none'}}>
+          <div className={`side-item ${isActive('/submissions') ? 'active' : ''}`}>
+            <span className="side-dot"/> 장학금 신청 관리
           </div>
         </Link>
-        <Link to="/admin/scholarships" style={{textDecoration: 'none'}}>
-          <div className={`side-item ${isActive('/admin/scholarships') ? 'active' : ''}`}>
-            <span className="side-dot"/> 장학금 관리
+        <Link to="/document-approval" style={{textDecoration: 'none'}}>
+          <div className={`side-item ${isActive('/document-approval') ? 'active' : ''}`}>
+            <span className="side-dot"/> 서류 검토 및 마일리지
           </div>
         </Link>
-        <Link to="/admin/notices" style={{textDecoration: 'none'}}>
-          <div className={`side-item ${isActive('/admin/notices') ? 'active' : ''}`}>
-            <span className="side-dot"/> 공지글
+        <Link to="/scholarships" style={{textDecoration: 'none'}}>
+          <div className={`side-item ${isActive('/scholarships') ? 'active' : ''}`}>
+            <span className="side-dot"/> 장학금 등록 관리
           </div>
         </Link>
-        <Link to="/admin/settings" style={{textDecoration: 'none'}}>
-          <div className={`side-item ${isActive('/admin/settings') ? 'active' : ''}`}>
-            <span className="side-dot"/> 설정
+        <Link to="/notices" style={{textDecoration: 'none'}}>
+          <div className={`side-item ${isActive('/notices') ? 'active' : ''}`}>
+            <span className="side-dot"/> 공지사항 관리
           </div>
         </Link>
       </div>

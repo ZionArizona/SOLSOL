@@ -74,6 +74,40 @@ export default function SubmissionManage(){
     }
   }
 
+  const handleViewFile = async (doc) => {
+    try {
+      // 파일 URL이 S3 presigned URL인 경우 직접 새 창에서 열기
+      if (doc.fileUrl) {
+        window.open(doc.fileUrl, '_blank')
+      } else {
+        alert('파일을 불러올 수 없습니다.')
+      }
+    } catch (error) {
+      console.error('Failed to view file:', error)
+      alert('파일 보기 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleDownloadFile = async (doc) => {
+    try {
+      if (doc.fileUrl) {
+        // 파일 다운로드
+        const link = document.createElement('a')
+        link.href = doc.fileUrl
+        link.download = doc.originalFileName || `document_${doc.applicationDocumentNm}`
+        link.target = '_blank'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else {
+        alert('파일을 다운로드할 수 없습니다.')
+      }
+    } catch (error) {
+      console.error('Failed to download file:', error)
+      alert('파일 다운로드 중 오류가 발생했습니다.')
+    }
+  }
+
   const transformApplicationData = (application) => ({
     id: `${application.userNm}-${application.scholarshipNm}`,
     scholarship: application.scholarshipName || '장학금명 없음',
@@ -151,7 +185,7 @@ export default function SubmissionManage(){
           <div className="topbar">
             <input 
               className="search" 
-              placeholder="학과명, 학번, 서류명으로 검색..." 
+              placeholder="장학금명으로 검색" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -220,14 +254,30 @@ export default function SubmissionManage(){
                     {selectedApplication.documents.map((doc, index) => (
                       <div key={index} className="document-item">
                         <span className="doc-icon">📄</span>
-                        <div>
-                          <p><strong>{doc.applicationDocumentNm}</strong></p>
+                        <div className="doc-info">
+                          <p><strong>{doc.originalFileName || doc.applicationDocumentNm}</strong></p>
                           <p className="doc-details">
-                            {doc.originalFileName} ({doc.formattedFileSize || '크기 정보 없음'})
+                            {doc.formattedFileSize || '크기 정보 없음'} • {doc.contentType || '파일 타입 불명'}
                           </p>
                           <p className="doc-date">
                             업로드: {new Date(doc.uploadedAt).toLocaleString('ko-KR')}
                           </p>
+                        </div>
+                        <div className="doc-actions">
+                          <button 
+                            className="btn-view" 
+                            onClick={() => handleViewFile(doc)}
+                            title="파일 보기"
+                          >
+                            👁️ 보기
+                          </button>
+                          <button 
+                            className="btn-download" 
+                            onClick={() => handleDownloadFile(doc)}
+                            title="파일 다운로드"
+                          >
+                            💾 다운로드
+                          </button>
                         </div>
                       </div>
                     ))}

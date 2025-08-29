@@ -30,6 +30,7 @@
 		<result column="contact_email"             property="contactEmail"/>
 		<result column="office_location"           property="officeLocation"/>
 		<result column="consultation_hours"        property="consultationHours"/>
+		<result column="required_documents"        property="requiredDocuments"/>
 		<result column="created_by"                property="createdBy"/>
 		<result column="created_at"                property="createdAt"/>
 		<result column="updated_at"                property="updatedAt"/>
@@ -51,13 +52,13 @@
 		 recruitment_start_date, recruitment_end_date, evaluation_start_date, interview_date, result_announcement_date,
 		 evaluation_method, recruitment_status, eligibility_condition, grade_restriction, major_restriction,
 		 duplicate_allowed, min_gpa, category, contact_person_name, contact_phone, contact_email,
-		 office_location, consultation_hours, created_by)
+		 office_location, consultation_hours, required_documents, created_by)
 		VALUES
 			(#{scholarshipName}, #{description}, #{type}, #{amount}, #{numberOfRecipients}, #{paymentMethod},
 			 #{recruitmentStartDate}, #{recruitmentEndDate}, #{evaluationStartDate}, #{interviewDate}, #{resultAnnouncementDate},
 			 #{evaluationMethod}, #{recruitmentStatus}, #{eligibilityCondition}, #{gradeRestriction}, #{majorRestriction},
 			 #{duplicateAllowed}, #{minGpa}, #{category}, #{contactPersonName}, #{contactPhone}, #{contactEmail},
-			 #{officeLocation}, #{consultationHours}, #{createdBy})
+			 #{officeLocation}, #{consultationHours}, #{requiredDocuments}, #{createdBy})
 	</insert>
 
 	<update id="update" parameterType="com.solsol.heycalendar.domain.Scholarship">
@@ -86,6 +87,7 @@
 							   contact_email = #{contactEmail},
 							   office_location = #{officeLocation},
 							   consultation_hours = #{consultationHours},
+							   required_documents = #{requiredDocuments},
 							   updated_at = NOW()
 		WHERE id = #{id}
 	</update>
@@ -251,6 +253,14 @@
 		WHERE DATE(created_at) BETWEEN #{startDate} AND #{endDate}
 		  AND recruitment_status = 'OPEN'
 		ORDER BY created_at DESC
+	</select>
+
+	<!-- 특정 날짜에 마감되는 장학금 조회 (마감임박 알림용) -->
+	<select id="findScholarshipsEndingOn" resultMap="ScholarshipMap">
+		SELECT * FROM scholarship 
+		WHERE recruitment_status = 'OPEN' 
+		  AND recruitment_end_date = #{endDate}
+		ORDER BY recruitment_end_date ASC
 	</select>
 
 	<!-- === Filter Queries === -->

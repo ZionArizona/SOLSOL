@@ -10,6 +10,8 @@ import { router } from "expo-router";
 import { scholarshipApi, Scholarship } from "../../services/scholarship.api";
 import { bookmarkApi } from "../../services/bookmark.api";
 import { applicationApi } from "../../services/application.api";
+import { notificationApi } from "../../services/notification.api";
+import { useWebSocket } from "../../contexts/WebSocketContext";
 
 export default function ScholarshipDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,6 +23,45 @@ export default function ScholarshipDetail() {
   const [applicationLoading, setApplicationLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+  
+  const { markAsRead, deleteNotificationsByScholarship } = useWebSocket();
+
+  // 특정 장학금과 관련된 알림들을 삭제하는 함수
+  const deleteNotificationsForScholarship = async (scholarshipId: number) => {
+    try {
+      console.log(`🗑️ Deleting notifications for scholarship: ${scholarshipId}`);
+      
+      // 모든 알림을 가져와서 이 장학금과 관련된 것들을 찾음
+      const notifications = await notificationApi.getUserNotifications();
+      
+      // 이 장학금 ID와 관련된 알림들 필터링
+      const relatedNotifications = notifications.filter(notification => 
+        notification.relatedId === scholarshipId
+      );
+      
+      console.log(`🗑️ Found ${relatedNotifications.length} notifications for scholarship ${scholarshipId}`);
+      
+      // 각각의 알림을 삭제
+      for (const notification of relatedNotifications) {
+        try {
+          // 읽지 않은 알림이면 먼저 읽음 처리 (unreadCount 감소)
+          if (!notification.isRead) {
+            await notificationApi.markAsRead(notification.id);
+            markAsRead(notification.id);
+            console.log(`✅ Marked notification ${notification.id} as read`);
+          }
+          
+          // 알림 삭제
+          await notificationApi.deleteNotification(notification.id);
+          console.log(`🗑️ Deleted notification ${notification.id}`);
+        } catch (error) {
+          console.warn(`⚠️ Failed to delete notification ${notification.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to delete scholarship notifications:', error);
+    }
+  };
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString: string) => {
@@ -182,6 +223,12 @@ export default function ScholarshipDetail() {
         console.log('🎓 Scholarship detail data:', scholarshipData);
         console.log('🔖 Bookmark status:', bookmarkStatus);
         console.log('📋 Application data:', applicationData);
+        
+        // 이 장학금과 관련된 알림을 자동으로 삭제
+        await deleteNotificationsForScholarship(parseInt(id));
+        
+        // WebSocket 컨텍스트에서도 해당 장학금 관련 알림들 삭제
+        deleteNotificationsByScholarship(parseInt(id));
         
         if (scholarshipData) {
           setScholarship(scholarshipData);

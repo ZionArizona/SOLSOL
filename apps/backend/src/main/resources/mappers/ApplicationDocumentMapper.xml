@@ -15,6 +15,19 @@
         <result property="contentType" column="content_type" />
     </resultMap>
 
+    <!-- Result Map for ApplicationDocumentResponse -->
+    <resultMap id="ApplicationDocumentResponseResultMap" type="com.solsol.heycalendar.dto.response.ApplicationDocumentResponse">
+        <id property="applicationDocumentNm" column="applicationDocumentNm" />
+        <result property="userNm" column="userNm" />
+        <result property="scholarshipNm" column="scholarshipNm" />
+        <result property="fileUrl" column="file_url" />
+        <result property="uploadedAt" column="uploaded_at" />
+        <result property="originalFileName" column="original_file_name" />
+        <result property="fileSize" column="file_size" />
+        <result property="contentType" column="content_type" />
+        <result property="formattedFileSize" column="formatted_file_size" />
+    </resultMap>
+
     <!-- Find all documents -->
     <select id="findAllDocuments" resultMap="ApplicationDocumentResultMap">
         SELECT applicationDocumentNm, userNm, scholarshipNm, file_url, uploaded_at, 
@@ -27,6 +40,20 @@
     <select id="findDocumentsByUserAndScholarship" resultMap="ApplicationDocumentResultMap">
         SELECT applicationDocumentNm, userNm, scholarshipNm, file_url, uploaded_at, 
                original_file_name, file_size, content_type
+        FROM applicationdocument
+        WHERE userNm = #{userNm} AND scholarshipNm = #{scholarshipNm}
+        ORDER BY uploaded_at DESC
+    </select>
+
+    <!-- Find documents by application (for admin) -->
+    <select id="findDocumentsByApplication" resultMap="ApplicationDocumentResponseResultMap">
+        SELECT applicationDocumentNm, userNm, scholarshipNm, file_url, uploaded_at, 
+               original_file_name, file_size, content_type,
+               CASE 
+                   WHEN file_size &lt; 1024 THEN CONCAT(file_size, ' B')
+                   WHEN file_size &lt; 1048576 THEN CONCAT(ROUND(file_size/1024, 1), ' KB')
+                   ELSE CONCAT(ROUND(file_size/1048576, 1), ' MB')
+               END as formatted_file_size
         FROM applicationdocument
         WHERE userNm = #{userNm} AND scholarshipNm = #{scholarshipNm}
         ORDER BY uploaded_at DESC
@@ -76,6 +103,18 @@
         )
         VALUES (
             #{applicationDocumentNm}, #{userNm}, #{scholarshipNm}, #{fileUrl}, #{uploadedAt}, 
+            #{originalFileName}, #{fileSize}, #{contentType}
+        )
+    </insert>
+
+    <insert id="insertApplicationDocument" parameterType="com.solsol.heycalendar.entity.ApplicationDocument"
+            useGeneratedKeys="true" keyProperty="applicationDocumentNm">
+        INSERT INTO applicationdocument (
+            userNm, scholarshipNm, file_url, uploaded_at,
+            original_file_name, file_size, content_type
+        )
+        VALUES (
+            #{userNm}, #{scholarshipNm}, #{fileUrl}, #{uploadedAt},
             #{originalFileName}, #{fileSize}, #{contentType}
         )
     </insert>

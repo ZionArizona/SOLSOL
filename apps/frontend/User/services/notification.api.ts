@@ -6,10 +6,11 @@ export interface Notification {
   type: NotificationType;
   title: string;
   message: string;
-  data?: string;
+  relatedId?: number;
   isRead: boolean;
+  actionRoute?: string;
   createdAt: string;
-  readAt?: string;
+  updatedAt?: string;
 }
 
 export enum NotificationType {
