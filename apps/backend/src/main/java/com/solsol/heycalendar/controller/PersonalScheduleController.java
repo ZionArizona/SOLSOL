@@ -2,6 +2,7 @@ package com.solsol.heycalendar.controller;
 
 
 import com.solsol.heycalendar.dto.request.CreatePersonalScheduleRequest;
+import com.solsol.heycalendar.dto.request.PersonalScheduleDeleteRequest;
 import com.solsol.heycalendar.dto.request.PersonalScheduleFetchRequest;
 import com.solsol.heycalendar.dto.response.PersonalScheduleListResponse;
 import com.solsol.heycalendar.dto.response.PersonalScheduleResponse;
@@ -29,7 +30,6 @@ public class PersonalScheduleController {
 
     @PostMapping
     public ResponseEntity<PersonalScheduleListResponse> list(@Valid @RequestBody PersonalScheduleFetchRequest req) {
-        System.out.println("come to get List of PersonalUser Schedule");
         List<PersonalScheduleResponse> list = service.findByUserNm(req.getUserNm());
         return ResponseEntity.ok(
                 PersonalScheduleListResponse.builder()
@@ -38,6 +38,14 @@ public class PersonalScheduleController {
                         .schedules(list)
                         .build()
         );
+    }
+
+    @PostMapping("/delete")
+    public ResponseEntity<String> delete(@Valid @RequestBody PersonalScheduleDeleteRequest req) {
+        System.out.println("delete operate");
+        int deleted = service.deleteByUserNmAndScheduleName(req.getUserNm(), req.getScheduleName());
+        if (deleted == 0) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok("ok"); // text/plain "ok"
     }
 
 }
