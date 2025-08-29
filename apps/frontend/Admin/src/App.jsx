@@ -40,7 +40,7 @@ export default function App(){
         <Route path="/admin/notices/:id/edit" element={<AdminRoute><NoticeEdit/></AdminRoute>}/> */}
         <Route path="/admin/scholarships/:id" element={<AdminRoute><ScholarshipDetail/></AdminRoute>}/>
         <Route path="/admin/scholarships/:id/edit" element={<AdminRoute><ScholarshipEdit/></AdminRoute>}/>
-        */}
+
         <Route path="/submissions" element={<AdminRoute><SubmissionManage/></AdminRoute>}/>
         <Route path="/scholarships/regist" element={<AdminRoute><ScholarshipCreate/></AdminRoute>}/>
         <Route path="/scholarships" element={<AdminRoute><ScholarshipManage/></AdminRoute>}/>

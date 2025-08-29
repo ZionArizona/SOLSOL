@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 import com.solsol.heycalendar.dto.request.MileageRequest;
 import com.solsol.heycalendar.service.MileageService;
 import com.solsol.heycalendar.util.CryptoUtil;
+import com.solsol.heycalendar.domain.NotificationType;
 
 /**
  * Service class for scholarship application management
@@ -45,6 +46,7 @@ public class ApplicationService {
     private final S3Presigner s3Presigner;
     private final MileageService mileageService;
     private final CryptoUtil cryptoUtil;
+    private final NotificationService notificationService;
 
     @Value("${AWS_S3_BUCKET}")
     private String bucketName;
@@ -215,7 +217,24 @@ public class ApplicationService {
         Application existingApplication = applicationMapper.findApplicationByUserAndScholarship(
                 userNm, request.getScholarshipId().toString());
         if (existingApplication != null) {
-            throw new IllegalStateException("이미 신청한 장학금입니다.");
+            // 반려된 경우 재신청 허용, 그 외에는 중복 신청 방지
+            if (existingApplication.getState() == ApplicationState.REJECTED) {
+                log.info("재신청 허용: 이전 신청이 반려됨 - User: {}, Scholarship: {}", userNm, request.getScholarshipId());
+                // 기존 신청 상태를 PENDING으로 업데이트하고 신청 시간 갱신
+                Application updatedApplication = Application.builder()
+                        .userNm(userNm)
+                        .scholarshipNm(request.getScholarshipId().toString())
+                        .state(ApplicationState.PENDING)
+                        .appliedAt(LocalDateTime.now())
+                        .reason(request.getReason())
+                        .build();
+                applicationMapper.updateApplication(updatedApplication);
+                log.info("Application resubmitted successfully for user: {} and scholarship: {}", 
+                        userNm, request.getScholarshipId());
+                return convertToApplicationResponse(updatedApplication);
+            } else {
+                throw new IllegalStateException("이미 신청한 장학금입니다.");
+            }
         }
 
         // Basic validation - check if scholarship exists would be good here
@@ -268,6 +287,21 @@ public class ApplicationService {
         applicationMapper.updateApplication(application);
         log.info("Application approved successfully for user: {} and scholarship: {}", userNm, scholarshipNm);
 
+        // 승인 알림 전송
+        try {
+            notificationService.createNotification(
+                userNm, 
+                NotificationType.SCHOLARSHIP_RESULT, 
+                "장학금 승인", 
+                "축하합니다! 장학금 신청이 승인되었습니다.", 
+                Long.parseLong(scholarshipNm), 
+                "/MyScholarship/MyScholarship"
+            );
+            log.info("승인 알림 전송 완료 - User: {}, Scholarship: {}", userNm, scholarshipNm);
+        } catch (Exception e) {
+            log.error("승인 알림 전송 실패 - User: {}, Scholarship: {}", userNm, scholarshipNm, e);
+        }
+
         return convertToApplicationResponse(application);
     }
 
@@ -288,6 +322,25 @@ public class ApplicationService {
 
         applicationMapper.updateApplication(application);
         log.info("Application rejected successfully for user: {} and scholarship: {}", userNm, scholarshipNm);
+
+        // 반려 알림 전송
+        try {
+            String rejectionMessage = request.getReason() != null && !request.getReason().isEmpty() 
+                ? "장학금 신청이 반려되었습니다. 사유: " + request.getReason()
+                : "장학금 신청이 반려되었습니다.";
+            
+            notificationService.createNotification(
+                userNm, 
+                NotificationType.SCHOLARSHIP_RESULT, 
+                "장학금 반려", 
+                rejectionMessage, 
+                Long.parseLong(scholarshipNm), 
+                "/MyScholarship/MyScholarship"
+            );
+            log.info("반려 알림 전송 완료 - User: {}, Scholarship: {}", userNm, scholarshipNm);
+        } catch (Exception e) {
+            log.error("반려 알림 전송 실패 - User: {}, Scholarship: {}", userNm, scholarshipNm, e);
+        }
 
         return convertToApplicationResponse(application);
     }
@@ -588,6 +641,21 @@ public class ApplicationService {
             applicationMapper.updateApplication(application);
             log.info("✅ 신청서 상태를 APPROVED로 변경 완료");
             
+            // 서류 승인 알림 전송
+            try {
+                notificationService.createNotification(
+                    userNm, 
+                    NotificationType.SCHOLARSHIP_RESULT, 
+                    "서류심사 합격", 
+                    "축하합니다! 장학금 서류심사에 합격하셨습니다.", 
+                    Long.parseLong(scholarshipNm), 
+                    "/MyScholarship/MyScholarship"
+                );
+                log.info("서류 승인 알림 전송 완료 - User: {}, Scholarship: {}", userNm, scholarshipNm);
+            } catch (Exception e) {
+                log.error("서류 승인 알림 전송 실패 - User: {}, Scholarship: {}", userNm, scholarshipNm, e);
+            }
+            
             // 마일리지 지급 (장학금별 중복 체크)
             if (mileage > 0) {
                 try {
@@ -626,6 +694,21 @@ public class ApplicationService {
             application.setState(ApplicationState.REJECTED);
             applicationMapper.updateApplication(application);
             log.info("✅ 신청서 상태를 REJECTED로 변경 완료");
+            
+            // 서류 반려 알림 전송
+            try {
+                notificationService.createNotification(
+                    userNm, 
+                    NotificationType.SCHOLARSHIP_RESULT, 
+                    "서류심사 반려", 
+                    "죄송합니다. 장학금 서류심사에서 반려되었습니다. 다시 신청하실 수 있습니다.", 
+                    Long.parseLong(scholarshipNm), 
+                    "/MyScholarship/MyScholarship"
+                );
+                log.info("서류 반려 알림 전송 완료 - User: {}, Scholarship: {}", userNm, scholarshipNm);
+            } catch (Exception e) {
+                log.error("서류 반려 알림 전송 실패 - User: {}, Scholarship: {}", userNm, scholarshipNm, e);
+            }
             
             log.info("🚫 서류 반려 완료");
             

@@ -12,22 +12,20 @@ export const NotificationTabs = ({
 }) => {
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
-        <View style={styles.tabsContainer}>
-          {tabs.map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tab, active === tab && styles.activeTab]}
-              onPress={() => onChange(tab)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.tabText, active === tab && styles.activeTabText]}>
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+      <View style={styles.tabsContainer}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, active === tab && styles.activeTab]}
+            onPress={() => onChange(tab)}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabText, active === tab && styles.activeTabText]}>
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 };
@@ -35,7 +33,7 @@ export const NotificationTabs = ({
 const styles = StyleSheet.create({
   container: {
     marginTop: 8,
-    marginHorizontal: 12,
+    marginHorizontal: 8,
   },
   scrollView: {
     flexGrow: 0,
@@ -47,10 +45,12 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   tab: {
-    paddingHorizontal: 16,
+    flex: 1, // 각 탭이 균등하게 공간을 차지
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    marginRight: 4,
+    marginHorizontal: 2,
+    alignItems: "center", // 텍스트 중앙 정렬
   },
   activeTab: {
     backgroundColor: "#6B86FF",
