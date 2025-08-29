@@ -34,22 +34,22 @@ export default function App(){
 
         <Route path="/admin/scholarships/regist" element={<AdminRoute><ScholarshipCreate/></AdminRoute>}/>
         <Route path="/admin/scholarships" element={<AdminRoute><ScholarshipManage/></AdminRoute>}/>
-        <Route path="/admin/notices" element={<AdminRoute><NoticeManage/></AdminRoute>}/>
+        {/* <Route path="/admin/notices" element={<AdminRoute><NoticeManage/></AdminRoute>}/>
         <Route path="/admin/notices/:id" element={<AdminRoute><NoticeDetail/></AdminRoute>}/>
-        <Route path="/admin/notices/:id/edit" element={<AdminRoute><NoticeEdit/></AdminRoute>}/>
+        <Route path="/admin/notices/:id/edit" element={<AdminRoute><NoticeEdit/></AdminRoute>}/> */}
         <Route path="/admin/scholarships/:id" element={<AdminRoute><ScholarshipDetail/></AdminRoute>}/>
         <Route path="/admin/scholarships/:id/edit" element={<AdminRoute><ScholarshipEdit/></AdminRoute>}/> */}
         <Route path="/submissions" element={<AdminRoute><SubmissionManage/></AdminRoute>}/>
         <Route path="/scholarships/regist" element={<AdminRoute><ScholarshipCreate/></AdminRoute>}/>
         <Route path="/scholarships" element={<AdminRoute><ScholarshipManage/></AdminRoute>}/>
-        <Route path="/notices" element={<AdminRoute><NoticeManage/></AdminRoute>}/>
+        {/* <Route path="/notices" element={<AdminRoute><NoticeManage/></AdminRoute>}/>
         <Route path="/notices/:id" element={<AdminRoute><NoticeDetail/></AdminRoute>}/>
-        <Route path="/notices/:id/edit" element={<AdminRoute><NoticeEdit/></AdminRoute>}/>
+        <Route path="/notices/:id/edit" element={<AdminRoute><NoticeEdit/></AdminRoute>}/> */}
         <Route path="/scholarships/:id" element={<AdminRoute><ScholarshipDetail/></AdminRoute>}/>
         <Route path="/scholarships/:id/edit" element={<AdminRoute><ScholarshipEdit/></AdminRoute>}/>
         <Route path="/document-approval" element={<AdminRoute><DocumentApproval/></AdminRoute>}/>
 
-        <Route path="/notices" element={<AdminRoute><PublicNoticeList/></AdminRoute>}/>
+        {/* <Route path="/notices" element={<AdminRoute><PublicNoticeList/></AdminRoute>}/> */}
         <Route path="/mypage" element={<AdminRoute><MyPage/></AdminRoute>}/>
 
         {/* 와일드카드 404 또는 기본 리다이렉트 */}
