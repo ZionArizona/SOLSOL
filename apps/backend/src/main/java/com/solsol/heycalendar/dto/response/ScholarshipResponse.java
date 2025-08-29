@@ -66,6 +66,10 @@ public class ScholarshipResponse {
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
+	// 신청 여부
+	private Boolean applied;
+	private ApplicationStatus applicationStatus;
+
 	@Getter @Builder @NoArgsConstructor @AllArgsConstructor
 	public static class RequiredDocumentDto {
 		private String name;

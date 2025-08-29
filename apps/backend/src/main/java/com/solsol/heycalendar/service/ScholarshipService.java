@@ -32,10 +32,11 @@ public class ScholarshipService {
 
 	/* 목록 */
 	@Transactional(readOnly = true)
-	public List<ScholarshipResponse> getAllScholarships() {
-		return mapper.findAll().stream()
-				.map(this::toSummaryResponse)
-				.collect(Collectors.toList());
+	public List<ScholarshipResponse> getAllScholarships(String userNm) {
+		// return mapper.findAll(userNm).stream()
+		// 		.map(this::toSummaryResponse)
+		// 		.collect(Collectors.toList());
+		return mapper.findAllWithApplied(userNm);
 	}
 
 	/* 상세 */
@@ -482,7 +483,7 @@ public class ScholarshipService {
 	 * 새 장학금 등록 시 모든 활성 사용자에게 알림 생성
 	 */
 	@Transactional
-	private void createNewScholarshipNotifications(ScholarshipResponse scholarship) {
+	public void createNewScholarshipNotifications(ScholarshipResponse scholarship) {
 		try {
 			// 모든 활성 사용자 조회
 			List<String> activeUsers = userMapper.findAllActiveUserNames();

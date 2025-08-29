@@ -36,10 +36,100 @@
 		<result column="updated_at"                property="updatedAt"/>
 	</resultMap>
 
+    <resultMap id="ScholarshipResponseMap" type="com.solsol.heycalendar.dto.response.ScholarshipResponse">
+        <id     property="id"                     column="id"/>
+
+        <!-- 기본 -->
+        <result property="scholarshipName"        column="scholarship_name"/>
+        <result property="description"            column="description"/>
+        <result property="type"                   column="type"/>
+        <result property="amount"                 column="amount"/>
+        <result property="numberOfRecipients"     column="number_of_recipients"/>
+        <result property="paymentMethod"          column="payment_method"/>
+
+        <!-- 일정/심사 -->
+        <result property="recruitmentStartDate"   column="recruitment_start_date"/>
+        <result property="recruitmentEndDate"     column="recruitment_end_date"/>
+        <result property="evaluationStartDate"    column="evaluation_start_date"/>
+        <result property="interviewDate"          column="interview_date"/>
+        <result property="resultAnnouncementDate" column="result_announcement_date"/>
+        <result property="evaluationMethod"       column="evaluation_method"/>
+        <result property="recruitmentStatus"      column="recruitment_status"/>
+
+        <!-- 제한 -->
+        <result property="eligibilityCondition"   column="eligibility_condition"/>
+        <result property="gradeRestriction"       column="grade_restriction"/>
+        <result property="majorRestriction"       column="major_restriction"/>
+        <result property="duplicateAllowed"       column="duplicate_allowed"/>
+        <result property="minGpa"                 column="min_gpa"/>
+
+        <!-- 카테고리/문의 -->
+        <result property="category"               column="category"/>
+        <result property="contactPersonName"      column="contact_person_name"/>
+        <result property="contactPhone"           column="contact_phone"/>
+        <result property="contactEmail"           column="contact_email"/>
+        <result property="officeLocation"         column="office_location"/>
+        <result property="consultationHours"      column="consultation_hours"/>
+
+        <!-- 메타 -->
+        <result property="createdBy"              column="created_by"/>
+        <result property="createdAt"              column="created_at"/>
+        <result property="updatedAt"              column="updated_at"/>
+
+        <!-- 목록 전용: 신청 여부/상태 -->
+        <result property="applied"                column="applied" />
+        <result property="applicationStatus"      column="application_status" />
+
+        <!-- 목록에서는 tags/notice/criteria/requiredDocuments 비워둔다(상세에서 채우는 걸 권장) -->
+    </resultMap>
+
 	<!-- === Scholarship CRUD === -->
-	<select id="findAll" resultMap="ScholarshipMap">
-		SELECT * FROM scholarship ORDER BY created_at DESC
-	</select>
+    <select id="findAll" resultMap="ScholarshipMap"> SELECT * FROM scholarship ORDER BY created_at DESC </select>
+
+    <!-- 전체 목록 + 로그인 유저의 '가장 최근 신청 1건'만 붙여 상태 계산 -->
+    <select id="findAllWithApplied" resultMap="ScholarshipResponseMap">
+        SELECT
+            s.id,
+            s.scholarship_name,
+            s.description,
+            s.type,
+            s.amount,
+            s.number_of_recipients,
+            s.payment_method,
+            s.recruitment_start_date,
+            s.recruitment_end_date,
+            s.evaluation_start_date,
+            s.interview_date,
+            s.result_announcement_date,
+            s.evaluation_method,
+            s.recruitment_status,
+            s.eligibility_condition,
+            s.grade_restriction,
+            s.major_restriction,
+            s.duplicate_allowed,
+            s.min_gpa,
+            s.category,
+            s.contact_person_name,
+            s.contact_phone,
+            s.contact_email,
+            s.office_location,
+            s.consultation_hours,
+            s.created_by,
+            s.created_at,
+            s.updated_at,
+
+            /* === 신청 여부/상태 === */
+            CASE WHEN a.scholarshipNm IS NULL THEN 0 ELSE 1 END AS applied,
+            COALESCE(UPPER(a.state), 'NONE') AS application_status
+
+        FROM scholarship s
+                 LEFT JOIN application a
+                           ON a.userNm = #{userNm}
+                               AND a.scholarshipNm = s.id
+        ORDER BY s.created_at DESC
+    </select>
+
+
 
 	<select id="findById" parameterType="long" resultMap="ScholarshipMap">
 		SELECT * FROM scholarship WHERE id = #{id}

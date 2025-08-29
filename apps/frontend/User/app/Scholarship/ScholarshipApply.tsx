@@ -73,6 +73,21 @@ export default function ScholarshipApply() {
         setScholarships([]);
       }
 
+      console.log('****************************************************************')
+
+      console.log('🔎 raw scholarshipData:', scholarshipData);
+      console.log('🔎 isArray:', Array.isArray(scholarshipData?.scholarships), 
+                  'length:', scholarshipData?.scholarships?.length ?? 'N/A');
+
+      if (Array.isArray(scholarshipData?.scholarships) && scholarshipData.scholarships.length > 0) {
+        const first = scholarshipData.scholarships[0];
+        console.log('👉 first.applied:', first.applied, 'first.applicationStatus:', first.applicationStatus);
+      } else {
+        console.log('🚫 scholarships가 비어있거나 없음');
+      }
+
+      console.log('****************************************************************')
+      
       if (mileageData) {
         console.log('💰 Setting current mileage:', mileageData.availableMileage);
         setCurrentMileage(mileageData.availableMileage || 0);
@@ -164,6 +179,8 @@ export default function ScholarshipApply() {
                     status={getDeadlineStatus(scholarship.recruitmentEndDate)}
                     category={scholarship.category}
                     onPress={() => handleScholarshipPress(scholarship.id)}
+                    applied={scholarship.applied}                             
+                    applicationStatus={scholarship.applicationStatus}  
                   />
                 </View>
               ))
@@ -185,6 +202,8 @@ export default function ScholarshipApply() {
                     status={getDeadlineStatus(scholarship.recruitmentEndDate)}
                     category={scholarship.category}
                     onPress={() => handleScholarshipPress(scholarship.id)}
+                    applied={scholarship.applied} 
+                    applicationStatus={scholarship.applicationStatus}
                   />
                 </View>
               ))

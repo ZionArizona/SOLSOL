@@ -72,6 +72,8 @@ export const ScholarshipItemCard = ({
   status,
   category,
   onPress,
+  applied,               
+  applicationStatus, 
 }: {
   title: string;
   amount: string;
@@ -79,7 +81,36 @@ export const ScholarshipItemCard = ({
   status: string;
   category?: string;
   onPress?: () => void;
+  applied?: boolean;                                      
+  applicationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
 }) => {
+   // 신청상태 라벨
+  const labelForAppStatus = (s?: 'PENDING' | 'APPROVED' | 'REJECTED') => {
+    switch (s) {
+      case 'PENDING':  return '심사 대기중';
+      case 'APPROVED': return '승인됨';
+      case 'REJECTED': return '반려됨';
+      default:         return '신청됨';
+    }
+  };
+
+  // 신청상태 뱃지 색
+  const appBadgeStyle = (s?: 'PENDING' | 'APPROVED' | 'REJECTED') => {
+    const base = {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 10,
+      alignSelf: 'flex-start',
+      marginBottom: 6,
+    } as const;
+    switch (s) {
+      case 'PENDING':  return [base, { backgroundColor: '#FFF3CD' }]; // 노랑
+      case 'APPROVED': return [base, { backgroundColor: '#D1F7C4' }]; // 초록
+      case 'REJECTED': return [base, { backgroundColor: '#F8D7DA' }]; // 빨강
+      default:         return [base, { backgroundColor: '#E0E7FF' }]; // 기본
+    }
+  };
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <LinearGradient
@@ -90,12 +121,21 @@ export const ScholarshipItemCard = ({
       >
         <CategoryIcon category={category} />
         <View style={{ flex: 1 }}>
+          {/* ✅ 신청 상태 뱃지 (있을 때만) */}
+          {applied ? (
+            <View style={appBadgeStyle(applicationStatus)}>
+              <Text style={styles.appBadgeText}>{labelForAppStatus(applicationStatus)}</Text>
+            </View>
+          ) : null}
+
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.amount}>
             {amount} <Text style={styles.mile}>마일리지</Text>
           </Text>
           <Text style={styles.period}>신청기간: {period}</Text>
         </View>
+
+        {/* 기존 마감 상태 뱃지 */}
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{status}</Text>
         </View>
@@ -143,4 +183,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   badgeText: { color: "#8B90A8", fontWeight: "900", fontSize: 11 },
+  appBadgeText: { color: "#1F2937", fontWeight: "900", fontSize: 11 },
 });

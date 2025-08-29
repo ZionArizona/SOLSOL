@@ -34,6 +34,9 @@ export interface Scholarship {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  
+  applied?: boolean;
+  applicationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
 export interface Eligibility {

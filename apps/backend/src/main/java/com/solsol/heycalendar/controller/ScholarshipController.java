@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.solsol.heycalendar.common.ApiResponse;
 import com.solsol.heycalendar.dto.request.ScholarshipRequest;
 import com.solsol.heycalendar.dto.response.ScholarshipResponse;
+import com.solsol.heycalendar.security.CustomUserPrincipal;
 import com.solsol.heycalendar.service.ScholarshipService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,9 +31,10 @@ public class ScholarshipController {
 
 	@Operation(summary = "장학금 전체 목록")
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<ScholarshipResponse>>> getAll() {
-		System.out.println("getAll");
-		return ResponseEntity.ok(new ApiResponse<>(true, "OK", "OK", service.getAllScholarships()));
+	public ResponseEntity<ApiResponse<List<ScholarshipResponse>>> getAll(@AuthenticationPrincipal CustomUserPrincipal principal) {
+		String userNm = principal.getUserNm();
+		List<ScholarshipResponse> list = service.getAllScholarships(userNm);
+		return ResponseEntity.ok(new ApiResponse<>(true, "OK", "OK", list));
 	}
 
 	@Operation(summary = "사용자 맞춤 장학금 목록 (자동 필터링)")

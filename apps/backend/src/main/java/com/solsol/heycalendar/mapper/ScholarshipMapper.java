@@ -9,12 +9,14 @@ import com.solsol.heycalendar.domain.Scholarship;
 import com.solsol.heycalendar.domain.ScholarshipCriteria;
 import com.solsol.heycalendar.domain.ScholarshipNotice;
 import com.solsol.heycalendar.domain.ScholarshipTag;
+import com.solsol.heycalendar.dto.response.ScholarshipResponse;
 
 @Mapper
 public interface ScholarshipMapper {
 
 	// --- scholarship ---
 	List<Scholarship> findAll();
+	List<ScholarshipResponse> findAllWithApplied(@Param("userNm") String userNm);
 	Scholarship findById(@Param("id") Long id);
 	void insert(Scholarship scholarship);                   // useGeneratedKeys
 	void update(Scholarship scholarship);
