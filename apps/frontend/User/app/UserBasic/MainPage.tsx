@@ -1,6 +1,6 @@
-import React, { useMemo, useEffect, useState } from "react";
-import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, Platform, Text , TouchableOpacity, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, ImageBackground, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 // theme
 import { colors } from "../../theme/colors";
@@ -9,16 +9,16 @@ import { colors } from "../../theme/colors";
 import SOLSOLBackground from "../../assets/images/SOLSOLBackground.png";
 
 import { HeaderSection } from "../../components/home/HeaderSection";
-import { StudentCard } from "../../components/home/StudentCard";
-import { PromoBanner } from "../../components/home/PromoBanner";
 import { MileageCard } from "../../components/home/MileageCard";
+import { PromoBanner } from "../../components/home/PromoBanner";
+import { StudentCard } from "../../components/home/StudentCard";
 import { ThisWeekList } from "../../components/home/ThisWeekList";
-import { UserCircleIcon, MenuIcon } from "../../components/shared/icons";
+import { MenuIcon, UserCircleIcon } from "../../components/shared/icons";
 import { NotificationBell } from "../../components/shared/NotificationBell";
 import { useAuth } from "../../contexts/AuthContext";
-import { userApi } from "../../services/user.api";
-import { mileageApi } from "../../services/mileage.api";
 import { useWebSocket } from "../../contexts/WebSocketContext";
+import { mileageApi } from "../../services/mileage.api";
+import { userApi } from "../../services/user.api";
 
 export default function MainPage() {
   const { user } = useAuth();
@@ -43,27 +43,45 @@ export default function MainPage() {
       try {
         setIsLoading(true);
         
-        // 사용자 정보 가져오기 (실패해도 JWT 토큰 정보 사용)
+        let userData = null;
+        let mileageValue = 0;
+        
+        // 사용자 정보 가져오기 (마일리지 포함)
         try {
-          const userData = await userApi.getMyInfo();
+          userData = await userApi.getMyInfo();
+          console.log('🏠 MainPage: User data received:', userData);
+          
           if (userData) {
             setUserInfo(userData);
+            
+            // 사용자 정보에서 직접 마일리지 가져오기
+            if (userData.userMileage !== null && userData.userMileage !== undefined) {
+              mileageValue = userData.userMileage;
+              console.log('🏠 MainPage: Got mileage from user data:', mileageValue);
+            }
           }
         } catch (userError) {
-          console.log('사용자 정보 API 실패 - JWT 토큰 정보 사용:', userError);
-          // JWT 토큰에서 추출한 정보를 사용하므로 별도 처리 불필요
+          console.log('🏠 MainPage: 사용자 정보 API 실패 - JWT 토큰 정보 사용:', userError);
         }
 
-        // 마일리지 정보 가져오기 (실패해도 기본값 사용)
-        try {
-          const mileageData = await mileageApi.getUserMileage();
-          if (mileageData) {
-            setMileage(mileageData.availableMileage || 0);
+        // fallback: 사용자 정보에서 마일리지를 못가져왔으면 mileageApi 시도
+        if (mileageValue === 0) {
+          try {
+            console.log('🏠 MainPage: Trying fallback mileage API...');
+            const mileageData = await mileageApi.getUserMileage();
+            console.log('🏠 MainPage: Fallback mileage data:', mileageData);
+            
+            if (mileageData && (mileageData.availableMileage || mileageData.totalMileage || mileageData.userMileage)) {
+              mileageValue = mileageData.availableMileage || mileageData.totalMileage || mileageData.userMileage || 0;
+              console.log('🏠 MainPage: Got mileage from fallback API:', mileageValue);
+            }
+          } catch (mileageError) {
+            console.log('🏠 MainPage: Fallback 마일리지 API도 실패:', mileageError);
           }
-        } catch (mileageError) {
-          console.log('마일리지 정보 로드 실패 - 기본값(0) 사용:', mileageError);
-          setMileage(0);
         }
+        
+        console.log('🏠 MainPage: Final mileage value:', mileageValue);
+        setMileage(mileageValue);
       } catch (error) {
         console.error('사용자 데이터 로드 실패:', error);
       } finally {

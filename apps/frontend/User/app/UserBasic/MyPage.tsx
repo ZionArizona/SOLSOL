@@ -1,15 +1,15 @@
+import { router } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, StatusBar, StyleSheet, ImageBackground, View, TouchableOpacity, Platform } from "react-native";
+import { ImageBackground, Platform, ScrollView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
 import BG from "../../assets/images/SOLSOLBackground.png";
-import { TopBar } from "../../components/scholarship/TopBar";
-import { NavBar } from "../../components/mypage/NavBar";
 import { InfoEditPanel } from "../../components/mypage/InfoEditPanel";
-import { PasswordChangePanel } from "../../components/mypage/PasswordChangePanel";
 import { MyDocsPanel } from "../../components/mypage/MyDocsPanel";
 import { MyScholarshipsPanel } from "../../components/mypage/MyScholarShipsPanel";
+import { NavBar } from "../../components/mypage/NavBar";
+import { PasswordChangePanel } from "../../components/mypage/PasswordChangePanel";
+import { TopBar } from "../../components/scholarship/TopBar";
 import { UserCircleIcon } from "../../components/shared/icons";
 import { colors } from "../../theme/colors";
-import { router } from "expo-router";
 
 export default function MyPage() {
   const [activeTab, setActiveTab] = useState("info");
@@ -20,7 +20,7 @@ export default function MyPage() {
 
       <View style={styles.myButtonWrap}>
         <TouchableOpacity
-          onPress={() => router.push("UserBasic/MyPage")}
+          onPress={() => router.push("/UserBasic/MyPage")}
           activeOpacity={0.85}
           style={styles.myButton}
         >
