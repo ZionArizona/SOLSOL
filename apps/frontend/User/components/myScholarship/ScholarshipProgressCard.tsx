@@ -6,7 +6,7 @@ export const ScholarshipProgressCard = ({
   scholarship,
   onPress,
 }: {
-  scholarship: { title: string; amount: string; date: string; steps: string[]; currentStep: number; status: string };
+  scholarship: { title: string; amount: string; date: string; steps: string[]; currentStep: number; status: string; rejectionReason?: string };
   onPress?: () => void;
 }) => {
   return (
@@ -34,6 +34,14 @@ export const ScholarshipProgressCard = ({
         ))}
       </View>
 
+      {/* 반려 사유 표시 */}
+      {scholarship.status === "불합격" && scholarship.rejectionReason && (
+        <View style={styles.rejectionReasonContainer}>
+          <Text style={styles.rejectionReasonLabel}>반려 사유:</Text>
+          <Text style={styles.rejectionReasonText}>{scholarship.rejectionReason}</Text>
+        </View>
+      )}
+
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -53,4 +61,7 @@ const styles = StyleSheet.create({
   circlePending: { backgroundColor: "#D3DAEE" },
   stepLabel: { fontSize: 10, color: "#2C3E66" },
   success: { marginTop: 8, fontSize: 12, color: "#2C3E66" },
+  rejectionReasonContainer: { marginTop: 12, padding: 12, backgroundColor: "#FFF3CD", borderRadius: 8, borderLeftWidth: 3, borderLeftColor: "#F59E0B" },
+  rejectionReasonLabel: { fontSize: 12, fontWeight: "700", color: "#92400E", marginBottom: 4 },
+  rejectionReasonText: { fontSize: 12, color: "#92400E", lineHeight: 16 },
 });

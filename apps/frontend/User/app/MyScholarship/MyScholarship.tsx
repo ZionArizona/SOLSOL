@@ -169,6 +169,7 @@ export default function MyScholarshipPage() {
       steps: ["신청", "서류심사", "결과발표"],
       currentStep,
       status,
+      rejectionReason: application.reason, // 반려 사유 추가
     };
   };
 
