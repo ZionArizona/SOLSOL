@@ -18,7 +18,7 @@ import { Platform } from "react-native";
 
 export default function ScholarshipApplyForm() {
   const { scholarshipId, edit } = useLocalSearchParams<{ scholarshipId: string; edit?: string }>();
-  const [files, setFiles] = useState<{ name: string; uri: string }[]>([]);
+  const [files, setFiles] = useState<{ name: string; uri: string; webFile?: File; size?: number; type?: string }[]>([]);
   const [reason, setReason] = useState("");
   const [scholarship, setScholarship] = useState<Scholarship | null>(null);
   const [loading, setLoading] = useState(true);
@@ -121,12 +121,14 @@ export default function ScholarshipApplyForm() {
   // 업로드 완료 후 처리
   const handleUploadComplete = (uploadData: any) => {
     console.log('✅ 업로드 완료:', uploadData);
-    // files 배열에도 추가
+    // files 배열에 추가 (웹용 File 객체도 포함)
     setFiles(prev => [...prev, { 
       name: uploadData.fileName, 
-      uri: `mybox://uploaded_${Date.now()}` 
+      uri: uploadData.file.uri,
+      webFile: uploadData.file.webFile, // 웹용 실제 File 객체
+      size: uploadData.file.size,
+      type: uploadData.file.type
     }]);
-    Alert.alert('성공', '서류가 MyBox에 저장되었습니다.');
   };
 
   // 신청/수정 처리 함수
@@ -142,40 +144,108 @@ export default function ScholarshipApplyForm() {
         success = await applicationApi.updateApplication(parseInt(scholarshipId), submitReason);
         Alert.alert('성공', '장학금 신청이 수정되었습니다.');
       } else {
-        // 선택된 파일들을 documents 배열로 변환 (실제 다운로드 URL 가져오기)
-        const documents = await Promise.all(
-          files.map(async (file, index) => {
-            let fileUrl = file.uri;
-            
-            // MyBox 파일인 경우 실제 다운로드 URL 생성
-            if (file.uri.startsWith('mybox://')) {
-              try {
-                const documentId = parseInt(file.uri.replace('mybox://', ''));
-                const { generateDownloadUrl } = await import('../../services/document.api');
-                fileUrl = await generateDownloadUrl(documentId);
-              } catch (error) {
-                console.error('다운로드 URL 생성 실패:', error);
-                Alert.alert('오류', '파일 URL 생성에 실패했습니다.');
-                return null;
-              }
-            }
-            
-            return {
-              documentNm: index + 1,
-              fileUrl,
-              fileName: file.name
-            };
-          })
-        );
-
-        // null인 항목들 제거
-        const validDocuments = documents.filter(doc => doc !== null);
-
+        // 1. 먼저 장학금 신청만 제출 (서류 없이)
         success = await applicationApi.submitApplication({
           scholarshipId: parseInt(scholarshipId),
           reason: submitReason,
-          documents: validDocuments
+          documents: []
         });
+
+        if (success) {
+          // 2. 선택된 파일들을 S3에 업로드하고 ApplicationDocument에 저장
+          console.log(`🚀 총 ${files.length}개 파일 업로드 시작`);
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            try {
+              console.log(`📤 파일 ${i + 1}/${files.length} 업로드 시작:`, file.name);
+              console.log(`📁 파일 정보:`, { 
+                name: file.name, 
+                size: file.size, 
+                type: file.type, 
+                hasWebFile: !!file.webFile,
+                uri: file.uri 
+              });
+              
+              if (file.uri.startsWith('mybox://')) {
+                // MyBox 파일인 경우: Presigned URL 생성해서 S3에서 S3로 복사
+                try {
+                  console.log(`📁 MyBox 파일 처리 시작: ${file.name}`);
+                  const documentId = parseInt(file.uri.replace('mybox://', ''));
+                  
+                  // MyBox 파일의 다운로드 URL 생성
+                  const { generateDownloadUrl } = await import('../../services/document.api');
+                  const downloadUrl = await generateDownloadUrl(documentId);
+                  console.log(`🔗 MyBox 다운로드 URL 생성 완료: ${file.name}`);
+                  
+                  // MyBox 파일을 fetch로 다운로드
+                  const response = await fetch(downloadUrl);
+                  if (!response.ok) {
+                    throw new Error(`MyBox 파일 다운로드 실패: ${response.status}`);
+                  }
+                  
+                  const fileBlob = await response.blob();
+                  const webFile = new File([fileBlob], file.name, { 
+                    type: file.type || 'application/octet-stream' 
+                  });
+                  
+                  console.log(`📥 MyBox 파일 다운로드 완료: ${file.name}, size: ${webFile.size}`);
+                  
+                  // 다운받은 파일을 장학금 신청용으로 업로드
+                  const { uploadApplicationDocumentWeb } = await import('../../services/document.api');
+                  await uploadApplicationDocumentWeb(
+                    webFile,
+                    file.name,
+                    'scholarship',
+                    scholarshipId,
+                    (i + 1).toString()
+                  );
+                  
+                  console.log(`✅ MyBox 파일 장학금용으로 업로드 완료: ${file.name}`);
+                } catch (error) {
+                  console.error(`❌ MyBox 파일 처리 실패: ${file.name}`, error);
+                  Alert.alert('오류', `MyBox 파일 "${file.name}" 처리에 실패했습니다.`);
+                  continue;
+                }
+              } else {
+                // 직접 선택한 파일인 경우
+                if (Platform.OS === 'web') {
+                  // 웹에서는 저장된 webFile 사용
+                  if (file.webFile) {
+                    const { uploadApplicationDocumentWeb } = await import('../../services/document.api');
+                    await uploadApplicationDocumentWeb(
+                      file.webFile,
+                      file.name,
+                      'scholarship',
+                      scholarshipId,
+                      `doc_${i + 1}`
+                    );
+                  } else {
+                    console.error('웹 환경에서 File 객체를 찾을 수 없습니다:', file.name);
+                    continue;
+                  }
+                } else {
+                  // 모바일에서는 file.uri 사용
+                  const { uploadApplicationDocumentRN } = await import('../../services/document.api');
+                  await uploadApplicationDocumentRN(
+                    file.uri,
+                    file.name,
+                    file.type || 'application/octet-stream',
+                    file.size || 0,
+                    scholarshipId,
+                    `doc_${i + 1}`
+                  );
+                }
+                
+                console.log(`✅ 파일 ${i + 1} 업로드 완료:`, file.name);
+              }
+            } catch (error) {
+              console.error(`❌ 파일 ${i + 1} 업로드 실패:`, file.name, error);
+              Alert.alert('오류', `파일 "${file.name}" 업로드에 실패했습니다.`);
+            }
+          }
+          
+          Alert.alert('성공', '장학금 신청 및 서류 업로드가 완료되었습니다.');
+        }
       }
       
       if (success) {
@@ -232,7 +302,10 @@ export default function ScholarshipApplyForm() {
 
   // 더 정확한 서류 매칭을 위한 체크리스트 개선
   // 장학금 정보의 필수서류를 기반으로 체크리스트 생성
-  const checklistItems = scholarship?.requiredDocuments 
+  console.log('📋 Scholarship data:', scholarship);
+  console.log('📋 Required documents:', scholarship?.requiredDocuments);
+  
+  const checklistItems = (scholarship?.requiredDocuments && scholarship.requiredDocuments.length > 0)
     ? scholarship.requiredDocuments.map((doc, index) => ({
         id: `doc_${index}`,
         label: doc.name,
@@ -242,6 +315,15 @@ export default function ScholarshipApplyForm() {
           ) || false
         ),
         required: doc.required
+      }))
+    : (scholarship?.criteria && scholarship.criteria.length > 0)
+    ? scholarship.criteria.map((criterion, index) => ({
+        id: `criteria_${index}`,
+        label: criterion.name,
+        done: files.some(f => 
+          f.name.toLowerCase().includes(criterion.name.toLowerCase())
+        ),
+        required: true
       }))
     : [
         // 기본 체크리스트 (필수서류 정보가 없는 경우)
@@ -258,6 +340,8 @@ export default function ScholarshipApplyForm() {
           required: true
         }
       ];
+
+  console.log('📋 Generated checklist items:', checklistItems);
   const canSubmit = true; // 신청 사유는 선택사항
 
   if (loading) {
@@ -448,6 +532,9 @@ export default function ScholarshipApplyForm() {
         visible={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onUpload={handleUploadComplete}
+        mode="scholarship"
+        scholarshipNm={scholarship?.id}
+        documentNm={`doc_${Date.now()}`} // 고유한 문서명 생성
       />
     </ImageBackground>
   );

@@ -49,6 +49,7 @@ export default function ScholarshipCreate(){
 
   // 제출서류 동적 리스트
   const [reqName, setReqName] = useState('')
+  const [weight, setWeight] = useState('')
   const [criteria, setCriteria] = useState([])
   
   // 제출서류
@@ -90,16 +91,27 @@ export default function ScholarshipCreate(){
       weight: 0 // 가중치는 0으로 고정 (백엔드 필드명에 맞춤)
     }])
     setReqName('')
+    setCriteria(list => [...list, {name:reqName.trim(), weight:weight||0}])
+    setReqName(''); setWeight('')
   }
   const removeCriteria = (idx) => {
     setCriteria(list => list.filter((_,i)=> i!==idx))
   }
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    if (field === 'type') {
+      // type이 변경되면 category에도 동일한 값 설정
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        category: value
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }))
+    }
   }
 
   const onSubmit = async (e) => {
@@ -358,6 +370,10 @@ export default function ScholarshipCreate(){
               <div className="criteria-row">
                 <input className="ip flex1" placeholder="서류명을 입력하세요 (예: 성적증명서, 자기소개서)"
                        value={reqName} onChange={e=>setReqName(e.target.value)} />
+                <div className="w120 with-suffix">
+                  <input className="ip" placeholder="가중치" value={weight} onChange={e=>setWeight(e.target.value)} />
+                  <span className="suffix">%</span>
+                </div>
                 <button type="button" className="btn-add" onClick={addCriteria}>추가</button>
               </div>
 
@@ -366,6 +382,7 @@ export default function ScholarshipCreate(){
                 {criteria.map((c,idx)=>(
                   <div className="chip" key={idx}>
                     <span className="name">{c.name}</span>
+                    <span className="meta">가중치 {c.weight}%</span>
                     <button type="button" className="del" onClick={()=>removeCriteria(idx)}>삭제</button>
                   </div>
                 ))}

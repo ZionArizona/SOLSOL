@@ -28,7 +28,12 @@ export default function SubmissionManage(){
   const fetchApplications = async () => {
     try {
       const result = await api.get('/applications')
+      console.log('신청서 목록 응답:', result)
+      
       if (result.success) {
+        console.log('신청서 데이터 샘플:', result.data[0])
+        setApplications(result.data)
+        calculateStats(result.data)
         const applicationsData = result.data || []
         setApplications(applicationsData)
         calculateStats(applicationsData)
@@ -89,11 +94,24 @@ export default function SubmissionManage(){
 
   const handleViewFile = async (doc) => {
     try {
-      // 파일 URL이 S3 presigned URL인 경우 직접 새 창에서 열기
-      if (doc.fileUrl) {
-        window.open(doc.fileUrl, '_blank')
+      // 암호화된 장학금 신청 서류의 경우 presigned URL 생성
+      console.log('🔍 파일 보기 요청:', doc)
+      
+      const userNm = selectedApplication?.userNm
+      const scholarshipNm = selectedApplication?.scholarshipNm
+      const documentNm = doc.applicationDocumentNm
+      
+      if (!userNm || !scholarshipNm || !documentNm) {
+        alert('파일 정보가 부족합니다.')
+        return
+      }
+
+      const response = await api.get(`/applications/admin/documents/download-url?userNm=${userNm}&scholarshipNm=${scholarshipNm}&documentNm=${documentNm}`)
+      
+      if (response.success && response.data) {
+        window.open(response.data, '_blank')
       } else {
-        alert('파일을 불러올 수 없습니다.')
+        alert('파일 URL을 생성할 수 없습니다.')
       }
     } catch (error) {
       console.error('Failed to view file:', error)
@@ -103,10 +121,24 @@ export default function SubmissionManage(){
 
   const handleDownloadFile = async (doc) => {
     try {
-      if (doc.fileUrl) {
+      // 암호화된 장학금 신청 서류의 경우 presigned URL 생성
+      console.log('📥 파일 다운로드 요청:', doc)
+      
+      const userNm = selectedApplication?.userNm
+      const scholarshipNm = selectedApplication?.scholarshipNm
+      const documentNm = doc.applicationDocumentNm
+      
+      if (!userNm || !scholarshipNm || !documentNm) {
+        alert('파일 정보가 부족합니다.')
+        return
+      }
+
+      const response = await api.get(`/applications/admin/documents/download-url?userNm=${userNm}&scholarshipNm=${scholarshipNm}&documentNm=${documentNm}`)
+      
+      if (response.success && response.data) {
         // 파일 다운로드
         const link = document.createElement('a')
-        link.href = doc.fileUrl
+        link.href = response.data
         link.download = doc.originalFileName || `document_${doc.applicationDocumentNm}`
         link.target = '_blank'
         document.body.appendChild(link)
@@ -124,10 +156,10 @@ export default function SubmissionManage(){
   const transformApplicationData = (application) => ({
     id: `${application.userNm}-${application.scholarshipNm}`,
     scholarship: application.scholarshipName || '장학금명 없음',
-    unit: application.departmentName ? `${application.departmentName} - ${application.collegeName || ''}` : '학과정보 없음',
-    files: application.documents?.map(doc => doc.documentName) || [],
+    unit: application.departmentName ? `${application.departmentName} - ${application.collegeName || ''}` : '전체 학과',
+    files: application.documents?.map(doc => doc.originalFileName || doc.documentName || doc.applicationDocumentNm) || [],
     applicant: application.userName || '신청자명 없음',
-    studentId: `${application.userNm} - ${application.departmentName || '학과정보 없음'}`,
+    studentId: `${application.userNm} - ${application.departmentName || '학과 정보없음'}`,
     time: new Date(application.applicationDate || application.appliedAt).toLocaleString('ko-KR') || '-',
     status: application.applicationState === 'PENDING' || application.state === 'PENDING' ? '검토 대기' :
              application.applicationState === 'APPROVED' || application.state === 'APPROVED' ? '승인' : '반려',
@@ -164,7 +196,15 @@ export default function SubmissionManage(){
   const handleViewDetails = async (application) => {
     try {
       const result = await api.get(`/applications/${application.userNm}/${application.scholarshipNm}`)
-      setSelectedApplication(result)
+      console.log('상세보기 응답:', result)
+      
+      if (result.success && result.data) {
+        setSelectedApplication(result.data)
+      } else if (result.data) {
+        setSelectedApplication(result.data)
+      } else {
+        setSelectedApplication(result)
+      }
       setShowDetailModal(true)
     } catch (error) {
       console.error('Failed to fetch application details:', error)
