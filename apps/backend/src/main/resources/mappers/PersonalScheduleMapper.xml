@@ -1,6 +1,48 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.solsol.heycalendar.mapper.PersonalScheduleMapper">
 
-</beans>
+    <!-- userNm으로 user.student_no를 찾아서 personalschedule에 바로 INSERT -->
+    <insert id="insertByUserNm">
+        INSERT INTO personalschedule
+        (student_no, schedule_date, schedule_name, start_time, end_time, notify_minutes, created_at, updated_at)
+        SELECT
+        u.userNm,                       <!-- 여기! u.student_no 대신 u.userNm -->
+        #{scheduleDate}, #{scheduleName}, #{startTime}, #{endTime}, #{notifyMinutes},
+        NOW(), NOW()
+        FROM user u
+        WHERE u.userNm = #{userNm}
+    </insert>
+
+    <insert id="insert" parameterType="com.solsol.heycalendar.dto.request.CreatePersonalScheduleRequest">
+        INSERT INTO personalschedule
+        (student_no, schedule_date, schedule_name, start_time, end_time, notify_minutes, created_at, updated_at)
+        SELECT
+            u.userNm,
+            #{date}, #{scheduleName}, #{startTime}, #{endTime}, #{notifyMinutes},
+            NOW(), NOW()
+        FROM user u
+        WHERE u.userNm = #{userNm}
+    </insert>
+
+    <!-- 조회 -->
+    <select id="findByUserNm" parameterType="string"
+            resultType="com.solsol.heycalendar.dto.response.PersonalScheduleResponse">
+        SELECT
+            p.id               AS id,
+            p.student_no       AS studentNo,
+            p.schedule_date    AS scheduleDate,
+            p.schedule_name    AS scheduleName,
+            p.start_time       AS startTime,
+            p.end_time         AS endTime,
+            p.notify_minutes   AS notifyMinutes,
+            p.created_at       AS createdAt,
+            p.updated_at       AS updatedAt
+        FROM personalschedule p
+        WHERE p.student_no = #{userNm}
+        ORDER BY p.schedule_date ASC, p.start_time ASC, p.id ASC
+    </select>
+
+
+</mapper>
