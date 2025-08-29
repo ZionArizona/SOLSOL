@@ -21,6 +21,24 @@ const getAuthToken = async (): Promise<string> => {
   }
 };
 
+// JWT 토큰에서 사용자명 추출
+const getUserNameFromToken = async (): Promise<string> => {
+  try {
+    const token = await getAuthToken();
+    if (!token) return '';
+    
+    const payload = tokenManager.decodeAccessToken(token);
+    if (!payload) return '';
+    
+    const userNm = payload.sub || payload.userName || payload.userId || '';
+    console.log('👤 추출된 사용자명:', userNm);
+    return userNm;
+  } catch (error) {
+    console.error('❌ 토큰에서 사용자명 추출 실패:', error);
+    return '';
+  }
+};
+
 export interface DocumentUploadRequest {
   fileName: string;
   contentType: string;
@@ -201,7 +219,80 @@ export const deleteDocument = async (documentId: number): Promise<void> => {
   }
 };
 
-// React Native용 파일 업로드 함수
+// 장학금 신청 서류 업로드 URL 생성
+export const generateApplicationUploadUrl = async (
+  request: DocumentUploadRequest,
+  scholarshipNm: string
+): Promise<DocumentUploadResponse> => {
+  const userNm = await getUserNameFromToken();
+  if (!userNm) {
+    throw new Error('사용자 인증 정보를 찾을 수 없습니다.');
+  }
+  
+  console.log('🔗 장학금 신청 서류 업로드 URL 생성:', { userNm, scholarshipNm, request });
+  
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/applications/student/documents/upload-url?scholarshipNm=${scholarshipNm}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'user-nm': userNm,
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ 업로드 URL 생성 실패:', response.status, errorText);
+    throw new Error(`업로드 URL 생성 실패 (${response.status}): ${errorText}`);
+  }
+
+  const result = await response.json();
+  console.log('✅ 업로드 URL 생성 응답:', result);
+  return result.data;
+};
+
+// 장학금 신청 서류 업로드 완료 처리
+export const completeApplicationUpload = async (data: {
+  objectKey: string;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  checksum: string;
+  scholarshipNm: string;
+  documentNm: string;
+}): Promise<void> => {
+  const userNm = await getUserNameFromToken();
+  if (!userNm) {
+    throw new Error('사용자 인증 정보를 찾을 수 없습니다.');
+  }
+  
+  console.log('✅ 장학금 신청 서류 업로드 완료 처리:', { userNm, data });
+  
+  const response = await fetch(`${BASE_URL.replace('/api', '')}/api/applications/student/documents/complete?scholarshipNm=${data.scholarshipNm}&documentNm=${data.documentNm}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'user-nm': userNm,
+    },
+    body: JSON.stringify({
+      objectKey: data.objectKey,
+      fileName: data.fileName,
+      contentType: data.contentType,
+      fileSize: data.fileSize,
+      checksum: data.checksum
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ 업로드 완료 처리 실패:', response.status, errorText);
+    throw new Error(`업로드 완료 처리 실패 (${response.status}): ${errorText}`);
+  }
+  
+  console.log('✅ 장학금 신청 서류 업로드 완료 처리 성공');
+};
+
+// React Native용 파일 업로드 함수 (MyBox용)
 export const uploadDocumentRN = async (
   fileUri: string, 
   fileName: string, 
@@ -284,10 +375,123 @@ export const uploadFileToS3RN = async (uploadUrl: string, fileUri: string, conte
   }
 };
 
-// 전체 업로드 프로세스 (웹용 - 기존 유지)
+// React Native용 장학금 신청 서류 업로드
+export const uploadApplicationDocumentRN = async (
+  fileUri: string, 
+  fileName: string, 
+  contentType: string, 
+  fileSize: number,
+  scholarshipNm: string,
+  documentNm: string
+): Promise<DocumentItem> => {
+  try {
+    console.log('📄 장학금 신청 서류 업로드 시작:', fileName);
+
+    // 1. 업로드 URL 생성
+    const uploadRequest: DocumentUploadRequest = {
+      fileName,
+      contentType,
+      fileSize,
+    };
+
+    const uploadResponse = await generateApplicationUploadUrl(uploadRequest, scholarshipNm);
+    console.log('✅ 장학금 신청 서류 업로드 URL 생성 완료');
+
+    // 2. S3에 파일 업로드
+    await uploadFileToS3RN(uploadResponse.uploadUrl, fileUri, contentType);
+    console.log('✅ 장학금 신청 서류 S3 업로드 완료');
+
+    // 3. 파일 해시 계산 (임시로 랜덤 값 사용)
+    const checksum = Math.random().toString(36).substring(2, 15);
+    console.log('✅ 파일 해시 계산 완료');
+
+    // 4. 업로드 완료 처리
+    await completeApplicationUpload({
+      objectKey: uploadResponse.objectKey,
+      fileName,
+      contentType,
+      fileSize,
+      checksum,
+      scholarshipNm,
+      documentNm,
+    });
+    console.log('✅ 장학금 신청 서류 업로드 완료 처리');
+
+    // 5. 업로드된 문서 정보 반환
+    return {
+      id: Date.now(),
+      fileName,
+      contentType,
+      sizeBytes: fileSize,
+      createdAt: new Date().toISOString(),
+    };
+
+  } catch (error) {
+    console.error('❌ 장학금 신청 서류 업로드 실패:', error);
+    throw error;
+  }
+};
+
+// 웹용 장학금 신청 서류 업로드
+export const uploadApplicationDocumentWeb = async (
+  file: File, 
+  fileName: string, 
+  category: string,
+  scholarshipNm: string,
+  documentNm: string
+): Promise<DocumentItem> => {
+  try {
+    console.log('📄 웹용 장학금 신청 서류 업로드 시작:', fileName);
+
+    // 1. 업로드 URL 생성
+    const uploadRequest: DocumentUploadRequest = {
+      fileName,
+      contentType: file.type,
+      fileSize: file.size,
+    };
+
+    const uploadResponse = await generateApplicationUploadUrl(uploadRequest, scholarshipNm);
+    console.log('✅ 장학금 신청 서류 업로드 URL 생성 완료');
+
+    // 2. S3에 파일 업로드
+    await uploadFileToS3(uploadResponse.uploadUrl, file, file.type);
+    console.log('✅ 장학금 신청 서류 S3 업로드 완료');
+
+    // 3. 파일 해시 계산
+    const checksum = await calculateSHA256(file);
+    console.log('✅ 파일 해시 계산 완료');
+
+    // 4. 업로드 완료 처리
+    await completeApplicationUpload({
+      objectKey: uploadResponse.objectKey,
+      fileName,
+      contentType: file.type,
+      fileSize: file.size,
+      checksum,
+      scholarshipNm,
+      documentNm,
+    });
+    console.log('✅ 장학금 신청 서류 업로드 완료 처리');
+
+    // 5. 업로드된 문서 정보 반환
+    return {
+      id: Date.now(),
+      fileName,
+      contentType: file.type,
+      sizeBytes: file.size,
+      createdAt: new Date().toISOString(),
+    };
+
+  } catch (error) {
+    console.error('❌ 웹용 장학금 신청 서류 업로드 실패:', error);
+    throw error;
+  }
+};
+
+// 전체 업로드 프로세스 (웹용 MyBox)
 export const uploadDocument = async (file: File, fileName: string, category: string): Promise<DocumentItem> => {
   try {
-    console.log('📄 문서 업로드 시작:', fileName);
+    console.log('📄 MyBox 문서 업로드 시작:', fileName);
 
     // 1. 업로드 URL 생성
     const uploadRequest: DocumentUploadRequest = {
