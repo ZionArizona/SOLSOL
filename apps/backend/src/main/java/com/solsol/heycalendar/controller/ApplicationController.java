@@ -74,7 +74,7 @@ public class ApplicationController {
     public ResponseEntity<ApplicationResponse> submitApplication(
             @RequestHeader("user-nm") String userNm,
             @Valid @RequestBody ApplicationRequest request) {
-        log.info("User {} submitting application for scholarship: {}", userNm, request.getScholarshipId());
+        log.info("user {} submitting application for scholarship: {}", userNm, request.getScholarshipId());
         ApplicationResponse application = applicationService.submitApplicationForUser(userNm, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(application);
     }
@@ -148,7 +148,7 @@ public class ApplicationController {
             @RequestHeader("user-nm") String userNm,
             @Valid @RequestBody ApplicationRequest request) {
         
-        log.info("User {} applying for scholarship {}", userNm, request.getScholarshipId());
+        log.info("user {} applying for scholarship {}", userNm, request.getScholarshipId());
         ApplicationResponse response = applicationService.submitApplicationForUser(userNm, request);
         return ResponseEntity.ok(new ApiResponse<>(true, "신청이 완료되었습니다.", "OK", response));
     }
@@ -191,7 +191,7 @@ public class ApplicationController {
             @RequestHeader("user-nm") String userNm,
             @PathVariable Long scholarshipId) {
         
-        log.info("User {} cancelling application for scholarship: {}", userNm, scholarshipId);
+        log.info("user {} cancelling application for scholarship: {}", userNm, scholarshipId);
         applicationService.deleteApplication(userNm, scholarshipId.toString());
         
         return ResponseEntity.ok(new ApiResponse<>(true, "신청이 취소되었습니다.", "OK", null));
@@ -205,7 +205,7 @@ public class ApplicationController {
             String scholarshipNm = (String) request.get("scholarshipNm");
             Integer mileage = (Integer) request.get("mileage");
             
-            log.info("Approving document - User: {}, Scholarship: {}, Mileage: {}", userNm, scholarshipNm, mileage);
+            log.info("Approving document - user: {}, Scholarship: {}, Mileage: {}", userNm, scholarshipNm, mileage);
             
             applicationService.approveApplicationDocument(userNm, scholarshipNm, mileage);
             
@@ -229,7 +229,7 @@ public class ApplicationController {
             String userNm = (String) request.get("userNm");
             String scholarshipNm = (String) request.get("scholarshipNm");
             
-            log.info("Rejecting document - User: {}, Scholarship: {}", userNm, scholarshipNm);
+            log.info("Rejecting document - user: {}, Scholarship: {}", userNm, scholarshipNm);
             
             applicationService.rejectApplicationDocument(userNm, scholarshipNm);
             

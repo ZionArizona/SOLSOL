@@ -30,7 +30,7 @@ public class BookmarkController {
             @RequestHeader("user-nm") String userNm,
             @PathVariable Long scholarshipId) {
         
-        log.info("User {} adding bookmark for scholarship {}", userNm, scholarshipId);
+        log.info("user {} adding bookmark for scholarship {}", userNm, scholarshipId);
         bookmarkService.addBookmark(userNm, scholarshipId);
         
         return ResponseEntity.ok(new ApiResponse<>(true, "찜목록에 추가되었습니다.", "OK", null));
@@ -42,7 +42,7 @@ public class BookmarkController {
             @RequestHeader("user-nm") String userNm,
             @PathVariable Long scholarshipId) {
         
-        log.info("User {} removing bookmark for scholarship {}", userNm, scholarshipId);
+        log.info("user {} removing bookmark for scholarship {}", userNm, scholarshipId);
         bookmarkService.removeBookmark(userNm, scholarshipId);
         
         return ResponseEntity.ok(new ApiResponse<>(true, "찜목록에서 제거되었습니다.", "OK", null));
@@ -54,7 +54,7 @@ public class BookmarkController {
             @RequestHeader("user-nm") String userNm,
             @PathVariable Long scholarshipId) {
         
-        log.info("User {} toggling bookmark for scholarship {}", userNm, scholarshipId);
+        log.info("user {} toggling bookmark for scholarship {}", userNm, scholarshipId);
         boolean isBookmarked = bookmarkService.toggleBookmark(userNm, scholarshipId);
         
         String message = isBookmarked ? "찜목록에 추가되었습니다." : "찜목록에서 제거되었습니다.";

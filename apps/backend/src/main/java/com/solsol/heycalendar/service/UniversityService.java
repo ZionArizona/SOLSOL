@@ -111,7 +111,7 @@ public class UniversityService {
         log.info("Creating university with ID: {}", request.getUnivNm());
         
         if (universityMapper.existsById(request.getUnivNm())) {
-            throw new IllegalArgumentException("University with ID '" + request.getUnivNm() + "' already exists");
+            throw new IllegalArgumentException("university with ID '" + request.getUnivNm() + "' already exists");
         }
         
         University university = University.builder()
@@ -241,9 +241,9 @@ public class UniversityService {
     /**
      * Create new department
      * 
-     * @param univNm University identifier
-     * @param collegeNm College identifier
-     * @param request Department creation request
+     * @param univNm university identifier
+     * @param collegeNm college identifier
+     * @param request department creation request
      * @return Created department response
      * @throws IllegalArgumentException if university/college not found or department already exists
      */
@@ -255,7 +255,7 @@ public class UniversityService {
         findCollegeByIdOrThrow(collegeNm, univNm);
         
         if (departmentMapper.existsById(request.getDeptNm(), collegeNm, univNm)) {
-            throw new IllegalArgumentException("Department with ID '" + request.getDeptNm() + "' already exists in college '" + collegeNm + "'");
+            throw new IllegalArgumentException("department with ID '" + request.getDeptNm() + "' already exists in college '" + collegeNm + "'");
         }
         
         Department department = Department.builder()
@@ -275,7 +275,7 @@ public class UniversityService {
     private University findUniversityByIdOrThrow(String univNm) {
         University university = universityMapper.findById(univNm);
         if (university == null) {
-            throw new IllegalArgumentException("University with ID '" + univNm + "' not found");
+            throw new IllegalArgumentException("university with ID '" + univNm + "' not found");
         }
         return university;
     }

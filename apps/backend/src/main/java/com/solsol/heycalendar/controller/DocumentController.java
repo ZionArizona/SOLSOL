@@ -22,7 +22,7 @@ import java.util.Map;
 @RequestMapping("/api/student/documents")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Document", description = "서류 관리 API")
+@Tag(name = "document", description = "서류 관리 API")
 public class DocumentController {
 
     private final DocumentService documentService;
