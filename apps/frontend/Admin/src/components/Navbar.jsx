@@ -8,7 +8,13 @@ const navStyle={
     position:'sticky',top:0,zIndex:10,background:'rgba(255,255,255,.85)',
     backdropFilter:'saturate(1.2) blur(8px)', borderBottom:'1px solid rgba(0,0,0,.06)'
   },
-  inner:{display:'flex',alignItems:'center',justifyContent:'space-between',height:'72px'}
+  inner:{
+    display:'flex',
+    alignItems:'center',
+    justifyContent:'space-between',
+    height:'72px',
+    minWidth:0
+  }
 }
 
 export default function Navbar(){
@@ -55,14 +61,57 @@ export default function Navbar(){
             <img src={logo} alt="HEY CALENDAR" height="60"/>
           </Link>
         </div>
-        <nav style={{display:'flex',gap:'28px',fontWeight:600,color:'#4b5563',alignItems:'center'}}>
+        <nav style={{
+          display:'flex',
+          gap:'20px',
+          fontWeight:600,
+          color:'#4b5563',
+          alignItems:'center',
+          flexWrap:'nowrap',
+          overflow:'hidden'
+        }}>
           {user ? (
             <>
-              <Link to="/scholarships" style={{textDecoration:'none',color:'#4b5563'}}>장학금 등록</Link>
-              <Link to="/submissions" style={{textDecoration:'none',color:'#4b5563'}}>장학금 승인</Link>
-              <Link to="/document-approval" style={{textDecoration:'none',color:'#4b5563'}}>마일리지 지급</Link>
-              <Link to="/exchange" style={{textDecoration:'none',color:'#4b5563'}}>마일리지 환전</Link>
-              <span style={{color:'#666'}}>{user.userNm || user.userName}님</span>
+              <Link to="/scholarships" style={{
+                textDecoration:'none',
+                color:'#4b5563',
+                whiteSpace:'nowrap',
+                overflow:'hidden',
+                textOverflow:'ellipsis',
+                minWidth:0
+              }}>장학금 등록</Link>
+              <Link to="/submissions" style={{
+                textDecoration:'none',
+                color:'#4b5563',
+                whiteSpace:'nowrap',
+                overflow:'hidden',
+                textOverflow:'ellipsis',
+                minWidth:0
+              }}>장학금 승인</Link>
+              <Link to="/document-approval" style={{
+                textDecoration:'none',
+                color:'#4b5563',
+                whiteSpace:'nowrap',
+                overflow:'hidden',
+                textOverflow:'ellipsis',
+                minWidth:0
+              }}>마일리지 지급</Link>
+              <Link to="/exchange" style={{
+                textDecoration:'none',
+                color:'#4b5563',
+                whiteSpace:'nowrap',
+                overflow:'hidden',
+                textOverflow:'ellipsis',
+                minWidth:0
+              }}>마일리지 환전</Link>
+              <span style={{
+                color:'#666',
+                whiteSpace:'nowrap',
+                overflow:'hidden',
+                textOverflow:'ellipsis',
+                minWidth:0,
+                maxWidth:'120px'
+              }}>{user.userNm || user.userName}님</span>
               <button 
                 onClick={handleLogout}
                 style={{
@@ -71,7 +120,9 @@ export default function Navbar(){
                   color:'#4b5563',
                   fontWeight:600,
                   cursor:'pointer',
-                  textDecoration:'underline'
+                  textDecoration:'underline',
+                  whiteSpace:'nowrap',
+                  minWidth:0
                 }}
               >
                 로그아웃
@@ -79,8 +130,16 @@ export default function Navbar(){
             </>
           ) : (
             <>
-              <Link to="/login" style={{textDecoration:'none',color:'#4b5563'}}>로그인</Link>
-              <Link to="/signup" style={{textDecoration:'none',color:'#4b5563'}}>회원가입</Link>
+              <Link to="/login" style={{
+                textDecoration:'none',
+                color:'#4b5563',
+                whiteSpace:'nowrap'
+              }}>로그인</Link>
+              <Link to="/signup" style={{
+                textDecoration:'none',
+                color:'#4b5563',
+                whiteSpace:'nowrap'
+              }}>회원가입</Link>
             </>
           )}
         </nav>

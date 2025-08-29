@@ -50,4 +50,22 @@ public interface MileageMapper {
      * @return Total mileage amount
      */
     Integer calculateTotalByUserNm(@Param("userNm") String userNm);
+    
+    /**
+     * Check if mileage has been paid for specific scholarship application
+     *
+     * @param userNm User name
+     * @param scholarshipNm Scholarship ID
+     * @return Mileage record if exists, null otherwise
+     */
+    Mileage findByUserNmAndScholarshipNm(@Param("userNm") String userNm, @Param("scholarshipNm") Long scholarshipNm);
+    
+    /**
+     * Check if user has received mileage for a scholarship
+     *
+     * @param userNm User name
+     * @param scholarshipNm Scholarship ID
+     * @return true if mileage already paid, false otherwise
+     */
+    boolean existsByUserNmAndScholarshipNm(@Param("userNm") String userNm, @Param("scholarshipNm") Long scholarshipNm);
 }

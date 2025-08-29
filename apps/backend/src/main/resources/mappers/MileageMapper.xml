@@ -8,6 +8,9 @@
         <id property="key" column="key"/>
         <result property="userNm" column="userNm"/>
         <result property="amount" column="amount"/>
+        <result property="scholarshipNm" column="scholarshipNm"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="reason" column="reason"/>
     </resultMap>
 
     <!-- Insert new mileage record -->
@@ -15,10 +18,14 @@
             useGeneratedKeys="true" keyProperty="key">
         INSERT INTO mileage (
             userNm,
-            amount
+            amount,
+            scholarshipNm,
+            reason
         ) VALUES (
             #{userNm},
-            #{amount}
+            #{amount},
+            #{scholarshipNm},
+            #{reason}
         )
     </insert>
 
@@ -27,7 +34,10 @@
         SELECT 
             `key`,
             userNm,
-            amount
+            amount,
+            scholarshipNm,
+            created_at,
+            reason
         FROM mileage
         WHERE userNm = #{userNm}
         ORDER BY `key` DESC
@@ -38,7 +48,10 @@
         SELECT 
             `key`,
             userNm,
-            amount
+            amount,
+            scholarshipNm,
+            created_at,
+            reason
         FROM mileage
         WHERE `key` = #{key}
     </select>
@@ -48,7 +61,10 @@
         SELECT 
             `key`,
             userNm,
-            amount
+            amount,
+            scholarshipNm,
+            created_at,
+            reason
         FROM mileage
         ORDER BY `key` DESC
     </select>
@@ -58,6 +74,28 @@
         SELECT COALESCE(SUM(amount), 0)
         FROM mileage
         WHERE userNm = #{userNm}
+    </select>
+
+    <!-- Find mileage record by user and scholarship -->
+    <select id="findByUserNmAndScholarshipNm" resultMap="MileageResultMap">
+        SELECT 
+            `key`,
+            userNm,
+            amount,
+            scholarshipNm,
+            created_at,
+            reason
+        FROM mileage
+        WHERE userNm = #{userNm} AND scholarshipNm = #{scholarshipNm}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <!-- Check if mileage exists for user and scholarship -->
+    <select id="existsByUserNmAndScholarshipNm" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM mileage
+        WHERE userNm = #{userNm} AND scholarshipNm = #{scholarshipNm}
     </select>
 
 </mapper>

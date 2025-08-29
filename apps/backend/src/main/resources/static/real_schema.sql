@@ -278,3 +278,11 @@ CREATE TABLE scholarship_bookmark (
                                           FOREIGN KEY (scholarship_id) REFERENCES scholarship (id)
                                               ON UPDATE CASCADE ON DELETE CASCADE
 ) CHARSET = utf8mb4;
+
+
+ALTER TABLE applicationdocument
+DROP COLUMN file_url,
+  DROP COLUMN original_file_name,
+  ADD COLUMN object_key_enc BLOB,
+  ADD COLUMN file_name_enc BLOB,
+  ADD COLUMN checksum_sha256 VARCHAR(64);

@@ -88,8 +88,31 @@
 /* 컨트롤 바 */
 .control-bar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.search-container {
+  flex: 1;
+  max-width: 300px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(111, 132, 230, 0.1);
 }
 
 .refresh-button {
@@ -126,9 +149,10 @@
   width: 100%;
 }
 
+/* 기본 테이블 레이아웃 - 사용자 마일리지용 */
 .table-header {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr 1fr 1.5fr 1.5fr 1.5fr;
+  grid-template-columns: 1.5fr 1.2fr 1fr 1fr 1fr 1.5fr;
   background-color: #f8f9fa;
   font-weight: 600;
   color: #374151;
@@ -137,9 +161,18 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr 1fr 1.5fr 1.5fr 1.5fr;
+  grid-template-columns: 1.5fr 1.2fr 1fr 1fr 1fr 1.5fr;
   border-bottom: 1px solid #f3f4f6;
   transition: background-color 0.2s ease;
+}
+
+/* 환전 내역 테이블용 레이아웃 */
+.exchange-table.exchange-history .table-header {
+  grid-template-columns: 1fr 1.2fr 1fr 1fr 1.5fr 1.5fr 1.5fr;
+}
+
+.exchange-table.exchange-history .table-row {
+  grid-template-columns: 1fr 1.2fr 1fr 1fr 1.5fr 1.5fr 1.5fr;
 }
 
 .table-row:hover {
@@ -364,8 +397,15 @@
     padding: 1rem;
   }
   
+  /* 사용자 마일리지 테이블 */
   .table-header,
   .table-row {
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 2fr;
+  }
+  
+  /* 환전 내역 테이블 */
+  .exchange-table.exchange-history .table-header,
+  .exchange-table.exchange-history .table-row {
     grid-template-columns: 1fr 1fr 1fr 1fr 2fr 2fr;
   }
   
@@ -375,6 +415,12 @@
   
   .header-cell:nth-child(6),
   .cell:nth-child(6) {
+    display: none;
+  }
+  
+  /* 환전 내역에서는 처리일시 숨김 */
+  .exchange-table.exchange-history .header-cell:nth-child(6),
+  .exchange-table.exchange-history .cell:nth-child(6) {
     display: none;
   }
 }
@@ -388,16 +434,59 @@
     grid-template-columns: repeat(2, 1fr);
   }
   
+  /* 사용자 마일리지 테이블 */
   .table-header,
   .table-row {
+    grid-template-columns: 1.5fr 1fr 1.5fr;
+  }
+  
+  /* 환전 내역 테이블 */
+  .exchange-table.exchange-history .table-header,
+  .exchange-table.exchange-history .table-row {
     grid-template-columns: 1fr 1fr 1fr 1.5fr;
   }
   
+  /* 사용자 마일리지 테이블: 일부 컬럼 숨김 */
+  .header-cell:nth-child(3),
+  .cell:nth-child(3),
+  .header-cell:nth-child(4),
+  .cell:nth-child(4),
   .header-cell:nth-child(5),
-  .cell:nth-child(5),
-  .header-cell:nth-child(6),
-  .cell:nth-child(6) {
+  .cell:nth-child(5) {
     display: none;
+  }
+  
+  /* 환전 내역 테이블: 다른 컬럼들 숨김 */
+  .exchange-table.exchange-history .header-cell:nth-child(5),
+  .exchange-table.exchange-history .cell:nth-child(5),
+  .exchange-table.exchange-history .header-cell:nth-child(6),
+  .exchange-table.exchange-history .cell:nth-child(6) {
+    display: none;
+  }
+  
+  /* 액션 컬럼은 항상 유지 */
+  .table-header .header-cell:nth-child(6),
+  .table-row .cell:nth-child(6),
+  .exchange-table.exchange-history .header-cell:nth-child(7),
+  .exchange-table.exchange-history .cell:nth-child(7) {
+    display: flex !important;
+  }
+  
+  /* 환전하기 버튼이 잘리지 않도록 조정 */
+  .convert-button {
+    padding: 6px 12px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .approve-button, .reject-button {
+    padding: 4px 8px;
+    font-size: 11px;
   }
 }
 
@@ -582,6 +671,59 @@
   
   .statistics {
     grid-template-columns: 1fr;
+  }
+  
+  /* 사용자 마일리지 테이블: 이름, 사용가능, 액션만 */
+  .table-header,
+  .table-row {
+    grid-template-columns: 1.2fr 1fr 1fr;
+  }
+  
+  /* 환전 내역 테이블: 신청번호, 사용자, 상태, 액션 */
+  .exchange-table.exchange-history .table-header,
+  .exchange-table.exchange-history .table-row {
+    grid-template-columns: 1fr 1fr 0.8fr 1fr;
+  }
+  
+  /* 사용자 마일리지 테이블: 사용자ID, 총마일리지, 환전대기 숨김 */
+  .header-cell:nth-child(2),
+  .cell:nth-child(2),
+  .header-cell:nth-child(3),
+  .cell:nth-child(3),
+  .header-cell:nth-child(5),
+  .cell:nth-child(5) {
+    display: none;
+  }
+  
+  /* 환전 내역 테이블: 금액, 신청일시, 처리일시 숨김 */
+  .exchange-table.exchange-history .header-cell:nth-child(3),
+  .exchange-table.exchange-history .cell:nth-child(3),
+  .exchange-table.exchange-history .header-cell:nth-child(5),
+  .exchange-table.exchange-history .cell:nth-child(5),
+  .exchange-table.exchange-history .header-cell:nth-child(6),
+  .exchange-table.exchange-history .cell:nth-child(6) {
+    display: none;
+  }
+  
+  /* 액션 컬럼은 항상 유지 */
+  .table-header .header-cell:nth-child(6),
+  .table-row .cell:nth-child(6),
+  .exchange-table.exchange-history .header-cell:nth-child(7),
+  .exchange-table.exchange-history .cell:nth-child(7) {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* 버튼 크기 더 작게 */
+  .convert-button {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  
+  .approve-button, .reject-button {
+    padding: 3px 6px;
+    font-size: 9px;
   }
 }
 

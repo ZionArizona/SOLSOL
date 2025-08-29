@@ -17,6 +17,9 @@
         <result property="userNm" column="userNm"/>
         <result property="scholarshipNm" column="scholarshipNm"/>
         <result property="scholarshipName" column="scholarship_name"/>
+        <result property="scholarshipAmount" column="scholarship_amount"/>
+        <result property="scholarshipType" column="scholarship_type"/>
+        <result property="scholarshipDescription" column="scholarship_description"/>
         <result property="userName" column="user_name"/>
         <result property="departmentName" column="department_name"/>
         <result property="collegeName" column="college_name"/>
@@ -64,6 +67,9 @@
             a.userNm, 
             a.scholarshipNm, 
             s.scholarship_name,
+            s.amount as scholarship_amount,
+            s.type as scholarship_type,
+            s.description as scholarship_description,
             u.userName as user_name,
             d.Deptname as department_name,
             c.name as college_name,
@@ -182,6 +188,9 @@
             a.userNm, 
             a.scholarshipNm, 
             s.scholarship_name,
+            s.amount as scholarship_amount,
+            s.type as scholarship_type,
+            s.description as scholarship_description,
             u.userName as user_name,
             d.Deptname as department_name,
             c.name as college_name,
