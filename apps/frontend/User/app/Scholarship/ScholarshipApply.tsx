@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { View, StyleSheet, ImageBackground, ScrollView, StatusBar, ActivityIndicator, Alert, RefreshControl, Text } from "react-native";
 import { router } from "expo-router";
-import { scholarshipApi, Scholarship, FilterParams } from "../../services/scholarship.api";
+import { scholarshipApi, Scholarship, FilterParams, ScholarshipWithStateResponse } from "../../services/scholarship.api";
 import { mileageApi } from "../../services/mileage.api";
 import SOLBG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
@@ -11,7 +11,9 @@ import { ScholarshipItemCard } from "../../components/scholarship/ScholarshipIte
 import { SectionBox } from "../../components/scholarship/SectionBox";
 
 export default function ScholarshipApply() {
-  const [scholarships, setScholarships] = useState<Scholarship[]>([]);
+  //const [scholarships, setScholarships] = useState<Scholarship[]>([]);
+  const [scholarships, setScholarships] = useState<ScholarshipWithStateResponse[]>([]);
+
   const [currentMileage, setCurrentMileage] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,35 +50,61 @@ export default function ScholarshipApply() {
   };
 
   // 데이터 로드 함수
+  // const loadData = async (filterParams: FilterParams = currentFilter) => {
+  //   try {
+  //     setLoading(true);
+
+  //     // 병렬로 데이터 로드 - 필터링된 장학금 데이터 사용
+  //     const [scholarshipData, mileageData] = await Promise.all([
+  //       scholarshipApi.getFilteredScholarships(filterParams),
+  //       mileageApi.getUserMileage()
+  //     ]);
+
+  //     console.log('📚 Filtered scholarship data received:', scholarshipData);
+  //     console.log('💰 Mileage data received:', mileageData);
+
+  //     if (scholarshipData) {
+  //       console.log('📚 Setting filtered scholarships:', scholarshipData.scholarships?.length || 0);
+  //       if (scholarshipData.scholarships && scholarshipData.scholarships.length > 0) {
+  //         console.log('📚 First filtered scholarship details:', scholarshipData.scholarships[0]);
+  //         console.log('📚 Applied filter params:', filterParams);
+  //       }
+  //       setScholarships(scholarshipData.scholarships || []);
+  //     } else {
+  //       console.log('❌ No filtered scholarship data received');
+  //       setScholarships([]);
+  //     }
+
+  //     if (mileageData) {
+  //       console.log('💰 Setting current mileage:', mileageData.availableMileage);
+  //       setCurrentMileage(mileageData.availableMileage || 0);
+  //     }
+  //   } catch (error) {
+  //     console.error('📚 Error loading filtered scholarship data:', error);
+  //     Alert.alert('오류', '데이터를 불러오는 중 오류가 발생했습니다.');
+  //   } finally {
+  //     setLoading(false);
+  //     setRefreshing(false);
+  //   }
+  // };
+
   const loadData = async (filterParams: FilterParams = currentFilter) => {
     try {
       setLoading(true);
 
-      // 병렬로 데이터 로드 - 필터링된 장학금 데이터 사용
       const [scholarshipData, mileageData] = await Promise.all([
-        scholarshipApi.getFilteredScholarships(filterParams),
+        scholarshipApi.getFilteredScholarships(filterParams), // ← 이제 {scholarship, state}[]
         mileageApi.getUserMileage()
       ]);
 
       console.log('📚 Filtered scholarship data received:', scholarshipData);
+      if (Array.isArray(scholarshipData)) {
+        console.log('📚 States snapshot:', scholarshipData.slice(0, 5).map(x => ({ id: x.scholarship?.id, state: x.state }))); 
+      }
       console.log('💰 Mileage data received:', mileageData);
 
-      if (scholarshipData) {
-        console.log('📚 Setting filtered scholarships:', scholarshipData.scholarships?.length || 0);
-        if (scholarshipData.scholarships && scholarshipData.scholarships.length > 0) {
-          console.log('📚 First filtered scholarship details:', scholarshipData.scholarships[0]);
-          console.log('📚 Applied filter params:', filterParams);
-        }
-        setScholarships(scholarshipData.scholarships || []);
-      } else {
-        console.log('❌ No filtered scholarship data received');
-        setScholarships([]);
-      }
-
-      if (mileageData) {
-        console.log('💰 Setting current mileage:', mileageData.availableMileage);
-        setCurrentMileage(mileageData.availableMileage || 0);
-      }
+      setScholarships(scholarshipData ?? []);               // ← 바로 배열 저장
+      setCurrentMileage(mileageData?.availableMileage ?? 0);
     } catch (error) {
       console.error('📚 Error loading filtered scholarship data:', error);
       Alert.alert('오류', '데이터를 불러오는 중 오류가 발생했습니다.');
@@ -110,13 +138,27 @@ export default function ScholarshipApply() {
   };
 
   // 마감 임박 장학금 필터링 (10일 이내)
+  // const urgentScholarships = useMemo(() => {
+  //   if (!scholarships || !Array.isArray(scholarships)) {
+  //     return [];
+  //   }
+  //   return scholarships.filter(scholarship => {
+  //     if (!scholarship.recruitmentEndDate) return false;
+  //     const end = new Date(scholarship.recruitmentEndDate);
+  //     if (isNaN(end.getTime())) return false;
+  //     const today = new Date();
+  //     const diffTime = end.getTime() - today.getTime();
+  //     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  //     return diffDays >= 0 && diffDays <= 10;
+  //   });
+  // }, [scholarships]);
+
   const urgentScholarships = useMemo(() => {
-    if (!scholarships || !Array.isArray(scholarships)) {
-      return [];
-    }
-    return scholarships.filter(scholarship => {
-      if (!scholarship.recruitmentEndDate) return false;
-      const end = new Date(scholarship.recruitmentEndDate);
+    if (!scholarships || !Array.isArray(scholarships)) return [];
+    return scholarships.filter(item => {
+      const endStr = item.scholarship.recruitmentEndDate;
+      if (!endStr) return false;
+      const end = new Date(endStr);
       if (isNaN(end.getTime())) return false;
       const today = new Date();
       const diffTime = end.getTime() - today.getTime();
@@ -124,6 +166,7 @@ export default function ScholarshipApply() {
       return diffDays >= 0 && diffDays <= 10;
     });
   }, [scholarships]);
+
 
   if (loading) {
     return (
@@ -153,7 +196,7 @@ export default function ScholarshipApply() {
 
           <FilterPanel onFilterChange={handleFilterChange} initialFilter={currentFilter} />
 
-          <SectionBox>
+          {/* <SectionBox>
             {scholarships && scholarships.length > 0 ? (
               scholarships.map((scholarship) => (
                 <View key={scholarship.id} style={{ marginBottom: 12 }}>
@@ -193,7 +236,58 @@ export default function ScholarshipApply() {
                 <Text style={styles.emptyText}>마감 임박 장학금이 없습니다.</Text>
               </View>
             )}
+          </SectionBox> */}
+          <SectionBox>
+            {scholarships && scholarships.length > 0 ? (
+              scholarships.map((item) => {
+                const s = item.scholarship;
+                return (
+                  <View key={s.id} style={{ marginBottom: 12 }}>
+                    <ScholarshipItemCard
+                      title={s.scholarshipName}
+                      amount={s.amount?.toLocaleString?.() ?? '0'}
+                      period={formatDateRange(s.recruitmentStartDate, s.recruitmentEndDate)}
+                      status={getDeadlineStatus(s.recruitmentEndDate)}
+                      category={s.category}
+                      // 🔹 상태 뱃지 표기를 위해 추가 prop 전달
+                      applicationState={item.state}
+                      onPress={() => handleScholarshipPress(s.id)}
+                    />
+                  </View>
+                );
+              })
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>현재 신청 가능한 장학금이 없습니다.</Text>
+              </View>
+            )}
           </SectionBox>
+
+          <SectionBox caption="10일 이내 신청 마감하는 장학금">
+            {urgentScholarships.length > 0 ? (
+              urgentScholarships.map((item) => {
+                const s = item.scholarship;
+                return (
+                  <View key={`urgent-${s.id}`} style={{ marginBottom: 12 }}>
+                    <ScholarshipItemCard
+                      title={s.scholarshipName}
+                      amount={s.amount?.toLocaleString?.() ?? '0'}
+                      period={formatDateRange(s.recruitmentStartDate, s.recruitmentEndDate)}
+                      status={getDeadlineStatus(s.recruitmentEndDate)}
+                      category={s.category}
+                      applicationState={item.state} // 🔹
+                      onPress={() => handleScholarshipPress(s.id)}
+                    />
+                  </View>
+                );
+              })
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>마감 임박 장학금이 없습니다.</Text>
+              </View>
+            )}
+          </SectionBox>
+
         </View>
       </ScrollView>
     </ImageBackground>

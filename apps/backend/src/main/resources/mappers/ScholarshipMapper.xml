@@ -92,6 +92,41 @@
 		WHERE id = #{id}
 	</update>
 
+    <!-- 상태/카테고리(라벨) 동적 필터 -->
+    <select id="findByFilters" resultMap="ScholarshipResultMap">
+        SELECT
+        s.id,
+        s.scholarship_name,
+        s.description,
+        s.`type`,
+        s.amount,
+        s.number_of_recipients,
+        s.payment_method,
+        s.recruitment_status
+        <!-- 필요 시 추가 컬럼들 -->
+        FROM `scholarship` s
+        <where>
+            <!-- 상태 필터: status가 null이 아니면 ENUM 문자열로 비교 -->
+            <if test="status != null">
+                s.recruitment_status = #{status}
+            </if>
+
+            <!-- 카테고리(라벨) 필터: DB에 type_label 컬럼이 없다면 CASE로 매핑 -->
+            <if test="category != null">
+                AND
+                (
+                CASE s.`type`
+                WHEN 'MERIT'   THEN '성적우수'
+                WHEN 'NEED'    THEN '생활지원'
+                WHEN 'SERVICE' THEN '공로/활동'
+                ELSE '기타'
+                END
+                ) = #{category}
+            </if>
+        </where>
+        ORDER BY s.id DESC
+    </select>
+
 	<delete id="delete" parameterType="long">
 		DELETE FROM scholarship WHERE id = #{id}
 	</delete>

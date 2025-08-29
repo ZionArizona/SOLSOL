@@ -36,6 +36,13 @@ export interface Scholarship {
   updatedAt: string;
 }
 
+export type ApplicationState = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface ScholarshipWithStateResponse {
+  scholarship: Scholarship;
+  state: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
 export interface Eligibility {
   field: string;
   operator: string;
@@ -234,50 +241,72 @@ export const scholarshipApi = {
   },
 
   // 사용자 맞춤 필터링된 장학금 목록 조회
-  async getFilteredScholarships(params?: FilterParams): Promise<ScholarshipListResponse | null> {
-    try {
-      const queryParams = new URLSearchParams();
-      if (params?.category) queryParams.append('category', params.category);
-      if (params?.status) queryParams.append('status', params.status);
-      if (params?.page !== undefined) queryParams.append('page', params.page.toString());
-      if (params?.size !== undefined) queryParams.append('size', params.size.toString());
+  // async getFilteredScholarships(params?: FilterParams): Promise<ScholarshipListResponse | null> {
+  //   try {
+  //     const queryParams = new URLSearchParams();
+  //     if (params?.category) queryParams.append('category', params.category);
+  //     if (params?.status) queryParams.append('status', params.status);
+  //     if (params?.page !== undefined) queryParams.append('page', params.page.toString());
+  //     if (params?.size !== undefined) queryParams.append('size', params.size.toString());
 
-      const endpoint = `/scholarships/filtered${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-      console.log('🎯 Fetching filtered scholarships from:', endpoint);
-      const response = await apiClient.get<ScholarshipListResponse>(endpoint);
+  //     const endpoint = `/scholarships/filtered${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+  //     console.log('🎯 Fetching filtered scholarships from:', endpoint);
+  //     const response = await apiClient.get<ScholarshipListResponse>(endpoint);
       
-      console.log('🎯 Filtered Scholarship API Response:', response);
+  //     console.log('🎯 Filtered Scholarship API Response:', response);
       
-      if (response.success && response.data) {
-        if (Array.isArray(response.data)) {
-          return {
-            scholarships: response.data,
-            totalElements: response.data.length,
-            totalPages: 1,
-            currentPage: 0,
-            pageSize: response.data.length
-          };
-        } else {
-          return response.data;
-        }
-      } else if (Array.isArray(response.data)) {
-        return {
-          scholarships: response.data,
-          totalElements: response.data.length,
-          totalPages: 1,
-          currentPage: 0,
-          pageSize: response.data.length
-        };
-      } else if (response.data) {
-        return response.data;
-      }
+  //     if (response.success && response.data) {
+  //       if (Array.isArray(response.data)) {
+  //         return {
+  //           scholarships: response.data,
+  //           totalElements: response.data.length,
+  //           totalPages: 1,
+  //           currentPage: 0,
+  //           pageSize: response.data.length
+  //         };
+  //       } else {
+  //         return response.data;
+  //       }
+  //     } else if (Array.isArray(response.data)) {
+  //       return {
+  //         scholarships: response.data,
+  //         totalElements: response.data.length,
+  //         totalPages: 1,
+  //         currentPage: 0,
+  //         pageSize: response.data.length
+  //       };
+  //     } else if (response.data) {
+  //       return response.data;
+  //     }
       
-      return null;
-    } catch (error) {
-      handleApiError(error, '필터링된 장학금 목록을 불러오는데 실패했습니다.');
-      return null;
-    }
-  },
+  //     return null;
+  //   } catch (error) {
+  //     handleApiError(error, '필터링된 장학금 목록을 불러오는데 실패했습니다.');
+  //     return null;
+  //   }
+  // },
+
+async getFilteredScholarships(params?: FilterParams): Promise<ScholarshipWithStateResponse[] | null> {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.status)   queryParams.append('status', params.status);
+    if (params?.page !== undefined) queryParams.append('page', String(params.page));
+    if (params?.size !== undefined) queryParams.append('size', String(params.size));
+
+    const endpoint = `/scholarships/filtered${queryParams.toString() ? `?${queryParams}` : ''}`;
+    const res = await apiClient.get<ScholarshipWithStateResponse[]>(endpoint);
+
+    if (res.success && Array.isArray(res.data)) return res.data;
+    if (Array.isArray((res as any)?.data)) return (res as any).data;
+    if (Array.isArray(res as any)) return res as any;
+
+    return null;
+  } catch (e) {
+    handleApiError(e, '필터링된 장학금 목록을 불러오는데 실패했습니다.');
+    return null;
+  }
+},
 
   // 장학금 카테고리 목록 조회
   async getCategories(): Promise<string[] | null> {
