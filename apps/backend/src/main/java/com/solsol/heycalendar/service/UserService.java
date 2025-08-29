@@ -35,6 +35,7 @@ public class UserService {
             .userId(user.getUserId())
             .userName(user.getUserName())
             .accountNm(user.getAccountNm())
+            .userMileage(user.getUserMileage()) // 마일리지 필드 추가
             .grade(user.getGrade())
             .gpa(user.getGpa())
             .role(user.getRole() != null ? user.getRole().name() : null)
