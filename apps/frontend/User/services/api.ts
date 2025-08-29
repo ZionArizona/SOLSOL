@@ -24,10 +24,11 @@ export interface ApiResponse<T = any> {
 
 // HTTP 클라이언트 클래스
 class ApiClient {
-  private baseURL: string;
+  public baseURL: string; // private → public으로 변경하여 디버깅 시 접근 가능하도록
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+    console.log('🏗️ ApiClient 생성됨. BASE_URL:', this.baseURL);
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {
@@ -134,10 +135,19 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     try {
       const headers = await this.getAuthHeaders();
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
+      const fullURL = `${this.baseURL}${endpoint}`;
+      
+      console.log('🌐 HTTP 요청:', options.method || 'GET', fullURL);
+      console.log('📋 요청 헤더:', JSON.stringify(headers, null, 2));
+      console.log('📦 요청 본문:', options.body || 'undefined');
+      
+      const response = await fetch(fullURL, {
         ...options,
         headers: { ...headers, ...options.headers },
       });
+      
+      console.log('📊 응답 상태:', response.status, response.statusText);
+      console.log('📋 응답 헤더:', Object.fromEntries(response.headers.entries()));
 
       // 401 Unauthorized - 토큰 갱신 시도
       if (response.status === 401) {
@@ -167,6 +177,13 @@ class ApiClient {
 
       return await this.handleResponse<T>(response);
     } catch (error) {
+      console.error('❌ HTTP 요청 실패:', error);
+      console.error('🔍 에러 상세:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack?.substring(0, 200)
+      });
+      
       if (error instanceof Error) {
         throw error;
       }
@@ -182,10 +199,16 @@ class ApiClient {
   }
 
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
+    console.log('🔄 POST 요청 시작:', endpoint);
+    console.log('📤 POST 데이터:', data ? JSON.stringify(data, null, 2) : 'undefined');
+    
+    const result = await this.request<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
+    
+    console.log('✅ POST 응답 완료:', endpoint);
+    return result;
   }
 
   async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {

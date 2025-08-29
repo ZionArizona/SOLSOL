@@ -30,9 +30,9 @@ type Scholarship = {
 };
 
 const CAT_COLORS: Record<NonNullable<MyEvent['category']>, string> = {
-  notice: '#FDE68A',
-  exam: '#FCA5A5',
-  club: '#A7F3D0',
+  notice: '#BFDBFE',
+  exam: '#BFDBFE',
+  club: '#BFDBFE',
   mileage: '#BFDBFE',
 };
 
@@ -76,40 +76,91 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
     setCurrentDate(nextMonth);
   };
 
-  // 초기 더미 일정 설정
+  // 개인 일정 로드
+  const loadPersonalSchedules = async () => {
+    try {
+      // 토큰에서 userNm 추출
+      const token = await require('../../utils/tokenManager').default.getAccessToken();
+      let userNm = null;
+      if (token) {
+        try {
+          const payload = require('../../utils/tokenManager').default.decodeAccessToken(token);
+          userNm = payload?.userNm || payload?.sub || payload?.userId;
+        } catch (error) {
+          console.warn('토큰에서 userNm 추출 실패:', error);
+        }
+      }
+
+      if (!userNm) {
+        console.warn('userNm을 찾을 수 없습니다.');
+        setEvents([]); // 빈 배열로 설정
+        return;
+      }
+
+      console.log('📅 개인 일정 로드 시작, userNm:', userNm);
+      
+      // 백엔드에 개인 일정 요청
+      const response = await require('../../services/api').apiClient.post('/calendar', { userNm });
+      
+      console.log('📅 개인 일정 로드 성공:', response);
+      console.log('📅 받은 응답 전체:', JSON.stringify(response, null, 2));
+      
+      // 응답 데이터 구조 확인 및 변환
+      // response 또는 response.data에 schedules가 있을 수 있음
+      const responseData = response?.data || response;
+      
+      if (responseData?.schedules && Array.isArray(responseData.schedules)) {
+        console.log(`📅 총 ${responseData.count}개의 일정을 불러왔습니다.`);
+        
+        const personalEvents: MyEvent[] = responseData.schedules.map((schedule: any) => {
+          // scheduleDate와 startTime/endTime을 조합해서 Date 객체 생성
+          // startTime이 "HH:mm:ss" 형식이므로 초 제거
+          const startTimeFormatted = schedule.startTime.substring(0, 5); // "01:00:00" -> "01:00"
+          const endTimeFormatted = schedule.endTime.substring(0, 5);     // "02:00:00" -> "02:00"
+          
+          const startDateTime = new Date(`${schedule.scheduleDate}T${startTimeFormatted}:00`);
+          const endDateTime = new Date(`${schedule.scheduleDate}T${endTimeFormatted}:00`);
+          
+          console.log(`📅 일정 변환: ${schedule.scheduleName} (${schedule.scheduleDate} ${startTimeFormatted} ~ ${endTimeFormatted})`);
+          
+          return {
+            id: `personal_${schedule.id}`,
+            title: schedule.scheduleName,
+            start: startDateTime,
+            end: endDateTime,
+            allDay: false,
+            category: 'notice' // 개인 일정은 notice 카테고리로 설정
+          };
+        });
+        
+        console.log('📅 변환된 이벤트 데이터:', personalEvents);
+        setEvents(personalEvents);
+      } else if (responseData?.count === 0) {
+        console.log('📅 등록된 개인 일정이 없습니다.');
+        setEvents([]);
+      } else {
+        console.log('📅 예상치 못한 응답 형식:', response);
+        console.log('📅 responseData 확인:', responseData);
+        setEvents([]);
+      }
+      
+    } catch (error) {
+      console.error('❌ 개인 일정 로드 실패:', error);
+      setEvents([]); // 에러 시 빈 배열로 설정
+    }
+  };
+
+  // 컴포넌트 마운트 시 개인 일정 로드 (최초 1회만)
   React.useEffect(() => {
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth();
-    
-    const dummyEvents: MyEvent[] = [
-      { id: '1', title: '장학금', start: new Date(currentYear, currentMonth, 1),  end: new Date(currentYear, currentMonth, 1),allDay: true, category: 'notice'},
-      { id: '2', title: '동아리 모임',start: new Date(currentYear, currentMonth, 3), end: new Date(currentYear, currentMonth, 3),allDay: true, category: 'club'},
-      { 
-        id: '3', 
-        title: '중간 점검', 
-        start: new Date(currentYear, currentMonth, 10), 
-        end: new Date(currentYear, currentMonth, 10), 
-        allDay: true, 
-        category: 'mileage'
-      },
-      {
-        id: '4',
-        title: '시험 공지',
-        start: new Date(currentYear, currentMonth, 13),
-        end: new Date(currentYear, currentMonth, 13),
-        allDay: true,
-        category: 'exam',
-      },
-      {
-        id: '5',
-        title: '프로젝트 발표',
-        start: new Date(currentYear, currentMonth, 23),
-        end: new Date(currentYear, currentMonth, 23),
-        allDay: true,
-        category: 'notice',
-      },
-    ];
-    setEvents(dummyEvents);
+    loadPersonalSchedules();
+  }, []); // 빈 배열로 변경 - 컴포넌트 마운트 시 한 번만 실행
+  
+  // 월 변경 시 개인 일정 다시 로드 (필요한 경우)
+  React.useEffect(() => {
+    // 첫 로드가 아닌 경우에만 실행
+    if (events.length > 0 || currentDate.getTime() !== new Date(2025, 7, 10).getTime()) {
+      // loadPersonalSchedules(); // 필요시 주석 해제
+    }
   }, [currentDate]);
 
   // 장학금 데이터 로드
@@ -158,16 +209,24 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
   };
   
   // 일정 저장
-  const handleScheduleSave = (title: string, date: Date) => {
+  const handleScheduleSave = ({ title, start, end, notifyMinutes }: { title: string; start: Date; end: Date; notifyMinutes: number }) => {
+    console.log('📅 MyCalendar에서 일정 저장:', { title, start, end, notifyMinutes });
+    
+    // 새 일정을 즉시 캘린더에 추가
     const newEvent: MyEvent = {
       id: `personal_${Date.now()}`,
       title,
-      start: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0),
-      end: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999),
-      allDay: true,
-      category: 'notice'
+      start,
+      end,
+      allDay: false, // 시간이 지정되므로 allDay는 false
+      category: 'notice' // 개인 일정은 notice 카테고리로 설정
     };
+    
     setEvents(prev => [...prev, newEvent]);
+    console.log('📅 캘린더에 일정 추가됨:', newEvent);
+    
+    // 선택사항: 서버에서 최신 데이터를 다시 불러오려면 아래 주석 해제
+    // setTimeout(() => loadPersonalSchedules(), 1000); // 1초 후 새로고침
   };
   
   // 모달 닫기
@@ -216,31 +275,6 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
   const loadScholarships = async () => {
     try {
       setLoading(true);
-      
-      // 더미 장학금 데이터 추가 (테스트용)
-      const dummyScholarships: Scholarship[] = [
-        {
-          id: 1,
-          scholarshipName: "성적우수장학금",
-          amount: 1000000,
-          recruitmentStartDate: "2025-08-20",
-          recruitmentEndDate: "2025-09-05", // 8일 후 마감
-        },
-        {
-          id: 2,
-          scholarshipName: "저소득층지원장학금",
-          amount: 1500000,
-          recruitmentStartDate: "2025-08-25",
-          recruitmentEndDate: "2025-09-03", // 6일 후 마감
-        },
-        {
-          id: 3,
-          scholarshipName: "글로벌인재장학금",
-          amount: 2000000,
-          recruitmentStartDate: "2025-08-22",
-          recruitmentEndDate: "2025-09-07", // 10일 후 마감
-        }
-      ];
 
       try {
         const response = await scholarshipApi.getScholarships({ 
@@ -251,14 +285,14 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
         
         if (response && response.scholarships) {
           console.log('📚 API에서 받은 장학금:', response.scholarships.length, '개');
-          setScholarships([...dummyScholarships, ...response.scholarships]);
+          setScholarships(response.scholarships);
         } else {
-          console.log('📚 API 응답이 없어서 더미 데이터만 사용');
-          setScholarships(dummyScholarships);
+          console.log('📚 API 응답이 없음');
+          setScholarships([]);
         }
       } catch (apiError) {
-        console.log('📚 API 호출 실패, 더미 데이터 사용:', apiError);
-        setScholarships(dummyScholarships);
+        console.log('📚 API 호출 실패:', apiError);
+        setScholarships([]);
       }
     } catch (error) {
       console.error('장학금 데이터 로드 실패:', error);
