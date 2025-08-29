@@ -1,5 +1,7 @@
 import tokenManager from '../utils/tokenManager';
 import { BASE_URL } from './api';
+import * as FileSystem from 'expo-file-system';
+
 
 // API_BASE는 services/api.ts의 BASE_URL 사용 
 
@@ -97,6 +99,8 @@ export const uploadFileToS3 = async (uploadUrl: string, file: File, contentType:
   });
 
   if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    console.error('S3 error body:', text);
     throw new Error('파일 업로드에 실패했습니다.');
   }
 };
@@ -251,21 +255,31 @@ export const uploadDocumentRN = async (
 };
 
 // React Native용 S3 업로드
-export const uploadFileToS3RN = async (uploadUrl: string, fileUri: string, contentType: string): Promise<void> => {
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': contentType,
-    },
-    body: {
-      uri: fileUri,
-      type: contentType,
-      name: fileUri.split('/').pop() || 'file',
-    } as any,
-  });
+// export const uploadFileToS3RN = async (uploadUrl: string, fileUri: string, contentType: string): Promise<void> => {
+//   const response = await fetch(uploadUrl, {
+//     method: 'PUT',
+//     headers: {
+//       'Content-Type': contentType,
+//     },
+//     body: {
+//       uri: fileUri,
+//       type: contentType,
+//       name: fileUri.split('/').pop() || 'file',
+//     } as any,
+//   });
 
-  if (!response.ok) {
-    throw new Error('파일 업로드에 실패했습니다.');
+//   if (!response.ok) {
+//     throw new Error('파일 업로드에 실패했습니다.');
+//   }
+// };
+export const uploadFileToS3RN = async (uploadUrl: string, fileUri: string, contentType: string) => {
+  const res = await FileSystem.uploadAsync(uploadUrl, fileUri, {
+    httpMethod: 'PUT',
+    headers: { 'Content-Type': contentType },
+    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+  });
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`S3 업로드 실패 (HTTP ${res.status}): ${res.body}`);
   }
 };
 
