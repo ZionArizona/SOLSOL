@@ -293,9 +293,9 @@ CREATE TABLE scholarship_bookmark (
                                       CONSTRAINT fk_bookmark_scholarship
                                           FOREIGN KEY (scholarship_id) REFERENCES scholarship (id)
                                               ON UPDATE CASCADE ON DELETE CASCADE
-) CHARSET = utf8mb4;-
+) CHARSET = utf8mb4;
 
-ALTER TABLE applicationDocument
+ALTER TABLE applicationdocument
   ADD COLUMN original_file_name varchar(255),
   ADD COLUMN file_size bigint,
   ADD COLUMN content_type varchar(100);
@@ -303,7 +303,7 @@ ALTER TABLE applicationDocument
 ALTER TABLE scholarship
     ADD COLUMN required_documents JSON NULL COMMENT '필수';
 
-ALTER TABLE applicationDocument
+ALTER TABLE applicationdocument
     MODIFY COLUMN applicationDocumentNm bigint NOT NULL
     AUTO_INCREMENT;
 
