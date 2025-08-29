@@ -15,6 +15,8 @@ public interface ScholarshipMapper {
 
 	// --- scholarship ---
 	List<Scholarship> findAll();
+	List<Scholarship> findByFilters(@Param("status") String status,
+		@Param("category") String category);
 	Scholarship findById(@Param("id") Long id);
 	void insert(Scholarship scholarship);                   // useGeneratedKeys
 	void update(Scholarship scholarship);

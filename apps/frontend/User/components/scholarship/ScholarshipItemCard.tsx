@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
+import type { ApplicationState } from '../../services/scholarship.api';
+import { getStateBadgeStyle, getStateLabel } from '../../utils/applicationState';
 
 // 카테고리별 아이콘 컴포넌트
 const CategoryIcon = ({ category }: { category?: string }) => {
@@ -71,6 +73,7 @@ export const ScholarshipItemCard = ({
   period,
   status,
   category,
+  applicationState,
   onPress,
 }: {
   title: string;
@@ -78,9 +81,33 @@ export const ScholarshipItemCard = ({
   period: string;
   status: string;
   category?: string;
+  applicationState?: ApplicationState;
   onPress?: () => void;
 }) => {
-  return (
+//   return (
+//     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+//       <LinearGradient
+//         colors={["#EAF2FF", "#E9F1FF"]}
+//         start={{ x: 0, y: 0 }}
+//         end={{ x: 1, y: 1 }}
+//         style={styles.card}
+//       >
+//         <CategoryIcon category={category} />
+//         <View style={{ flex: 1 }}>
+//           <Text style={styles.title}>{title}</Text>
+//           <Text style={styles.amount}>
+//             {amount} <Text style={styles.mile}>마일리지</Text>
+//           </Text>
+//           <Text style={styles.period}>신청기간: {period}</Text>
+//         </View>
+//         <View style={styles.badge}>
+//           <Text style={styles.badgeText}>{status}</Text>
+//         </View>
+//       </LinearGradient>
+//     </TouchableOpacity>
+//   );
+// };
+ return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <LinearGradient
         colors={["#EAF2FF", "#E9F1FF"]}
@@ -89,14 +116,25 @@ export const ScholarshipItemCard = ({
         style={styles.card}
       >
         <CategoryIcon category={category} />
+
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>{title}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.title} numberOfLines={1}>{title}</Text>
+            {applicationState && (
+            <View style={[{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }, getStateBadgeStyle(applicationState)]}>
+             <Text style={{ fontSize: 12, fontWeight: '700' }}>{getStateLabel(applicationState)}</Text>
+            </View>
+           )}
+         </View>
+
           <Text style={styles.amount}>
             {amount} <Text style={styles.mile}>마일리지</Text>
           </Text>
           <Text style={styles.period}>신청기간: {period}</Text>
         </View>
-        <View style={styles.badge}>
+
+        {/* 마감 상태 뱃지 (기존) */}
+        <View style={styles.deadlineBadge}>
           <Text style={styles.badgeText}>{status}</Text>
         </View>
       </LinearGradient>
@@ -131,11 +169,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stateBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  stateBadgeText: { fontSize: 12, fontWeight: '700' },
   title: { fontWeight: "900", color: "#1F2A44", fontSize: 14 },
   amount: { marginTop: 4, fontWeight: "900", color: "#5A84FF" },
   mile: { fontSize: 12, fontWeight: "900" },
   period: { marginTop: 4, color: "#8391B2", fontWeight: "700", fontSize: 12 },
-  badge: {
+  deadlineBadge: {
     alignSelf: "flex-start",
     backgroundColor: "#EDF0FF",
     paddingHorizontal: 10,

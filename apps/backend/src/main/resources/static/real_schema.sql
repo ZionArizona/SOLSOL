@@ -1,6 +1,6 @@
 -- application
 CREATE TABLE application (
-                             userNm        BIGINT                                   NOT NULL,
+                             userNm        VARCHAR(20)                              NOT NULL,
                              scholarshipNm BIGINT                                   NOT NULL,
                              state         ENUM ('PENDING', 'APPROVED', 'REJECTED') NULL,
                              applied_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP      NULL,
@@ -11,7 +11,7 @@ CREATE TABLE application (
 -- applicationdocument
 CREATE TABLE applicationdocument (
                                      applicationDocumentNm BIGINT AUTO_INCREMENT            NOT NULL,
-                                     userNm                BIGINT                           NOT NULL,
+                                     userNm                VARCHAR(20)                           NOT NULL,
                                      scholarshipNm         BIGINT                           NOT NULL,
                                      file_url              VARCHAR(500)                     NULL,
                                      uploaded_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP NULL,
@@ -61,7 +61,7 @@ CREATE TABLE eligibility (
 -- exchange
 CREATE TABLE exchange (
                           exchangeNm   BIGINT                                   NOT NULL,
-                          userNm       BIGINT                                   NOT NULL,
+                          userNm       VARCHAR(20)                                   NOT NULL,
                           amount       INT                                      NULL,
                           state        ENUM ('PENDING', 'APPROVED', 'REJECTED') NULL,
                           applied_at   TIMESTAMP                                NULL,
@@ -72,7 +72,7 @@ CREATE TABLE exchange (
 -- mileage
 CREATE TABLE mileage (
                          `Key`  BIGINT AUTO_INCREMENT NOT NULL,
-                         userNm BIGINT                NOT NULL,
+                         userNm VARCHAR(20)                NOT NULL,
                          amount INT                   NULL,
                          PRIMARY KEY (`Key`, userNm)
 );

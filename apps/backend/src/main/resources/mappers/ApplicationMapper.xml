@@ -221,4 +221,25 @@
         ORDER BY a.applied_at DESC
     </select>
 
+    <!-- Enum 매핑: DB가 소문자('pending') 저장이면 UPPER로 올려 Java enum(UPPER_CASE)과 매핑 -->
+    <resultMap id="ApplicationStatusRowMap" type="com.solsol.heycalendar.dto.response.ApplicationStatusRow">
+        <result property="scholarshipId" column="scholarship_id"/>
+        <result property="state" column="state"/>
+    </resultMap>
+
+    <select id="findStatusesByUserAndScholarshipIds"
+            resultMap="ApplicationStatusRowMap">
+        SELECT
+        a.scholarshipNm                         AS scholarship_id,
+        COALESCE(UPPER(a.state), 'NONE')        AS state
+        FROM application a
+        WHERE a.userNm = #{userNm}
+        <if test="ids != null and ids.size() > 0">
+            AND a.scholarshipNm IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+
 </mapper>

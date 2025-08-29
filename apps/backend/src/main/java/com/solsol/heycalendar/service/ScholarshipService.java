@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.solsol.heycalendar.domain.*;
 import com.solsol.heycalendar.dto.request.ScholarshipRequest;
 import com.solsol.heycalendar.dto.response.ScholarshipResponse;
+import com.solsol.heycalendar.mapper.ApplicationMapper;
 import com.solsol.heycalendar.mapper.ScholarshipMapper;
 import com.solsol.heycalendar.mapper.UserMapper;
 
@@ -29,6 +30,7 @@ public class ScholarshipService {
 	private final NotificationService notificationService;
 	private final UserMapper userMapper;
 	private final ObjectMapper objectMapper = new ObjectMapper();
+	private final ApplicationMapper applicationMapper;
 
 	/* 목록 */
 	@Transactional(readOnly = true)
@@ -482,7 +484,7 @@ public class ScholarshipService {
 	 * 새 장학금 등록 시 모든 활성 사용자에게 알림 생성
 	 */
 	@Transactional
-	private void createNewScholarshipNotifications(ScholarshipResponse scholarship) {
+	public void createNewScholarshipNotifications(ScholarshipResponse scholarship) {
 		try {
 			// 모든 활성 사용자 조회
 			List<String> activeUsers = userMapper.findAllActiveUserNames();
@@ -515,75 +517,107 @@ public class ScholarshipService {
 	/**
 	 * 사용자 맞춤 장학금 필터링 조회
 	 */
+	// @Transactional(readOnly = true)
+	// public List<ScholarshipResponse> getFilteredScholarshipsForUser(String userNm, String category, String status) {
+	// 	try {
+	// 		System.out.println("🔍 필터링 요청 - 사용자: " + userNm + ", 카테고리: " + category + ", 상태: " + status);
+	//
+	// 		// 사용자 정보 조회 (사용자 정보가 없어도 기본 장학금은 보여줌)
+	// 		User tempUser = null;
+	// 		try {
+	// 			tempUser = userMapper.findByUserNm(userNm).orElse(null);
+	// 			if (tempUser == null) {
+	// 				System.out.println("⚠️ 사용자 정보를 찾을 수 없음: " + userNm + ", 기본 필터링 적용");
+	// 			} else {
+	// 				System.out.println("✅ 사용자 정보 조회 성공: " + tempUser.getUserName());
+	// 			}
+	// 		} catch (Exception e) {
+	// 			System.err.println("❌ 사용자 정보 조회 실패: " + e.getMessage());
+	// 			tempUser = null;
+	// 		}
+	// 		final User user = tempUser;
+	//
+	// 		// 모든 장학금 조회
+	// 		List<Scholarship> allScholarships = mapper.findAll();
+	// 		System.out.println("📚 전체 장학금 수: " + allScholarships.size());
+	//
+	// 	// 사용자 정보 기반 자동 필터링
+	// 	List<Scholarship> filteredScholarships = allScholarships.stream()
+	// 		.filter(scholarship -> {
+	// 			// 상태 필터링 (기본값: OPEN)
+	// 			String targetStatus = status != null ? status : "OPEN";
+	// 			if (!targetStatus.equals("ALL") && !scholarship.getRecruitmentStatus().name().equals(targetStatus)) {
+	// 				return false;
+	// 			}
+	//
+	// 			// 카테고리 필터링 (사용자가 선택한 경우) - 장학금 타입 기반
+	// 			if (category != null && !category.equals("ALL")) {
+	// 				String scholarshipTypeLabel = getTypeLabelFromEnum(scholarship.getType());
+	// 				if (!scholarshipTypeLabel.equals(category)) {
+	// 					return false;
+	// 				}
+	// 			}
+	//
+	// 			// 사용자 정보 기반 자동 필터링 (사용자 정보가 있는 경우에만)
+	// 			return user != null ? isEligibleForUser(scholarship, user) : true;
+	// 		})
+	// 		.collect(Collectors.toList());
+	//
+	// 	System.out.println("🎯 필터링 후 장학금 수: " + filteredScholarships.size());
+	//
+	// 	// ScholarshipResponse로 변환
+	// 	return filteredScholarships.stream()
+	// 		.map(this::toSummaryResponse)
+	// 		.collect(Collectors.toList());
+	//
+	// 	} catch (Exception e) {
+	// 		System.err.println("❌ 필터링 처리 중 오류 발생: " + e.getMessage());
+	// 		e.printStackTrace();
+	//
+	// 		// 오류 발생 시 기본 장학금 목록 반환
+	// 		try {
+	// 			List<Scholarship> basicScholarships = mapper.findAll();
+	// 			return basicScholarships.stream()
+	// 				.filter(s -> status == null || status.equals("ALL") || s.getRecruitmentStatus().name().equals(status))
+	// 				.map(this::toSummaryResponse)
+	// 				.collect(Collectors.toList());
+	// 		} catch (Exception fallbackError) {
+	// 			System.err.println("❌ 기본 장학금 조회도 실패: " + fallbackError.getMessage());
+	// 			return new ArrayList<>();
+	// 		}
+	// 	}
+
+	// }
 	@Transactional(readOnly = true)
-	public List<ScholarshipResponse> getFilteredScholarshipsForUser(String userNm, String category, String status) {
-		try {
-			System.out.println("🔍 필터링 요청 - 사용자: " + userNm + ", 카테고리: " + category + ", 상태: " + status);
-			
-			// 사용자 정보 조회 (사용자 정보가 없어도 기본 장학금은 보여줌)
-			User tempUser = null;
-			try {
-				tempUser = userMapper.findByUserNm(userNm).orElse(null);
-				if (tempUser == null) {
-					System.out.println("⚠️ 사용자 정보를 찾을 수 없음: " + userNm + ", 기본 필터링 적용");
-				} else {
-					System.out.println("✅ 사용자 정보 조회 성공: " + tempUser.getUserName());
-				}
-			} catch (Exception e) {
-				System.err.println("❌ 사용자 정보 조회 실패: " + e.getMessage());
-				tempUser = null;
-			}
-			final User user = tempUser;
-			
-			// 모든 장학금 조회
-			List<Scholarship> allScholarships = mapper.findAll();
-			System.out.println("📚 전체 장학금 수: " + allScholarships.size());
-		
-		// 사용자 정보 기반 자동 필터링
-		List<Scholarship> filteredScholarships = allScholarships.stream()
-			.filter(scholarship -> {
-				// 상태 필터링 (기본값: OPEN)
-				String targetStatus = status != null ? status : "OPEN";
-				if (!targetStatus.equals("ALL") && !scholarship.getRecruitmentStatus().name().equals(targetStatus)) {
-					return false;
-				}
-				
-				// 카테고리 필터링 (사용자가 선택한 경우) - 장학금 타입 기반
-				if (category != null && !category.equals("ALL")) {
-					String scholarshipTypeLabel = getTypeLabelFromEnum(scholarship.getType());
-					if (!scholarshipTypeLabel.equals(category)) {
-						return false;
-					}
-				}
-				
-				// 사용자 정보 기반 자동 필터링 (사용자 정보가 있는 경우에만)
-				return user != null ? isEligibleForUser(scholarship, user) : true;
-			})
-			.collect(Collectors.toList());
-		
-		System.out.println("🎯 필터링 후 장학금 수: " + filteredScholarships.size());
-		
-		// ScholarshipResponse로 변환
-		return filteredScholarships.stream()
-			.map(this::toSummaryResponse)
-			.collect(Collectors.toList());
-			
-		} catch (Exception e) {
-			System.err.println("❌ 필터링 처리 중 오류 발생: " + e.getMessage());
-			e.printStackTrace();
-			
-			// 오류 발생 시 기본 장학금 목록 반환
-			try {
-				List<Scholarship> basicScholarships = mapper.findAll();
-				return basicScholarships.stream()
-					.filter(s -> status == null || status.equals("ALL") || s.getRecruitmentStatus().name().equals(status))
-					.map(this::toSummaryResponse)
-					.collect(Collectors.toList());
-			} catch (Exception fallbackError) {
-				System.err.println("❌ 기본 장학금 조회도 실패: " + fallbackError.getMessage());
-				return new ArrayList<>();
-			}
-		}
+	public List<ScholarshipWithStateResponse> getFilteredScholarshipsForUser(
+		String userNm, String category, String status) {
+
+		// 0) 입력 정규화
+		final String normalizedStatus = normalizeStatus(status);
+		final String normalizedCategory = normalizeCategory(category);
+
+		List<Scholarship> filtered = mapper.findByFilters(normalizedStatus, normalizedCategory);
+
+		if (filtered.isEmpty()) return List.of();
+
+		// 3) 지원 상태 일괄 조회 (N+1 방지)
+		List<Long> ids = filtered.stream().map(Scholarship::getId).toList();
+
+		Map<Long, ApplicationStatus> statusMap = applicationMapper
+			.findStatusesByUserAndScholarshipIds(userNm, ids)
+			.stream()
+			.collect(Collectors.toMap(
+				ApplicationStatusRow::getScholarshipId,
+				ApplicationStatusRow::getState
+			));
+
+		// 4) DTO 매핑 (미지원 시 NONE)
+		return filtered.stream()
+			.map(s -> ScholarshipWithStateResponse.builder()
+				.scholarship(toSummaryResponse(s))
+				.state(statusMap.getOrDefault(s.getId(), ApplicationStatus.NONE))
+				.build())
+			.toList();
 	}
 
 	/**
@@ -663,6 +697,22 @@ public class ScholarshipService {
 			System.err.println("❌ 카테고리 조회 실패: " + e.getMessage());
 			return Arrays.asList("성적우수", "생활지원", "공로/활동", "기타");
 		}
+	}
+
+
+	private String normalizeStatus(String status) {
+		if (status == null || status.equalsIgnoreCase("ALL")) return null;
+		return status.trim().toUpperCase(); // DB에서는 ENUM 문자열로 비교
+	}
+
+	private String normalizeCategory(String category) {
+		if (category == null || category.equalsIgnoreCase("ALL")) return null;
+		return category.trim();
+	}
+
+	private boolean needsUserForEligibility() {
+		// isEligibleForUser가 학년/학점/단과대 등 사용자 상세를 요구하면 true
+		return true; // 필요 없으면 false로 바꾸고, 위의 user 조회도 제거
 	}
 
 

@@ -1,5 +1,6 @@
 package com.solsol.heycalendar.mapper;
 
+import com.solsol.heycalendar.dto.response.ApplicationStatusRow;
 import com.solsol.heycalendar.entity.Application;
 import com.solsol.heycalendar.dto.response.ApplicationResponse;
 import org.apache.ibatis.annotations.Mapper;
@@ -150,4 +151,9 @@ public interface ApplicationMapper {
     ApplicationResponse findApplicationDetailByUserAndScholarship(
             @Param("userNm") String userNm, 
             @Param("scholarshipNm") String scholarshipNm);
+
+	List<ApplicationStatusRow> findStatusesByUserAndScholarshipIds(
+		@Param("userNm") String userNm,
+		@Param("ids") List<Long> scholarshipIds
+	);
 }
