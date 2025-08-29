@@ -28,7 +28,10 @@ export default function SubmissionManage(){
   const fetchApplications = async () => {
     try {
       const result = await api.get('/applications')
+      console.log('신청서 목록 응답:', result)
+      
       if (result.success) {
+        console.log('신청서 데이터 샘플:', result.data[0])
         setApplications(result.data)
         calculateStats(result.data)
       }
@@ -111,10 +114,10 @@ export default function SubmissionManage(){
   const transformApplicationData = (application) => ({
     id: `${application.userNm}-${application.scholarshipNm}`,
     scholarship: application.scholarshipName || '장학금명 없음',
-    unit: application.departmentName ? `${application.departmentName} - ${application.collegeName || ''}` : '학과정보 없음',
-    files: application.documents?.map(doc => doc.documentName) || [],
+    unit: application.departmentName ? `${application.departmentName} - ${application.collegeName || ''}` : '전체 학과',
+    files: application.documents?.map(doc => doc.originalFileName || doc.documentName || doc.applicationDocumentNm) || [],
     applicant: application.userName || '신청자명 없음',
-    studentId: `${application.userNm} - ${application.departmentName || '학과정보 없음'}`,
+    studentId: `${application.userNm} - ${application.departmentName || '학과 정보없음'}`,
     time: new Date(application.applicationDate || application.appliedAt).toLocaleString('ko-KR') || '-',
     status: application.applicationState === 'PENDING' || application.state === 'PENDING' ? '검토 대기' :
              application.applicationState === 'APPROVED' || application.state === 'APPROVED' ? '승인' : '반려',
@@ -151,7 +154,15 @@ export default function SubmissionManage(){
   const handleViewDetails = async (application) => {
     try {
       const result = await api.get(`/applications/${application.userNm}/${application.scholarshipNm}`)
-      setSelectedApplication(result)
+      console.log('상세보기 응답:', result)
+      
+      if (result.success && result.data) {
+        setSelectedApplication(result.data)
+      } else if (result.data) {
+        setSelectedApplication(result.data)
+      } else {
+        setSelectedApplication(result)
+      }
       setShowDetailModal(true)
     } catch (error) {
       console.error('Failed to fetch application details:', error)

@@ -121,12 +121,11 @@ export default function ScholarshipApplyForm() {
   // 업로드 완료 후 처리
   const handleUploadComplete = (uploadData: any) => {
     console.log('✅ 업로드 완료:', uploadData);
-    // files 배열에도 추가
+    // files 배열에 추가 (실제 파일 URI 사용)
     setFiles(prev => [...prev, { 
       name: uploadData.fileName, 
-      uri: `mybox://uploaded_${Date.now()}` 
+      uri: uploadData.file.uri 
     }]);
-    Alert.alert('성공', '서류가 MyBox에 저장되었습니다.');
   };
 
   // 신청/수정 처리 함수
@@ -232,7 +231,10 @@ export default function ScholarshipApplyForm() {
 
   // 더 정확한 서류 매칭을 위한 체크리스트 개선
   // 장학금 정보의 필수서류를 기반으로 체크리스트 생성
-  const checklistItems = scholarship?.requiredDocuments 
+  console.log('📋 Scholarship data:', scholarship);
+  console.log('📋 Required documents:', scholarship?.requiredDocuments);
+  
+  const checklistItems = (scholarship?.requiredDocuments && scholarship.requiredDocuments.length > 0)
     ? scholarship.requiredDocuments.map((doc, index) => ({
         id: `doc_${index}`,
         label: doc.name,
@@ -242,6 +244,15 @@ export default function ScholarshipApplyForm() {
           ) || false
         ),
         required: doc.required
+      }))
+    : (scholarship?.criteria && scholarship.criteria.length > 0)
+    ? scholarship.criteria.map((criterion, index) => ({
+        id: `criteria_${index}`,
+        label: criterion.name,
+        done: files.some(f => 
+          f.name.toLowerCase().includes(criterion.name.toLowerCase())
+        ),
+        required: true
       }))
     : [
         // 기본 체크리스트 (필수서류 정보가 없는 경우)
@@ -258,6 +269,8 @@ export default function ScholarshipApplyForm() {
           required: true
         }
       ];
+
+  console.log('📋 Generated checklist items:', checklistItems);
   const canSubmit = true; // 신청 사유는 선택사항
 
   if (loading) {
@@ -448,6 +461,7 @@ export default function ScholarshipApplyForm() {
         visible={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onUpload={handleUploadComplete}
+        mode="scholarship"
       />
     </ImageBackground>
   );

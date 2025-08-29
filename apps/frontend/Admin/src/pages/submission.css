@@ -54,8 +54,9 @@
   background:#f9fbff; border-bottom:1px solid var(--line); color:#6b7280; font-size:13px;
   padding:10px 14px; font-weight:700;
 }
-.trow{ padding:12px 14px; border-bottom:1px solid var(--line); }
+.trow{ padding:12px 14px; border-bottom:1px solid var(--line); transition:background-color 0.2s; }
 .trow:last-child{ border-bottom:none; }
+.trow:hover{ background-color:#f8fafc; }
 
 /* 열 내부 */
 .cell-title{ display:flex; gap:10px; align-items:center; }
@@ -78,24 +79,24 @@
   font-size:12px;
 }
 .approve-btn{
-  height:30px; padding:0 12px; border:none; border-radius:8px; background:#e6fbf1; color:#1a7c49; font-weight:700; cursor:pointer;
+  height:30px; padding:0 12px; border:none; border-radius:8px; background:#e1f5fe; color:#0277bd; font-weight:700; cursor:pointer;
   font-size:12px;
 }
 .reject-btn{
-  height:30px; padding:0 12px; border:none; border-radius:8px; background:#ffecec; color:#b53030; font-weight:700; cursor:pointer;
+  height:30px; padding:0 12px; border:none; border-radius:8px; background:#f5f5f5; color:#616161; font-weight:700; cursor:pointer;
   font-size:12px;
 }
 .view-btn:hover{ background:#d1d9ff; }
-.approve-btn:hover{ background:#d1f5e1; }
-.reject-btn:hover{ background:#ffe0e0; }
+.approve-btn:hover{ background:#b3e5fc; }
+.reject-btn:hover{ background:#e0e0e0; }
 
 /* 배지 */
 .badge{
   display:inline-flex; align-items:center; justify-content:center; padding:4px 10px; border-radius:999px;
   font-size:12px; font-weight:800;
 }
-.badge.green{ background:#e6fbf1; color:#1a7c49; }
-.badge.red{ background:#ffecec; color:#b53030; }
+.badge.green{ background:#e1f5fe; color:#0277bd; }
+.badge.red{ background:#f5f5f5; color:#616161; }
 .badge.amber{ background:#fff4e5; color:#a06400; }
 
 /* 사이드바(간단) */
@@ -150,8 +151,8 @@
   display:inline-block; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:700; margin-left:8px;
 }
 .status-badge.pending{ background:#fff4e5; color:#a06400; }
-.status-badge.approved{ background:#e6fbf1; color:#1a7c49; }
-.status-badge.rejected{ background:#ffecec; color:#b53030; }
+.status-badge.approved{ background:#e1f5fe; color:#0277bd; }
+.status-badge.rejected{ background:#f5f5f5; color:#616161; }
 .documents-list{
   display:flex; flex-direction:column; gap:12px;
 }
@@ -194,14 +195,14 @@
   font-size:14px;
 }
 .approve-btn-modal{
-  background:var(--green); color:white;
+  background:#2196f3; color:white;
 }
 .approve-btn-modal:hover{
-  background:#359a5b;
+  background:#1976d2;
 }
 .reject-btn-modal{
-  background:var(--red); color:white;
+  background:#9e9e9e; color:white;
 }
 .reject-btn-modal:hover{
-  background:#e55555;
+  background:#757575;
 }

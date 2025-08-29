@@ -8,7 +8,6 @@ import './scholarship-create.css'
 export default function ScholarshipCreate(){
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
-  const [categories, setCategories] = useState([])
   
   // 기본 정보
   const [formData, setFormData] = useState({
@@ -41,7 +40,6 @@ export default function ScholarshipCreate(){
 
   // 제출서류/평가기준 동적 리스트
   const [reqName, setReqName] = useState('')
-  const [stdPoint, setStdPoint] = useState('')
   const [weight, setWeight] = useState('')
   const [criteria, setCriteria] = useState([])
   
@@ -53,34 +51,30 @@ export default function ScholarshipCreate(){
 
   const totalWeight = criteria.reduce((s,c)=> s + Number(c.weight||0), 0)
 
-  // 컴포넌트 마운트 시 카테고리 목록 로드
-  useEffect(() => {
-    loadCategories()
-  }, [])
-
-  const loadCategories = async () => {
-    try {
-      const categoryList = await scholarshipApi.getCategories()
-      setCategories(categoryList)
-    } catch (error) {
-      console.error('카테고리 로드 실패:', error)
-    }
-  }
 
   const addCriteria = () => {
     if(!reqName.trim()) return
-    setCriteria(list => [...list, {name:reqName.trim(), std:stdPoint||'-', weight:weight||0}])
-    setReqName(''); setStdPoint(''); setWeight('')
+    setCriteria(list => [...list, {name:reqName.trim(), weight:weight||0}])
+    setReqName(''); setWeight('')
   }
   const removeCriteria = (idx) => {
     setCriteria(list => list.filter((_,i)=> i!==idx))
   }
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    if (field === 'type') {
+      // type이 변경되면 category에도 동일한 값 설정
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        category: value
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }))
+    }
   }
 
   const onSubmit = async (e) => {
@@ -248,20 +242,6 @@ export default function ScholarshipCreate(){
                 />
               </Field>
 
-              <Field label="장학금 카테고리/태그">
-                <select 
-                  className="ip"
-                  value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                >
-                  <option value="">카테고리를 선택하세요</option>
-                  {categories.map((category, index) => (
-                    <option key={index} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </Field>
             </Section>
 
             {/* ===== 신청 제한 조건 ===== */}
@@ -329,8 +309,6 @@ export default function ScholarshipCreate(){
               <div className="criteria-row">
                 <input className="ip flex1" placeholder="항목을 입력하세요 (예: 성적증명서, 봉사시간) "
                        value={reqName} onChange={e=>setReqName(e.target.value)} />
-                <input className="ip w120" placeholder="기준 점수"
-                       value={stdPoint} onChange={e=>setStdPoint(e.target.value)} />
                 <div className="w120 with-suffix">
                   <input className="ip" placeholder="가중치" value={weight} onChange={e=>setWeight(e.target.value)} />
                   <span className="suffix">%</span>
@@ -343,7 +321,7 @@ export default function ScholarshipCreate(){
                 {criteria.map((c,idx)=>(
                   <div className="chip" key={idx}>
                     <span className="name">{c.name}</span>
-                    <span className="meta">기준 {c.std} / 가중치 {c.weight}%</span>
+                    <span className="meta">가중치 {c.weight}%</span>
                     <button type="button" className="del" onClick={()=>removeCriteria(idx)}>삭제</button>
                   </div>
                 ))}
