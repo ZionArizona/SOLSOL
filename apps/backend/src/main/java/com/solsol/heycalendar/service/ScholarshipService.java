@@ -270,6 +270,9 @@ public class ScholarshipService {
 	}
 
 	private ScholarshipResponse toSummaryResponse(Scholarship s) {
+		// 실제 마감일 확인해서 모집상태 업데이트
+		RecruitmentStatus actualStatus = getActualRecruitmentStatus(s);
+		
 		return ScholarshipResponse.builder()
 				.id(s.getId())
 				.scholarshipName(s.getScholarshipName())
@@ -280,10 +283,29 @@ public class ScholarshipService {
 				.paymentMethod(s.getPaymentMethod())
 				.recruitmentStartDate(s.getRecruitmentStartDate())
 				.recruitmentEndDate(s.getRecruitmentEndDate())
+				.recruitmentStatus(actualStatus)
+				.category(s.getCategory())
 				.createdBy(s.getCreatedBy())
 				.createdAt(s.getCreatedAt())
 				.updatedAt(s.getUpdatedAt())
 				.build();
+	}
+	
+	private RecruitmentStatus getActualRecruitmentStatus(Scholarship s) {
+		if (s.getRecruitmentEndDate() == null) {
+			return s.getRecruitmentStatus(); 
+		}
+		
+		LocalDate today = LocalDate.now();
+		LocalDate endDate = s.getRecruitmentEndDate();
+		
+		// 마감일이 지난 경우 CLOSED로 설정
+		if (endDate.isBefore(today)) {
+			return RecruitmentStatus.CLOSED;
+		}
+		
+		// 원래 상태가 CLOSED가 아닌데 마감일이 지나지 않았으면 원래 상태 유지
+		return s.getRecruitmentStatus();
 	}
 
 	private ScholarshipResponse toDetailResponse(Scholarship s, List<ScholarshipCriteria> cs, List<String> tags, ScholarshipNotice n) {
@@ -600,7 +622,7 @@ public class ScholarshipService {
 
 		if (filtered.isEmpty()) return List.of();
 
-		// 3) 지원 상태 일괄 조회 (N+1 방지)
+		// 1) 지원 상태 일괄 조회 (N+1 방지)
 		List<Long> ids = filtered.stream().map(Scholarship::getId).toList();
 
 		Map<Long, ApplicationStatus> statusMap = applicationMapper
@@ -611,8 +633,32 @@ public class ScholarshipService {
 				ApplicationStatusRow::getState
 			));
 
-		// 4) DTO 매핑 (미지원 시 NONE)
+		// 2) 사용자 정보 조회 (자격 요건 체크용)
+		User user = null;
+		try {
+			user = userMapper.findByUserNm(userNm).orElse(null);
+		} catch (Exception e) {
+			System.err.println("❌ 사용자 정보 조회 실패: " + e.getMessage());
+		}
+		final User finalUser = user;
+
+		// 3) 필터링 및 DTO 매핑
 		return filtered.stream()
+			.filter(s -> {
+				ApplicationStatus applicationStatus = statusMap.getOrDefault(s.getId(), ApplicationStatus.NONE);
+				
+				// 이미 승인된 장학금은 제외 (신청 가능 목록에서)
+				if (applicationStatus == ApplicationStatus.APPROVED) {
+					return false;
+				}
+				
+				// 사용자 자격 요건 체크 (사용자 정보가 있는 경우에만)
+				if (finalUser != null && !isEligibleForUser(s, finalUser)) {
+					return false;
+				}
+				
+				return true;
+			})
 			.map(s -> ScholarshipWithStateResponse.builder()
 				.scholarship(toSummaryResponse(s))
 				.state(statusMap.getOrDefault(s.getId(), ApplicationStatus.NONE))

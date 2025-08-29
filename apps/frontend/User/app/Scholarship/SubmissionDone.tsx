@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { ScrollView, StatusBar, StyleSheet, View, Text, ActivityIndicator, Alert } from "react-native";
+import { ScrollView, StatusBar, StyleSheet, View, Text, ActivityIndicator, Alert, BackHandler } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { ConfirmInfoTable } from "../../components/scholarship/ConfirmInfoTable";
 import { PrimaryButton } from "../../components/scholarship/PrimaryButton";
@@ -14,6 +14,21 @@ export default function SubmissionDone() {
   const { scholarshipId } = useLocalSearchParams<{ scholarshipId?: string }>();
   const [scholarship, setScholarship] = useState<Scholarship | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Android 뒤로가기 버튼 제어
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // 뒤로가기 시 MyScholarship으로 이동
+        router.replace('/MyScholarship/MyScholarship');
+        return true; // 기본 뒤로가기 동작 막기
+      };
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => backHandler.remove();
+    }, [])
+  );
 
   useEffect(() => {
     const loadScholarship = async () => {
@@ -54,7 +69,13 @@ export default function SubmissionDone() {
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={responsiveStyles.scrollContainer}>
         <View style={deviceInfo.isTablet ? responsiveStyles.cardContainer : responsiveStyles.container}>
-          <TopBar title="장학금 신청" />
+          <TopBar 
+            title="장학금 신청" 
+            onBackPress={() => {
+              // 뒤로가기 시 MyScholarship으로 이동
+              router.replace('/MyScholarship/MyScholarship');
+            }}
+          />
 
           {/* 메인 그라데이션 카드 */}
           <LinearGradient
@@ -99,7 +120,8 @@ export default function SubmissionDone() {
             <PrimaryButton
               label="확인"
               onPress={() => {
-                router.push('/MyScholarship/MyScholarship');
+                // 네비게이션 스택을 초기화하고 MyScholarship으로 이동
+                router.replace('/MyScholarship/MyScholarship');
               }}
               style={{ marginTop: 16, minWidth: 200, paddingHorizontal: 40 }}
             />

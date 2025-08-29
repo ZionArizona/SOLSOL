@@ -14,25 +14,27 @@ type Props = {
 export const MileageCard = ({ label, points, onPressScholar }: Props) => {
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
+      {/* 상단: 라벨과 장학금 보러가기 버튼 */}
+      <View style={styles.topRow}>
         <Text style={styles.label}>{label}</Text>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity activeOpacity={0.9} style={styles.smallBtn} onPress={onPressScholar}>
-            <Text style={styles.smallBtnText}>장학금 보러가기</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            activeOpacity={0.9} 
-            style={[styles.smallBtn, styles.accountBtn]} 
-            onPress={() => router.push("/Menu/AccountView")}
-          >
-            <Text style={[styles.smallBtnText, styles.accountBtnText]}>내 계좌 보러가기</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity activeOpacity={0.9} style={styles.smallBtn} onPress={onPressScholar}>
+          <Text style={styles.smallBtnText}>장학금 보러가기</Text>
+        </TouchableOpacity>
       </View>
 
-      <Text style={styles.pointText}>
-        {points.toLocaleString()} <Text style={{ fontSize: 16 }}>P</Text>
-      </Text>
+      {/* 중간: 포인트와 계좌 버튼을 나란히 배치 */}
+      <View style={styles.middleRow}>
+        <Text style={styles.pointText}>
+          {points.toLocaleString()} <Text style={{ fontSize: 16 }}>P</Text>
+        </Text>
+        <TouchableOpacity 
+          activeOpacity={0.9} 
+          style={[styles.smallBtn, styles.accountBtn]} 
+          onPress={() => router.push("/Menu/AccountView")}
+        >
+          <Text style={[styles.smallBtnText, styles.accountBtnText]}>내 계좌 보러가기</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.row}>
         <Shortcut 
@@ -72,10 +74,20 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 2,
   },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  topRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  middleRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center",
+    marginBottom: 6,
+  },
   label: { color: colors.muted, fontWeight: "700", flex: 1 },
-  buttonRow: { flexDirection: "column", gap: 6 },
-  pointText: { marginTop: 6, fontSize: 26, fontWeight: "900", color: colors.title },
+  pointText: { fontSize: 26, fontWeight: "900", color: colors.title, flex: 1 },
   smallBtn: {
     backgroundColor: "#EEF3FF",
     paddingHorizontal: 12,

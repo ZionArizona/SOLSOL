@@ -252,7 +252,8 @@ export default function ScholarshipApplyForm() {
         if (isEditMode) {
           router.back(); // 수정 완료 후 이전 페이지로
         } else {
-          router.push(`/Scholarship/SubmissionDone?scholarshipId=${scholarshipId}`);
+          // replace를 사용해서 뒤로가기 시 신청폼으로 돌아가지 않도록 함
+          router.replace(`/Scholarship/SubmissionDone?scholarshipId=${scholarshipId}`);
         }
       } else {
         const actionText = isEditMode ? '수정' : '신청';
