@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 
@@ -37,26 +37,58 @@ export const DocCard = ({
 
   const handleDelete = () => {
     console.log('🗑️ DocCard handleDelete 호출:', item.id, 'onDelete 함수:', onDelete ? '있음' : '없음');
-    if (onDelete) {
-      Alert.alert(
-        "서류 삭제",
-        `'${item.fileName}' 파일을 삭제하시겠습니까?`,
-        [
-          { text: "취소", style: "cancel" },
-          { 
-            text: "삭제", 
-            style: "destructive",
-            onPress: () => {
-              console.log('🗑️ 삭제 확인 버튼 누름:', item.id);
-              onDelete(item.id);
-            }
-          }
-        ]
-      );
-    } else {
-      console.log('❌ onDelete 함수가 없습니다!');
+    
+    if (!onDelete) return;
+
+    const id = String(item.id);
+  //   if (onDelete) {
+  //     Alert.alert(
+  //       "서류 삭제",
+  //       `'${item.fileName}' 파일을 삭제하시겠습니까?`,
+  //       [
+  //         { text: "취소", style: "cancel" },
+  //         { 
+  //           text: "삭제", 
+  //           style: "destructive",
+  //           onPress: () => {
+  //             console.log('🗑️ 삭제 확인 버튼 누름:', item.id);
+  //             onDelete(item.id);
+  //           }
+  //         }
+  //       ]
+  //     );
+  //   } else {
+  //     console.log('❌ onDelete 함수가 없습니다!');
+  //   }
+  // };
+
+  if (Platform.OS === 'web') {
+    // ✅ 웹: confirm 사용 (Alert 버튼 onPress 무시 이슈 회피)
+    const ok = window.confirm(`'${item.fileName}' 파일을 삭제하시겠습니까?`);
+    if (ok) {
+      console.log('🗑️ (web) 삭제 확인 버튼 누름:', id);
+      onDelete(id);
     }
-  };
+    return;
+  }
+
+  // ✅ 네이티브: 반드시 함수로 감싸 전달
+  Alert.alert(
+    '서류 삭제',
+    `'${item.fileName}' 파일을 삭제하시겠습니까?`,
+    [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: () => {
+          console.log('🗑️ (native) 삭제 확인 버튼 누름:', id);
+          onDelete(id);
+        },
+      },
+    ],
+  );
+};
 
   return (
     <TouchableOpacity 
