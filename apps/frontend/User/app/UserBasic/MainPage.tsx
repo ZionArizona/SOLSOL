@@ -20,6 +20,36 @@ import { useWebSocket } from "../../contexts/WebSocketContext";
 import { mileageApi } from "../../services/mileage.api";
 import { userApi } from "../../services/user.api";
 
+// 학과 매핑 정보
+const departments = [
+  { label: '경제학과', value: 1 },
+  { label: '간호학과', value: 2 },
+  { label: '디자인학과', value: 3 },
+  { label: '빅데이터융합학과', value: 4 },
+  { label: '소프트웨어공학과', value: 5 },
+  { label: '식품공학과', value: 6 },
+  { label: '인공지능학과', value: 7 },
+  { label: '영어교육과', value: 8 },
+  { label: '컴퓨터공학과', value: 9 },
+  { label: '화학과', value: 10 }
+];
+
+// 정수 ID를 학과명으로 변환하는 함수
+const getDepartmentNameById = (id: number | string | null | undefined): string => {
+  if (id === null || id === undefined) {
+    return '컴퓨터공학과'; // 기본값
+  }
+  
+  const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+  
+  if (isNaN(numId)) {
+    return '컴퓨터공학과'; // 잘못된 값일 때 기본값
+  }
+  
+  const department = departments.find(dept => dept.value === numId);
+  return department ? department.label : '알 수 없는 학과';
+};
+
 export default function MainPage() {
   const { user } = useAuth();
   const [userInfo, setUserInfo] = useState<any>(null);
@@ -99,7 +129,15 @@ export default function MainPage() {
     if (!userInfo && !user) return "정보 없음";
     
     const info = userInfo || user;
-    const dept = info.deptName || info.deptNm || '학과 정보 없음';
+    
+    // 학과 ID가 있으면 매핑된 학과명 사용, 없으면 기존 방식
+    let dept = '';
+    if (info.dept || info.deptId || info.department) {
+      dept = getDepartmentNameById(info.dept || info.deptId || info.department);
+    } else {
+      dept = info.deptName || info.deptNm || '학과 정보 없음';
+    }
+    
     const grade = info.grade ? `재학 ${info.grade}학년` : '';
     
     return grade ? `${dept}, ${grade}` : dept;
@@ -175,7 +213,6 @@ export default function MainPage() {
 
           
           <View style={styles.block}>
-            <Text>Hey Calendar !</Text>
             <PromoBanner
               title={`신청부터 지금까지,\n헤이영 캘린더가\n다 챙겨드려요`}
               ctaLabel="나의 일정 바로가기"
