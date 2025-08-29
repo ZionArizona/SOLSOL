@@ -1,267 +1,280 @@
-create table application
-(
-    userNm        bigint                                   not null,
-    scholarshipNm bigint                                   not null,
-    state         enum ('pending', 'approved', 'rejected') null,
-    applied_at    timestamp default CURRENT_TIMESTAMP      null,
-    reason        text                                     null,
-    primary key (userNm, scholarshipNm)
+-- application
+CREATE TABLE application (
+                             userNm        BIGINT                                   NOT NULL,
+                             scholarshipNm BIGINT                                   NOT NULL,
+                             state         ENUM ('PENDING', 'APPROVED', 'REJECTED') NULL,
+                             applied_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP      NULL,
+                             reason        TEXT                                     NULL,
+                             PRIMARY KEY (userNm, scholarshipNm)
 );
 
-create table applicationdocument
-(
-    applicationDocumentNm bigint auto_increment            not null,
-    userNm                bigint                           not null,
-    scholarshipNm         bigint                           not null,
-    file_url              varchar(500)                     null,
-    uploaded_at           timestamp default CURRENT_TIMESTAMP null,
-    original_file_name    varchar(255)                     null,
-    file_size             bigint                           null,
-    content_type          varchar(100)                     null,
-    primary key (applicationDocumentNm, userNm, scholarshipNm)
+-- applicationdocument
+CREATE TABLE applicationdocument (
+                                     applicationDocumentNm BIGINT AUTO_INCREMENT            NOT NULL,
+                                     userNm                BIGINT                           NOT NULL,
+                                     scholarshipNm         BIGINT                           NOT NULL,
+                                     file_url              VARCHAR(500)                     NULL,
+                                     uploaded_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP NULL,
+                                     original_file_name    VARCHAR(255)                     NULL,
+                                     file_size             BIGINT                           NULL,
+                                     content_type          VARCHAR(100)                     NULL,
+                                     PRIMARY KEY (applicationDocumentNm, userNm, scholarshipNm)
 );
 
-create table college
-(
-    collegeNm bigint       not null,
-    univNm    bigint       not null,
-    name      varchar(255) null,
-    primary key (collegeNm, univNm)
+-- college
+CREATE TABLE college (
+                         collegeNm BIGINT       NOT NULL,
+                         univNm    BIGINT       NOT NULL,
+                         name      VARCHAR(255) NULL,
+                         PRIMARY KEY (collegeNm, univNm)
 );
 
-create table department
-(
-    deptNm    bigint       not null,
-    collegeNm bigint       not null,
-    univNm    bigint       not null,
-    Deptname  varchar(255) null,
-    primary key (deptNm, collegeNm, univNm),
-    constraint FK_College_TO_Department_1
-        foreign key (collegeNm) references college (collegeNm)
+-- department
+CREATE TABLE department (
+                            deptNm    BIGINT       NOT NULL,
+                            collegeNm BIGINT       NOT NULL,
+                            univNm    BIGINT       NOT NULL,
+                            Deptname  VARCHAR(255) NULL,
+                            PRIMARY KEY (deptNm, collegeNm, univNm),
+                            CONSTRAINT FK_College_TO_Department_1
+                                FOREIGN KEY (collegeNm) REFERENCES college (collegeNm)
 );
 
-create table document
-(
-    DocumentNm    bigint       not null primary key,
-    scholarshipNm bigint       not null,
-    name          varchar(255) null,
-    description   text         null
+-- document
+CREATE TABLE document (
+                          DocumentNm    BIGINT       NOT NULL PRIMARY KEY,
+                          scholarshipNm BIGINT       NOT NULL,
+                          name          VARCHAR(255) NULL,
+                          description   TEXT         NULL
 );
 
-create table eligibility
-(
-    eligibilityNm bigint                            not null primary key,
-    scholarshipNm bigint                            not null,
-    field         enum ('gpa', 'grade', 'state')    null,
-    operator      enum ('>=', '<=', '==', '>', '<') null,
-    value         varchar(255)                      null,
-    content       text                              null
+-- eligibility
+CREATE TABLE eligibility (
+                             eligibilityNm BIGINT                            NOT NULL PRIMARY KEY,
+                             scholarshipNm BIGINT                            NOT NULL,
+                             field         ENUM ('GPA', 'GRADE', 'STATE')    NULL,
+                             operator      ENUM ('>=', '<=', '==', '>', '<') NULL,
+                             value         VARCHAR(255)                      NULL,
+                             content       TEXT                              NULL
 );
 
-create table exchange
-(
-    exchangeNm   bigint                                   not null,
-    userNm       bigint                                   not null,
-    amount       int                                      null,
-    state        enum ('pending', 'approved', 'rejected') null,
-    applied_at   timestamp                                null,
-    processed_at timestamp                                null,
-    primary key (exchangeNm, userNm)
+-- exchange
+CREATE TABLE exchange (
+                          exchangeNm   BIGINT                                   NOT NULL,
+                          userNm       BIGINT                                   NOT NULL,
+                          amount       INT                                      NULL,
+                          state        ENUM ('PENDING', 'APPROVED', 'REJECTED') NULL,
+                          applied_at   TIMESTAMP                                NULL,
+                          processed_at TIMESTAMP                                NULL,
+                          PRIMARY KEY (exchangeNm, userNm)
 );
 
-create table mileage
-(
-    `Key`  bigint auto_increment not null,
-    userNm bigint not null,
-    amount int    null,
-    primary key (`Key`, userNm)
+-- mileage
+CREATE TABLE mileage (
+                         `Key`  BIGINT AUTO_INCREMENT NOT NULL,
+                         userNm BIGINT                NOT NULL,
+                         amount INT                   NULL,
+                         PRIMARY KEY (`Key`, userNm)
 );
 
-create table mybox
-(
-    id              bigint auto_increment primary key,
-    userNm          varchar(20)                        not null,
-    object_key_enc  varbinary(512)                     null,
-    file_name_enc   varbinary(512)                     null,
-    content_type    varchar(100)                       null,
-    size_bytes      bigint                             null,
-    checksum_sha256 char(64)                           null,
-    created_at      datetime default CURRENT_TIMESTAMP null,
-    updated_at      datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP
+-- mybox
+CREATE TABLE mybox (
+                       id              BIGINT AUTO_INCREMENT                  NOT NULL PRIMARY KEY,
+                       userNm          VARCHAR(20)                            NOT NULL,
+                       object_key_enc  VARBINARY(512)                         NULL,
+                       file_name_enc   VARBINARY(512)                         NULL,
+                       content_type    VARCHAR(100)                           NULL,
+                       size_bytes      BIGINT                                 NULL,
+                       checksum_sha256 CHAR(64)                               NULL,
+                       created_at      DATETIME DEFAULT CURRENT_TIMESTAMP     NOT NULL,
+                       updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL
 );
 
-create table mybox_audit
-(
-    id              bigint auto_increment primary key,
-    mybox_id        bigint                                           not null,
-    actor_userNm    varchar(20)                                      null,
-    action          enum ('CREATE', 'DOWNLOAD_URL_ISSUED', 'DELETE') null,
-    object_key_enc  varbinary(512)                                   null,
-    file_name_enc   varbinary(512)                                   null,
-    size_bytes      bigint                                           null,
-    checksum_sha256 char(64)                                         null,
-    s3_etag         varchar(80)                                      null,
-    s3_version_id   varchar(200)                                     null,
-    actor_ip        varchar(64)                                      null,
-    user_agent      varchar(255)                                     null,
-    detail          json                                             null,
-    created_at      datetime default CURRENT_TIMESTAMP               null
+-- mybox_audit
+CREATE TABLE mybox_audit (
+                             id              BIGINT AUTO_INCREMENT                  NOT NULL PRIMARY KEY,
+                             mybox_id        BIGINT                                 NOT NULL,
+                             actor_userNm    VARCHAR(20)                            NULL,
+                             action          ENUM ('CREATE', 'DOWNLOAD_URL_ISSUED', 'DELETE') NULL,
+                             object_key_enc  VARBINARY(512)                         NULL,
+                             file_name_enc   VARBINARY(512)                         NULL,
+                             size_bytes      BIGINT                                 NULL,
+                             checksum_sha256 CHAR(64)                               NULL,
+                             s3_etag         VARCHAR(80)                            NULL,
+                             s3_version_id   VARCHAR(200)                           NULL,
+                             actor_ip        VARCHAR(64)                            NULL,
+                             user_agent      VARCHAR(255)                           NULL,
+                             detail          JSON                                   NULL,
+                             created_at      DATETIME DEFAULT CURRENT_TIMESTAMP     NOT NULL
 );
 
-create table university
-(
-    univNm       bigint       not null primary key,
-    univName     varchar(255) null,
-    mileageRatio double       null
+-- university
+CREATE TABLE university (
+                            univNm       BIGINT       NOT NULL PRIMARY KEY,
+                            univName     VARCHAR(255) NULL,
+                            mileageRatio DOUBLE       NULL
 );
 
-create table users
-(
-    userNm      varchar(20)                                                    not null primary key,
-    userMileage int                                                            null,
-    accountNm   varchar(100)                                                   null,
-    userId      varchar(100)                                                   null,
-    password    varchar(255)                                                   null,
-    userKey     varchar(100)                                                   null,
-    userName    varchar(100)                                                   null,
-    state       enum ('ENROLLED', 'LEAVE_OF_ABSENCE', 'GRADUATED', 'EXPELLED') null,
-    grade       int                                                            null,
-    gpa         decimal(3, 2)                                                  null,
-    createdAt   datetime                                                       null,
-    updatedAt   datetime                                                       null,
-    role        enum ('ADMIN', 'STUDENT', 'STAFF')                             null,
-    deptNm      bigint                                                         not null,
-    collegeNm   bigint                                                         not null,
-    univNm      bigint                                                         not null
+-- users
+CREATE TABLE users (
+                       userNm      VARCHAR(20)                                                    NOT NULL PRIMARY KEY,
+                       userMileage INT                                                            NULL,
+                       accountNm   VARCHAR(100)                                                   NULL,
+                       userId      VARCHAR(100)                                                   NULL,
+                       password    VARCHAR(255)                                                   NULL,
+                       userKey     VARCHAR(100)                                                   NULL,
+                       userName    VARCHAR(100)                                                   NULL,
+                       state       ENUM ('ENROLLED', 'LEAVE_OF_ABSENCE', 'GRADUATED', 'EXPELLED') NULL,
+                       grade       INT                                                            NULL,
+                       gpa         DECIMAL(3, 2)                                                  NULL,
+                       createdAt   DATETIME                                                       NULL,
+                       updatedAt   DATETIME                                                       NULL,
+                       role        ENUM ('ADMIN', 'STUDENT', 'STAFF')                             NULL,
+                       deptNm      BIGINT                                                         NOT NULL,
+                       collegeNm   BIGINT                                                         NOT NULL,
+                       univNm      BIGINT                                                         NOT NULL
 );
 
-create table refresh_token
-(
-    userNm      varchar(20)          not null,
-    userId      varchar(100)         not null,
-    token       varchar(255)         not null primary key,
-    issuedAt    datetime             not null,
-    expiresAt   datetime             not null,
-    revoked     tinyint(1) default 0 null,
-    userAgent   varchar(255)         null,
-    ip          varchar(45)          null,
-    rotatedFrom varchar(255)         null,
-    lastUsedAt  datetime             null
+-- personalschedule
+CREATE TABLE personalschedule (
+                                  id             BIGINT UNSIGNED AUTO_INCREMENT            NOT NULL PRIMARY KEY,
+                                  student_no     VARCHAR(20)                               NOT NULL,
+                                  schedule_date  DATE                                      NOT NULL,
+                                  schedule_name  VARCHAR(100)                              NOT NULL,
+                                  start_time     TIME                                      NOT NULL,
+                                  end_time       TIME                                      NOT NULL,
+                                  notify_minutes TINYINT UNSIGNED DEFAULT '0'              NOT NULL,
+                                  created_at     DATETIME DEFAULT CURRENT_TIMESTAMP        NOT NULL,
+                                  updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL,
+                                  CONSTRAINT fk_personalschedule_user
+                                      FOREIGN KEY (student_no) REFERENCES users (userNm)
+                                          ON UPDATE CASCADE ON DELETE CASCADE,
+                                  CHECK (`end_time` > `start_time`)
 );
+CREATE INDEX idx_personalschedule_user_date ON personalschedule (student_no, schedule_date);
 
-create index idx_expiresAt on refresh_token (expiresAt);
-create index idx_revoked on refresh_token (revoked);
-create index idx_userId on refresh_token (userId);
-create index idx_userNm on refresh_token (userNm);
-
-create table scholarship
-(
-    id                       bigint unsigned auto_increment primary key,
-    scholarship_name         varchar(255)                                                             not null,
-    description              text                                                                     null,
-    type                     enum ('ACADEMIC', 'FINANCIAL_AID', 'ACTIVITY', 'OTHER')                  not null,
-    amount                   int unsigned                                                             not null,
-    number_of_recipients     int unsigned                                                             not null,
-    payment_method           enum ('LUMP_SUM', 'INSTALLMENT')               default 'LUMP_SUM'        not null,
-    recruitment_start_date   date                                                                     null,
-    recruitment_end_date     date                                                                     not null,
-    evaluation_start_date    date                                                                     not null,
-    interview_date           date                                                                     null,
-    result_announcement_date date                                                                     not null,
-    evaluation_method        enum ('DOCUMENT_REVIEW', 'DOCUMENT_INTERVIEW') default 'DOCUMENT_REVIEW' not null,
-    recruitment_status       enum ('DRAFT', 'OPEN', 'CLOSED')               default 'OPEN'            not null,
-    eligibility_condition    varchar(500)                                                             not null,
-    grade_restriction        varchar(100)                                                             null,
-    major_restriction        varchar(255)                                                             null,
-    duplicate_allowed        tinyint(1)                                     default 1                 not null,
-    min_gpa                  decimal(3, 2)                                                            null,
-    category                 varchar(100)                                                             null,
-    contact_person_name      varchar(100)                                                             not null,
-    contact_phone            varchar(50)                                                              not null,
-    contact_email            varchar(255)                                                             not null,
-    office_location          varchar(255)                                                             null,
-    consultation_hours       varchar(255)                                                             null,
-    created_by               varchar(100)                                                             null,
-    created_at               datetime                                       default CURRENT_TIMESTAMP not null,
-    updated_at               datetime                                       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
-    required_documents       json                                                                     null comment '필수'
+-- refresh_token
+CREATE TABLE refresh_token (
+                               userNm      VARCHAR(20)   NOT NULL,
+                               userId      VARCHAR(100)  NOT NULL,
+                               token       VARCHAR(255)  NOT NULL PRIMARY KEY,
+                               issuedAt    DATETIME      NOT NULL,
+                               expiresAt   DATETIME      NOT NULL,
+                               revoked     TINYINT(1)    DEFAULT 0 NULL,
+                               userAgent   VARCHAR(255)  NULL,
+                               ip          VARCHAR(45)   NULL,
+                               rotatedFrom VARCHAR(255)  NULL,
+                               lastUsedAt  DATETIME      NULL
 );
+CREATE INDEX idx_expiresAt ON refresh_token (expiresAt);
+CREATE INDEX idx_revoked   ON refresh_token (revoked);
+CREATE INDEX idx_userId    ON refresh_token (userId);
+CREATE INDEX idx_userNm    ON refresh_token (userNm);
 
-create index idx_scholarship_dates on scholarship (recruitment_start_date, recruitment_end_date);
-create index idx_scholarship_status on scholarship (recruitment_status);
-create index idx_type_category on scholarship (type, category);
+-- scholarship
+CREATE TABLE scholarship (
+                             id                       BIGINT UNSIGNED AUTO_INCREMENT      NOT NULL PRIMARY KEY,
+                             scholarship_name         VARCHAR(255)                        NOT NULL,
+                             description              TEXT                                NULL,
+                             type                     ENUM ('ACADEMIC', 'FINANCIAL_AID', 'ACTIVITY', 'OTHER') NOT NULL,
+                             amount                   INT UNSIGNED                        NOT NULL,
+                             number_of_recipients     INT UNSIGNED                        NOT NULL,
+                             payment_method           ENUM ('LUMP_SUM', 'INSTALLMENT')    NOT NULL DEFAULT 'LUMP_SUM',
+                             recruitment_start_date   DATE                                NULL,
+                             recruitment_end_date     DATE                                NOT NULL,
+                             evaluation_start_date    DATE                                NOT NULL,
+                             interview_date           DATE                                NULL,
+                             result_announcement_date DATE                                NOT NULL,
+                             evaluation_method        ENUM ('DOCUMENT_REVIEW', 'DOCUMENT_INTERVIEW') NOT NULL DEFAULT 'DOCUMENT_REVIEW',
+                             recruitment_status       ENUM ('DRAFT', 'OPEN', 'CLOSED')    NOT NULL DEFAULT 'OPEN',
+                             eligibility_condition    VARCHAR(500)                        NOT NULL,
+                             grade_restriction        VARCHAR(100)                        NULL,
+                             major_restriction        VARCHAR(255)                        NULL,
+                             duplicate_allowed        TINYINT(1)                          NOT NULL DEFAULT 1,
+                             min_gpa                  DECIMAL(3, 2)                       NULL,
+                             category                 VARCHAR(100)                        NULL,
+                             contact_person_name      VARCHAR(100)                        NOT NULL,
+                             contact_phone            VARCHAR(50)                         NOT NULL,
+                             contact_email            VARCHAR(255)                        NOT NULL,
+                             office_location          VARCHAR(255)                        NULL,
+                             consultation_hours       VARCHAR(255)                        NULL,
+                             created_by               VARCHAR(100)                        NULL,
+                             created_at               DATETIME DEFAULT CURRENT_TIMESTAMP  NOT NULL,
+                             updated_at               DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL,
+                             required_documents       JSON                                NULL COMMENT '필수'
+);
+CREATE INDEX idx_scholarship_dates   ON scholarship (recruitment_start_date, recruitment_end_date);
+CREATE INDEX idx_scholarship_status  ON scholarship (recruitment_status);
+CREATE INDEX idx_type_category       ON scholarship (type, category);
 
-create table scholarship_criteria
-(
-    id             bigint unsigned auto_increment primary key,
-    scholarship_id bigint unsigned                    not null,
-    name           varchar(255)                       not null,
-    std_point      decimal(6, 2)                      null,
-    weight_percent tinyint unsigned                   not null,
-    created_at     datetime default CURRENT_TIMESTAMP not null,
-    constraint fk_criteria_scholarship
-        foreign key (scholarship_id) references scholarship (id)
-            on update cascade on delete cascade
-) charset = utf8mb4;
+-- scholarship_criteria
+CREATE TABLE scholarship_criteria (
+                                      id             BIGINT UNSIGNED AUTO_INCREMENT           NOT NULL PRIMARY KEY,
+                                      scholarship_id BIGINT UNSIGNED                          NOT NULL,
+                                      name           VARCHAR(255)                             NOT NULL,
+                                      std_point      DECIMAL(6, 2)                            NULL,
+                                      weight_percent TINYINT UNSIGNED                         NOT NULL,
+                                      created_at     DATETIME DEFAULT CURRENT_TIMESTAMP       NOT NULL,
+                                      CONSTRAINT fk_criteria_scholarship
+                                          FOREIGN KEY (scholarship_id) REFERENCES scholarship (id)
+                                              ON UPDATE CASCADE ON DELETE CASCADE
+) CHARSET = utf8mb4;
+CREATE INDEX idx_criteria_scholarship ON scholarship_criteria (scholarship_id);
 
-create index idx_criteria_scholarship on scholarship_criteria (scholarship_id);
+-- scholarship_notice
+CREATE TABLE scholarship_notice (
+                                    id             BIGINT UNSIGNED AUTO_INCREMENT           NOT NULL PRIMARY KEY,
+                                    scholarship_id BIGINT UNSIGNED                          NOT NULL,
+                                    title          VARCHAR(255)                             NOT NULL,
+                                    content        TEXT                                     NOT NULL,
+                                    image_url      VARCHAR(500)                             NULL,
+                                    created_at     DATETIME DEFAULT CURRENT_TIMESTAMP       NOT NULL,
+                                    CONSTRAINT fk_notice_scholarship
+                                        FOREIGN KEY (scholarship_id) REFERENCES scholarship (id)
+                                            ON UPDATE CASCADE ON DELETE CASCADE
+) CHARSET = utf8mb4;
+CREATE INDEX idx_notice_scholarship ON scholarship_notice (scholarship_id);
 
-create table scholarship_notice
-(
-    id             bigint unsigned auto_increment primary key,
-    scholarship_id bigint unsigned                    not null,
-    title          varchar(255)                       not null,
-    content        text                               not null,
-    image_url      varchar(500)                       null,
-    created_at     datetime default CURRENT_TIMESTAMP not null,
-    constraint fk_notice_scholarship
-        foreign key (scholarship_id) references scholarship (id)
-            on update cascade on delete cascade
-) charset = utf8mb4;
+-- scholarship_tag
+CREATE TABLE scholarship_tag (
+                                 id             BIGINT UNSIGNED AUTO_INCREMENT           NOT NULL PRIMARY KEY,
+                                 scholarship_id BIGINT UNSIGNED                          NOT NULL,
+                                 tag            VARCHAR(50)                              NOT NULL,
+                                 CONSTRAINT uniq_scholarship_tag UNIQUE (scholarship_id, tag),
+                                 CONSTRAINT fk_tag_scholarship
+                                     FOREIGN KEY (scholarship_id) REFERENCES scholarship (id)
+                                         ON UPDATE CASCADE ON DELETE CASCADE
+) CHARSET = utf8mb4;
+CREATE INDEX idx_tag ON scholarship_tag (tag);
 
-create index idx_notice_scholarship on scholarship_notice (scholarship_id);
+-- notification
+CREATE TABLE notification (
+                              id            BIGINT UNSIGNED AUTO_INCREMENT            NOT NULL PRIMARY KEY,
+                              user_nm       VARCHAR(20)                               NOT NULL,
+                              type          ENUM('SCHOLARSHIP_RESULT', 'DEADLINE_REMINDER', 'NEW_SCHOLARSHIP', 'SCHEDULE') NOT NULL,
+                              title         VARCHAR(255)                              NOT NULL,
+                              message       TEXT                                      NOT NULL,
+                              related_id    BIGINT UNSIGNED                           NULL,
+                              is_read       BOOLEAN                                   NULL DEFAULT FALSE,
+                              action_route  VARCHAR(255)                              NULL,
+                              created_at    DATETIME DEFAULT CURRENT_TIMESTAMP        NOT NULL,
+                              updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL,
+                              INDEX idx_user_nm (user_nm),
+                              INDEX idx_type (type),
+                              INDEX idx_is_read (is_read),
+                              INDEX idx_created_at (created_at)
+) CHARSET = utf8mb4;
 
-create table scholarship_tag
-(
-    id             bigint unsigned auto_increment primary key,
-    scholarship_id bigint unsigned not null,
-    tag            varchar(50)     not null,
-    constraint uniq_scholarship_tag unique (scholarship_id, tag),
-    constraint fk_tag_scholarship
-        foreign key (scholarship_id) references scholarship (id)
-            on update cascade on delete cascade
-) charset = utf8mb4;
-
-create index idx_tag on scholarship_tag (tag);
-
-create table notification
-(
-    id          bigint unsigned auto_increment primary key,
-    user_nm     varchar(20) not null,
-    type        enum('SCHOLARSHIP_RESULT', 'DEADLINE_REMINDER', 'NEW_SCHOLARSHIP', 'SCHEDULE') not null,
-    title       varchar(255) not null,
-    message     text not null,
-    related_id  bigint unsigned null,
-    is_read     boolean default false,
-    action_route varchar(255) null,
-    created_at  datetime default CURRENT_TIMESTAMP,
-    updated_at  datetime default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-    index idx_user_nm (user_nm),
-    index idx_type (type),
-    index idx_is_read (is_read),
-    index idx_created_at (created_at)
-) charset = utf8mb4;
-
-create table scholarship_bookmark
-(
-    id             bigint unsigned auto_increment primary key,
-    user_nm        varchar(20) not null,
-    scholarship_id bigint unsigned not null,
-    created_at     datetime default CURRENT_TIMESTAMP,
-    unique key unique_user_scholarship (user_nm, scholarship_id),
-    index idx_user_nm (user_nm),
-    index idx_scholarship_id (scholarship_id),
-    constraint fk_bookmark_scholarship
-        foreign key (scholarship_id) references scholarship (id)
-            on update cascade on delete cascade
-) charset = utf8mb4;
+-- scholarship_bookmark
+CREATE TABLE scholarship_bookmark (
+                                      id             BIGINT UNSIGNED AUTO_INCREMENT           NOT NULL PRIMARY KEY,
+                                      user_nm        VARCHAR(20)                              NOT NULL,
+                                      scholarship_id BIGINT UNSIGNED                          NOT NULL,
+                                      created_at     DATETIME DEFAULT CURRENT_TIMESTAMP       NOT NULL,
+                                      UNIQUE KEY unique_user_scholarship (user_nm, scholarship_id),
+                                      INDEX idx_user_nm (user_nm),
+                                      INDEX idx_scholarship_id (scholarship_id),
+                                      CONSTRAINT fk_bookmark_scholarship
+                                          FOREIGN KEY (scholarship_id) REFERENCES scholarship (id)
+                                              ON UPDATE CASCADE ON DELETE CASCADE
+) CHARSET = utf8mb4;

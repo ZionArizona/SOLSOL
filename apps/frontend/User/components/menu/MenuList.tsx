@@ -3,7 +3,18 @@ import { router } from "expo-router";
 import React from "react";
 import { StyleSheet } from "react-native";
 import { BellIcon, CalendarIcon, FileBoxIcon, HomeIcon, ScholarshipIcon, UserCircleIcon } from "../shared/icons";
+import Svg, { Path } from "react-native-svg";
 import { MenuItem } from "./MenuItem";
+
+// 계좌 아이콘 컴포넌트
+const AccountIcon = ({ size = 24 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V7" stroke="#6B86FF" strokeWidth={2} strokeLinecap="round"/>
+    <Path d="M3 7L12 13L21 7" stroke="#6B86FF" strokeWidth={2} strokeLinecap="round"/>
+    <Path d="M21 7H3V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V7Z" stroke="#6B86FF" strokeWidth={2} strokeLinecap="round"/>
+    <Path d="M7 15H11" stroke="#6B86FF" strokeWidth={1.5} strokeLinecap="round"/>
+  </Svg>
+);
 
 export const MenuList = () => {
   return (
@@ -43,6 +54,12 @@ export const MenuList = () => {
         title="장학금 둘러보기"
         desc="추천/전체 장학금 탐색"
         onPress={() => router.push("/Scholarship/ScholarshipApply")}
+      />
+      <MenuItem
+        icon={<AccountIcon size={24} />}
+        title="내 계좌 보기"
+        desc="계좌 잔액 및 환전 내역 확인"
+        onPress={() => router.push("/Menu/AccountView")}
       />
       {/* 로그인/로그아웃은 프로젝트 상태에 맞게 분기해서 사용 */}
       <MenuItem

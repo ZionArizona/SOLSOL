@@ -41,14 +41,27 @@ export default function ScholarshipManage(){
   const fetchScholarships = async () => {
     try {
       const result = await api.get('/scholarships')
-      if (result.success) {
-        setScholarships(result.data)
-        setFilteredScholarships(result.data)
-        calculateStats(result.data)
+      if (result?.success === true) {
+        const list = Array.isArray(result.data) ? result.data : [];
+        setScholarships(list);
+        setFilteredScholarships(list);
+        calculateStats(list);
+        return; // 정상 종료 (alert 없음)
       }
+
+      const msg =
+        result?.message ||
+        '장학금 목록 요청이 실패했습니다. 잠시 후 다시 시도해주세요.';
+      alert(msg);
+
+      // if (result.success) {
+      //   setScholarships(result.data)
+      //   setFilteredScholarships(result.data)
+      //   calculateStats(result.data)
+      // }
     } catch (error) {
       console.error('Failed to fetch scholarships:', error)
-      alert('장학금 목록을 불러오는데 실패했습니다.')
+      alert('서버와 통신에 실패했습니다. 네트워크 상태를 확인해주세요.');
     } finally {
       setLoading(false)
     }
@@ -116,7 +129,7 @@ export default function ScholarshipManage(){
   }, [searchQuery, selectedCategory, selectedStatus, scholarships])
 
   const handleCreateScholarship = () => {
-    navigate('/admin/scholarships/regist')
+    navigate('/scholarships/regist')
   }
 
   const handleDeleteScholarship = async (id) => {
