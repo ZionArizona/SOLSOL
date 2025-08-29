@@ -1,6 +1,9 @@
-import React, { useMemo } from 'react';
-import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Modal from 'react-native-modal';
+import { DocumentUploadModal } from '../../components/mydocs/DocumentUploadModal';
+import { apiClient } from '../../services/api';
+import { PersonalFileUploadPanel } from './PersonalFileUploadPanel';
 
 type DetailEvent = {
   id: string;
@@ -45,6 +48,10 @@ const notifyToText = (min?: number) => {
 
 const PersonalDetailSchedule: React.FC<Props> = ({ isVisible, event, onClose, onEdit, onDelete }) => {
   const hasEvent = !!event;
+  
+  // 첨부파일 상태
+  const [attachedFiles, setAttachedFiles] = useState<{name: string; uri: string}[]>([]);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
 
   const dateLine = useMemo(() => {
     if (!hasEvent || !event) return '';
@@ -58,7 +65,92 @@ const PersonalDetailSchedule: React.FC<Props> = ({ isVisible, event, onClose, on
 
   const alarmText = useMemo(() => notifyToText(event?.notifyMinutes), [event?.notifyMinutes]);
 
+  const handleDelete = async () => {
+    if (!hasEvent || !event) return;
+
+    Alert.alert(
+      '일정 삭제',
+      '정말로 이 일정을 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        { 
+          text: '삭제', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // 토큰에서 userNm 추출
+              const token = await require('../../utils/tokenManager').default.getAccessToken();
+              let userNm = null;
+              if (token) {
+                try {
+                  const payload = require('../../utils/tokenManager').default.decodeAccessToken(token);
+                  userNm = payload?.userNm || payload?.sub || payload?.userId;
+                } catch (error) {
+                  console.warn('토큰에서 userNm 추출 실패:', error);
+                }
+              }
+
+              const deleteData = {
+                userNm: userNm,
+                scheduleName: event.title.trim()
+              };
+
+              console.log('🗑️ 일정 삭제 API 호출 시작');
+              console.log('📤 전송할 데이터:', JSON.stringify(deleteData, null, 2));
+              console.log('🌐 전체 API URL:', `${apiClient.baseURL}/calendar/delete`);
+
+              // 토큰 헤더 생성
+              const headers: any = {
+                'Content-Type': 'application/json',
+              };
+              if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+              }
+
+              // fetch를 직접 사용하여 text 응답 처리
+              const response = await fetch(`${apiClient.baseURL}/calendar/delete`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(deleteData),
+              });
+
+              console.log('✅ 일정 삭제 API 호출 완료!');
+              console.log('📊 응답 상태:', response.status);
+
+              if (response.ok) {
+                // 응답을 text로 읽기
+                const responseText = await response.text();
+                console.log('📥 응답 텍스트:', responseText);
+
+                if (responseText === "ok") {
+                  console.log('🎉 삭제 성공으로 판정!');
+                  // 삭제 성공 시 모달 닫고 부모 컴포넌트에 삭제된 일정 ID 전달
+                  onClose();
+                  if (onDelete) onDelete(event.id);
+                } else {
+                  console.log('❌ 예상치 못한 응답:', responseText);
+                  Alert.alert('삭제 실패', '일정 삭제에 실패했습니다.');
+                }
+              } else {
+                console.log('❌ HTTP 오류:', response.status, response.statusText);
+                Alert.alert('삭제 실패', `서버 오류가 발생했습니다. (${response.status})`);
+              }
+
+            } catch (error: any) {
+              console.error('❌ 일정 삭제 실패:', error);
+              Alert.alert(
+                '삭제 실패', 
+                error?.message || '일정 삭제에 실패했습니다. 다시 시도해주세요.'
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
+    <>
     <Modal
       isVisible={isVisible}
       onBackdropPress={onClose}
@@ -121,10 +213,10 @@ const PersonalDetailSchedule: React.FC<Props> = ({ isVisible, event, onClose, on
               <Text style={styles.infoVal}>{event?.repeatText ?? '없음'}</Text>
             </View>
 
-            <View style={styles.infoRow}>
+            {/* <View style={styles.infoRow}>
               <Text style={styles.infoKey}>캘린더</Text>
               <Text style={styles.infoVal}>사용자화</Text>
-            </View>
+            </View> */}
           </View>
 
           {/* 메모 */}
@@ -144,15 +236,42 @@ const PersonalDetailSchedule: React.FC<Props> = ({ isVisible, event, onClose, on
             )}
 
             {onDelete && hasEvent && (
-              <TouchableOpacity style={[styles.actionBtn, styles.actionDanger]} onPress={() => onDelete?.(event!.id)}>
+              <TouchableOpacity style={[styles.actionBtn, styles.actionDanger]} onPress={handleDelete}>
                 <Text style={[styles.actionText, styles.actionDangerText]}>삭제</Text>
               </TouchableOpacity>
             )}
           </View>
+
+          {/* 첨부파일 섹션 */}
+          <View style={{ marginTop: 24 }}>
+            <Text style={styles.attachmentTitle}>첨부파일</Text>
+            <View style={styles.fileUploadContainer}>
+              <PersonalFileUploadPanel
+                files={attachedFiles}
+                onAdd={(file) => setAttachedFiles(prev => [...prev, file])}
+                onRemove={(index) => setAttachedFiles(prev => prev.filter((_, i) => i !== index))}
+                onUploadPress={() => setShowDocumentModal(true)}
+              />
+            </View>
+          </View>
         </View>
       </View>
     </Modal>
-  );
+
+    {/* DocumentUploadModal - Modal 밖에 배치 */}
+    <DocumentUploadModal
+      visible={showDocumentModal}
+      onClose={() => setShowDocumentModal(false)}
+      onUpload={(data) => {
+        // 업로드된 파일을 첨부파일 목록에 추가
+        setAttachedFiles(prev => [...prev, {
+          name: data.fileName,
+          uri: data.file.uri || ''
+        }]);
+        setShowDocumentModal(false);
+      }}
+    />
+  </>);
 };
 
 const styles = StyleSheet.create({
@@ -216,6 +335,19 @@ const styles = StyleSheet.create({
   actionPrimaryText: { color: '#4A5BFF' },
   actionDanger: { backgroundColor: '#FFE8E8' },
   actionDangerText: { color: '#D14343' },
+
+  // 첨부파일 스타일
+  attachmentTitle: { fontSize: 18, fontWeight: '800', color: '#111', marginBottom: 10 },
+  fileUploadContainer: {
+    minHeight: 300,
+    maxHeight: 400,
+    width: '100%',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+    padding: 12,
+  },
 });
 
 export default PersonalDetailSchedule;

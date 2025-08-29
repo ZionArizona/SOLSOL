@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 export const SectionBox = ({
   children,
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
-  caption: { color: "#7182A6", fontWeight: "900", fontSize: 12, marginBottom: 8 },
+  caption: { color: "#7182A6", fontWeight: "900", fontSize: 12, marginBottom: 8, marginLeft: 8 },
   empty: {
     height: 120,
     borderRadius: 12,
