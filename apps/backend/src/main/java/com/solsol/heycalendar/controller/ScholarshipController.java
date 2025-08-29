@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.solsol.heycalendar.common.ApiResponse;
 import com.solsol.heycalendar.dto.request.ScholarshipRequest;
 import com.solsol.heycalendar.dto.response.ScholarshipResponse;
+import com.solsol.heycalendar.security.CustomUserPrincipal;
 import com.solsol.heycalendar.service.ScholarshipService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,13 +38,13 @@ public class ScholarshipController {
 
 	@Operation(summary = "사용자 맞춤 장학금 목록 (자동 필터링)")
 	@GetMapping("/filtered")
-	public ResponseEntity<ApiResponse<List<ScholarshipResponse>>> getFilteredScholarships(
+	public ResponseEntity<ApiResponse<List<ScholarshipWithStateResponse>>> getFilteredScholarships(
 			@RequestParam(required = false) String category,
 			@RequestParam(required = false) String status,
-			Authentication authentication) {
+			@AuthenticationPrincipal CustomUserPrincipal principal) {
 		try {
-			String userNm = authentication.getName();
-			List<ScholarshipResponse> scholarships = service.getFilteredScholarshipsForUser(userNm, category, status);
+			String userNm = principal.getUserNm();
+			List<ScholarshipWithStateResponse> scholarships = service.getFilteredScholarshipsForUser(userNm, category, status);
 			return ResponseEntity.ok(new ApiResponse<>(true, "사용자 맞춤 장학금 조회 성공", "OK", scholarships));
 		} catch (Exception e) {
 			return ResponseEntity.internalServerError()
