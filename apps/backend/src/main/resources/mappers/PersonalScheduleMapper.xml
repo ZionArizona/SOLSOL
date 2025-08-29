@@ -11,7 +11,7 @@
         u.userNm,                       <!-- 여기! u.student_no 대신 u.userNm -->
         #{scheduleDate}, #{scheduleName}, #{startTime}, #{endTime}, #{notifyMinutes},
         NOW(), NOW()
-        FROM user u
+        FROM users u
         WHERE u.userNm = #{userNm}
     </insert>
 
@@ -22,7 +22,7 @@
             u.userNm,
             #{date}, #{scheduleName}, #{startTime}, #{endTime}, #{notifyMinutes},
             NOW(), NOW()
-        FROM user u
+        FROM users u
         WHERE u.userNm = #{userNm}
     </insert>
 
@@ -43,6 +43,13 @@
         WHERE p.student_no = #{userNm}
         ORDER BY p.schedule_date ASC, p.start_time ASC, p.id ASC
     </select>
+
+    <!-- 삭제 -->
+    <delete id="deleteByUserNmAndScheduleName">
+        DELETE FROM personalschedule
+        WHERE student_no = #{userNm}
+          AND schedule_name = #{scheduleName}
+    </delete>
 
 
 </mapper>

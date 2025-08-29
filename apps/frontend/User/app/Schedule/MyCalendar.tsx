@@ -6,6 +6,7 @@ import { ScholarshipItemCard } from '../../components/scholarship/ScholarshipIte
 import { SectionBox } from '../../components/scholarship/SectionBox';
 import { useAuth } from '../../contexts/AuthContext';
 import { scholarshipApi } from '../../services/scholarship.api';
+import PersonalDetailSchedule from './PersonalDetailSchedule'; // [ADD]
 import PersonalSchedule from './PersonalSchedule';
 
 interface MyCalendarProps {
@@ -19,6 +20,9 @@ type MyEvent = {
   end: Date;
   allDay?: boolean;
   category?: 'notice' | 'exam' | 'club' | 'mileage';
+  notifyMinutes?: number;          // [ADD] 상세 모달에 보여주기 위함
+  repeatText?: string;             // [ADD] 옵션
+  memo?: string;                   // [ADD] 옵션
 };
 
 type Scholarship = {
@@ -42,7 +46,6 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
     if (onBack) {
       onBack();
     } else {
-      // onBack이 없으면 router로 뒤로가기
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -54,26 +57,36 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 7, 10)); // 2025-08 (month: 0-indexed)
   const [events, setEvents] = useState<MyEvent[]>([]);
   
-  // 모달 상태 관리
+  // 모달 상태 관리 (등록)
   const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // 상세 모달 상태 관리  // [ADD]
+  const [detailVisible, setDetailVisible] = useState(false);      // [ADD]
+  const [detailEvent, setDetailEvent] = useState<MyEvent | null>(null); // [ADD]
   
   // 장학금 관련 상태
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 이전 달로 이동
+  // 이전/다음 달 이동
   const goToPreviousMonth = () => {
     const prevMonth = new Date(currentDate);
     prevMonth.setMonth(prevMonth.getMonth() - 1);
     setCurrentDate(prevMonth);
   };
-
-  // 다음 달로 이동
   const goToNextMonth = () => {
     const nextMonth = new Date(currentDate);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     setCurrentDate(nextMonth);
+  };
+
+  // [ADD] 문자열 날짜/시간을 로컬 Date로 만드는 유틸 (UTC 파싱 이슈 방지)
+  const toLocalDateTime = (dateStr: string, timeStr: string) => {
+    // date: 'YYYY-MM-DD', time: 'HH:mm' 또는 'HH:mm:ss'
+    const [y, m, d] = dateStr.split('-').map((n) => parseInt(n, 10));
+    const [hh, mm] = timeStr.split(':').slice(0, 2).map((n) => parseInt(n, 10));
+    return new Date(y, (m - 1), d, hh, mm, 0, 0);
   };
 
   // 개인 일정 로드
@@ -93,43 +106,39 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
 
       if (!userNm) {
         console.warn('userNm을 찾을 수 없습니다.');
-        setEvents([]); // 빈 배열로 설정
+        setEvents([]);
         return;
       }
 
       console.log('📅 개인 일정 로드 시작, userNm:', userNm);
       
-      // 백엔드에 개인 일정 요청
+      // 백엔드에 개인 일정 요청 (기본 경로: /api + /calendar)
       const response = await require('../../services/api').apiClient.post('/calendar', { userNm });
       
       console.log('📅 개인 일정 로드 성공:', response);
       console.log('📅 받은 응답 전체:', JSON.stringify(response, null, 2));
       
-      // 응답 데이터 구조 확인 및 변환
-      // response 또는 response.data에 schedules가 있을 수 있음
       const responseData = response?.data || response;
       
       if (responseData?.schedules && Array.isArray(responseData.schedules)) {
         console.log(`📅 총 ${responseData.count}개의 일정을 불러왔습니다.`);
         
         const personalEvents: MyEvent[] = responseData.schedules.map((schedule: any) => {
-          // scheduleDate와 startTime/endTime을 조합해서 Date 객체 생성
-          // startTime이 "HH:mm:ss" 형식이므로 초 제거
-          const startTimeFormatted = schedule.startTime.substring(0, 5); // "01:00:00" -> "01:00"
-          const endTimeFormatted = schedule.endTime.substring(0, 5);     // "02:00:00" -> "02:00"
-          
-          const startDateTime = new Date(`${schedule.scheduleDate}T${startTimeFormatted}:00`);
-          const endDateTime = new Date(`${schedule.scheduleDate}T${endTimeFormatted}:00`);
-          
-          console.log(`📅 일정 변환: ${schedule.scheduleName} (${schedule.scheduleDate} ${startTimeFormatted} ~ ${endTimeFormatted})`);
-          
+          // 'HH:mm:ss' → 앞의 HH:mm만 사용해 로컬 Date 생성
+          const startStr = (schedule.startTime || '').substring(0, 5); // "01:00"
+          const endStr   = (schedule.endTime || '').substring(0, 5);   // "02:00"
+
+          const startDateTime = toLocalDateTime(schedule.scheduleDate, startStr); // [CHANGE] 로컬 Date
+          const endDateTime   = toLocalDateTime(schedule.scheduleDate, endStr);   // [CHANGE]
+
           return {
             id: `personal_${schedule.id}`,
             title: schedule.scheduleName,
             start: startDateTime,
             end: endDateTime,
             allDay: false,
-            category: 'notice' // 개인 일정은 notice 카테고리로 설정
+            category: 'notice',
+            notifyMinutes: schedule.notifyMinutes ?? 0, // [ADD] 상세 표시에 사용
           };
         });
         
@@ -146,21 +155,18 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
       
     } catch (error) {
       console.error('❌ 개인 일정 로드 실패:', error);
-      setEvents([]); // 에러 시 빈 배열로 설정
+      setEvents([]);
     }
   };
 
-  // 컴포넌트 마운트 시 개인 일정 로드 (최초 1회만)
+  // 컴포넌트 마운트 시 개인 일정 로드
   React.useEffect(() => {
     loadPersonalSchedules();
-  }, []); // 빈 배열로 변경 - 컴포넌트 마운트 시 한 번만 실행
+  }, []);
   
-  // 월 변경 시 개인 일정 다시 로드 (필요한 경우)
+  // 월 변경 시 다시 로드하고 싶다면 주석 해제
   React.useEffect(() => {
-    // 첫 로드가 아닌 경우에만 실행
-    if (events.length > 0 || currentDate.getTime() !== new Date(2025, 7, 10).getTime()) {
-      // loadPersonalSchedules(); // 필요시 주석 해제
-    }
+    // loadPersonalSchedules();
   }, [currentDate]);
 
   // 장학금 데이터 로드
@@ -168,126 +174,84 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
     loadScholarships();
   }, []);
 
-  // 마감 임박 장학금 필터링 (10일 이내)
   const urgentScholarships = useMemo(() => {
-    console.log('🚨 전체 장학금 수:', scholarships?.length || 0);
-    
-    if (!scholarships || !Array.isArray(scholarships)) {
-      console.log('🚨 장학금 데이터가 없거나 배열이 아님');
-      return [];
-    }
-    
+    if (!scholarships || !Array.isArray(scholarships)) return [];
     const urgent = scholarships.filter(scholarship => {
-      if (!scholarship.recruitmentEndDate) {
-        console.log('🚨 마감일이 없는 장학금:', scholarship.scholarshipName);
-        return false;
-      }
-      
+      if (!scholarship.recruitmentEndDate) return false;
       const end = new Date(scholarship.recruitmentEndDate);
-      if (isNaN(end.getTime())) {
-        console.log('🚨 잘못된 마감일 형식:', scholarship.recruitmentEndDate);
-        return false;
-      }
-      
+      if (isNaN(end.getTime())) return false;
       const today = new Date();
       const diffTime = end.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      console.log(`🚨 ${scholarship.scholarshipName}: D-${diffDays} (${diffDays >= 0 && diffDays <= 10 ? '포함' : '제외'})`);
-      
       return diffDays >= 0 && diffDays <= 10;
     });
-    
-    console.log('🚨 마감 임박 장학금 수:', urgent.length);
     return urgent;
   }, [scholarships]);
   
-  // 모달 열기
+  // 셀 탭 → 등록 모달
   const openScheduleModal = (date: Date) => {
     setSelectedDate(date);
     setScheduleModalVisible(true);
   };
   
-  // 일정 저장
+  // 이벤트 탭 → 상세 모달  // [ADD]
+  const openDetailModal = (e: MyEvent) => {
+    setDetailEvent(e);
+    setDetailVisible(true);
+  };
+
+  // 등록 완료 콜백
   const handleScheduleSave = ({ title, start, end, notifyMinutes }: { title: string; start: Date; end: Date; notifyMinutes: number }) => {
-    console.log('📅 MyCalendar에서 일정 저장:', { title, start, end, notifyMinutes });
-    
-    // 새 일정을 즉시 캘린더에 추가
     const newEvent: MyEvent = {
       id: `personal_${Date.now()}`,
       title,
       start,
       end,
-      allDay: false, // 시간이 지정되므로 allDay는 false
-      category: 'notice' // 개인 일정은 notice 카테고리로 설정
+      allDay: false,
+      category: 'notice',
+      notifyMinutes, // [ADD]
     };
-    
     setEvents(prev => [...prev, newEvent]);
-    console.log('📅 캘린더에 일정 추가됨:', newEvent);
-    
-    // 선택사항: 서버에서 최신 데이터를 다시 불러오려면 아래 주석 해제
-    // setTimeout(() => loadPersonalSchedules(), 1000); // 1초 후 새로고침
+    // 필요하면 서버 재조회
+    // setTimeout(() => loadPersonalSchedules(), 600);
   };
   
-  // 모달 닫기
+  // 등록 모달 닫기
   const handleScheduleClose = () => {
     setScheduleModalVisible(false);
     setSelectedDate(null);
   };
 
-  // 날짜 포맷팅 함수
-  const formatDateRange = (startDate: string, endDate: string) => {
-    if (!startDate || !endDate) return "날짜 정보 없음";
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+  // 상세 액션 (선택 사항)  // [ADD]
+  const handleEdit = (id: string) => {
+    // 예: 수정 플로우로 라우팅하거나 PersonalSchedule 열어서 값 바인딩
+    console.log('edit:', id);
+    setDetailVisible(false);
+  };
+  const handleDelete = async (id: string) => {
+    console.log('MyCalendar - 일정 삭제:', id);
     
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "날짜 정보 오류";
+    // events 배열에서 해당 id의 일정 제거
+    setEvents(prev => prev.filter(event => event.id !== id));
     
-    const startStr = `${start.getMonth() + 1}/${start.getDate()}`;
-    const endStr = `${end.getMonth() + 1}/${end.getDate()}`;
-    return `${startStr} ~ ${endStr}`;
+    // 상세 모달 닫기
+    setDetailVisible(false);
+    
+    console.log('✅ MyCalendar - 일정이 달력에서 제거되었습니다.');
   };
 
-  // 마감일 상태 계산
-  const getDeadlineStatus = (endDate: string) => {
-    if (!endDate) return "날짜 정보 없음";
-    const end = new Date(endDate);
-    if (isNaN(end.getTime())) return "날짜 정보 오류";
-    
-    const today = new Date();
-    const diffTime = end.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return "마감됨";
-    if (diffDays === 0) return "오늘 마감";
-    if (diffDays === 1) return "내일 마감";
-    if (diffDays <= 7) return `${diffDays}일 남음`;
-    return "신청 가능";
-  };
-
-  // 장학금 클릭 핸들러
+  // 장학금
   const handleScholarshipPress = (scholarshipId: number) => {
-    console.log('장학금 상세 보기:', scholarshipId);
     router.push(`/Scholarship/ScholarshipDetail?id=${scholarshipId}`);
   };
-
-  // 장학금 데이터 로드
   const loadScholarships = async () => {
     try {
       setLoading(true);
-
       try {
-        const response = await scholarshipApi.getScholarships({ 
-          page: 0, 
-          size: 20, 
-          status: 'OPEN' 
-        });
-        
+        const response = await scholarshipApi.getScholarships({ page: 0, size: 20, status: 'OPEN' });
         if (response && response.scholarships) {
-          console.log('📚 API에서 받은 장학금:', response.scholarships.length, '개');
           setScholarships(response.scholarships);
         } else {
-          console.log('📚 API 응답이 없음');
           setScholarships([]);
         }
       } catch (apiError) {
@@ -326,28 +290,19 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
 
           <View style={styles.rightWrap}>
             <TouchableOpacity 
-              onPress={() => {
-                console.log('알림 페이지로 이동');
-                router.push('/Notifications/Notifications');
-              }} 
+              onPress={() => { router.push('/Notifications/Notifications'); }} 
               style={styles.iconBtn}
             >
               <Image source={require('../../assets/images/BellIcon.png')} style={styles.icon} />
             </TouchableOpacity>
             <TouchableOpacity 
-              onPress={() => {
-                console.log('홈으로 이동');
-                router.push('/');
-              }} 
+              onPress={() => { router.push('/'); }} 
               style={styles.iconBtn}
             >
               <Image source={require('../../assets/images/HomeIcon.png')} style={styles.icon} />
             </TouchableOpacity>
             <TouchableOpacity 
-              onPress={() => {
-                console.log('메뉴 페이지로 이동');
-                router.push('/Menu/Menu');
-              }} 
+              onPress={() => { router.push('/Menu/Menu'); }} 
               style={styles.iconBtn}
             >
               <Image source={require('../../assets/images/HamburgerButton.png')} style={styles.icon} />
@@ -370,8 +325,7 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
           </TouchableOpacity>
         </View>
 
-
-        {/* 달력 흰색 컨테이너 */}
+        {/* 달력 */}
         <View style={styles.calendarWrap}>
           <Calendar<MyEvent>
             mode="month"
@@ -381,27 +335,27 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
             height={400}
             weekStartsOn={0}
             swipeEnabled
-            // ✅ 겹침/선/여백 튜닝
             headerContainerStyle={styles.calHeader}
             headerContentStyle={styles.calHeaderContent}
-            calendarCellStyle={styles.calCell} // 내부 그리드만 hairline
+            calendarCellStyle={styles.calCell}
             eventCellStyle={() => ({ backgroundColor: 'transparent', borderWidth: 0 })}
             renderEvent={(event, touchableOpacityProps) => {
-            const { key, ...pressableProps } = touchableOpacityProps ?? {};
-            return (
-              <TouchableOpacity
-                {...pressableProps}
-                style={[styles.chip, { backgroundColor: CAT_COLORS[event.category ?? 'notice'] }]}
-              >
-                <Text numberOfLines={1} style={styles.chipText}>{event.title}</Text>
-              </TouchableOpacity>
-            );
-          }}
-          onPressCell={openScheduleModal}
+              const { key, ...pressableProps } = touchableOpacityProps ?? {};
+              return (
+                <TouchableOpacity
+                  {...pressableProps}
+                  style={[styles.chip, { backgroundColor: CAT_COLORS[event.category ?? 'notice'] }]}
+                >
+                  <Text numberOfLines={1} style={styles.chipText}>{event.title}</Text>
+                </TouchableOpacity>
+              );
+            }}
+            onPressCell={openScheduleModal}
+            onPressEvent={openDetailModal}   // [ADD] 이벤트 탭 → 상세
           />
         </View>
 
-        {/* 10일 이내 마감 장학금 섹션 (고정) */}
+        {/* 10일 이내 마감 장학금 섹션 */}
         <View style={styles.sectionContainer}>
           <SectionBox caption="10일 이내 신청 마감하는 장학금">
             <View style={styles.scholarshipScrollContainer}>
@@ -413,16 +367,25 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
                 <ScrollView
                   style={styles.scholarshipScrollView}
                   contentContainerStyle={styles.scholarshipScrollContent}
-                  showsVerticalScrollIndicator={true}
-                  nestedScrollEnabled={true}
+                  showsVerticalScrollIndicator
+                  nestedScrollEnabled
                 >
                   {urgentScholarships.map((scholarship) => (
                     <View key={`urgent-${scholarship.id}`} style={{ marginBottom: 12 }}>
                       <ScholarshipItemCard
                         title={scholarship.scholarshipName}
                         amount={scholarship.amount.toLocaleString()}
-                        period={formatDateRange(scholarship.recruitmentStartDate, scholarship.recruitmentEndDate)}
-                        status={getDeadlineStatus(scholarship.recruitmentEndDate)}
+                        period={`${new Date(scholarship.recruitmentStartDate).toLocaleDateString()} ~ ${new Date(scholarship.recruitmentEndDate).toLocaleDateString()}`}
+                        status={(function() {
+                          const end = new Date(scholarship.recruitmentEndDate);
+                          const today = new Date();
+                          const diffDays = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                          if (diffDays < 0) return '마감됨';
+                          if (diffDays === 0) return '오늘 마감';
+                          if (diffDays === 1) return '내일 마감';
+                          if (diffDays <= 7) return `${diffDays}일 남음`;
+                          return '신청 가능';
+                        })()}
                         onPress={() => handleScholarshipPress(scholarship.id)}
                       />
                     </View>
@@ -438,12 +401,21 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
         </View>
       </ImageBackground>
       
-      {/* PersonalSchedule 모달 */}
+      {/* 등록 모달 */}
       <PersonalSchedule
         isVisible={scheduleModalVisible}
         selectedDate={selectedDate}
         onClose={handleScheduleClose}
         onSave={handleScheduleSave}
+      />
+
+      {/* 상세 모달 */}  {/* [ADD] */}
+      <PersonalDetailSchedule
+        isVisible={detailVisible}
+        event={detailEvent}
+        onClose={() => setDetailVisible(false)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </View>
   );
@@ -473,100 +445,36 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  navButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#8FA1FF',
-  },
+  navButtonText: { fontSize: 18, fontWeight: '600', color: '#8FA1FF' },
 
   calendarWrap: {
     marginHorizontal: 12,
     marginBottom: 16,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',  // 완전 흰색 배경
+    backgroundColor: '#FFFFFF',
     padding: 10,
-    minHeight: 400,  // 최소 높이 설정
+    minHeight: 400,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
   },
 
-  calHeader: {
-    paddingHorizontal: 12,
-    paddingTop: 4,
-    paddingBottom: 0,
-    backgroundColor: 'transparent',
-  },
-  calHeaderContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: 'transparent',
-    // marginBottom 제거로 흰 선 없애기
-  },
-  calCell: {
-    // 내부 그리드 라인만 아주 얇게
-    borderColor: 'rgba(0,0,0,0.08)',
-    borderWidth: StyleSheet.hairlineWidth,
-    backgroundColor: 'transparent',
-  },
+  calHeader: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 0, backgroundColor: 'transparent' },
+  calHeaderContent: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'transparent' },
+  calCell: { borderColor: 'rgba(0,0,0,0.08)', borderWidth: StyleSheet.hairlineWidth, backgroundColor: 'transparent' },
 
-  // 이벤트 칩
-  chip: {
-    borderRadius: 5,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 3,
-    minHeight: 16,
-  },
-  chipText: {
-    fontSize: 8,
-    lineHeight: 12,
-    color: '#111',
-  },
+  chip: { borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2, marginTop: 3, minHeight: 16 },
+  chipText: { fontSize: 8, lineHeight: 12, color: '#111' },
 
-  // 섹션 컨테이너 (고정)
-  sectionContainer: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    flex: 1, // 남은 공간 차지
-  },
-
-  // 장학금 스크롤 컨테이너
-  scholarshipScrollContainer: {
-    height: 250, // 고정 높이로 변경 (원하는 높이로 조절)
-  },
-
-  // 장학금 전용 ScrollView
-  scholarshipScrollView: {
-    flex: 1,
-  },
-  
-  scholarshipScrollContent: {
-    paddingVertical: 8,
-  },
-
-  // 로딩 및 빈 상태
-  loadingContainer: {
-    paddingVertical: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyState: {
-    paddingVertical: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#7C89A6',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
+  sectionContainer: { flex: 1 },
+  scholarshipScrollContainer: { height: 260 },
+  scholarshipScrollView: { flex: 1 },
+  scholarshipScrollContent: { paddingVertical: 8 },
+  loadingContainer: { paddingVertical: 32, alignItems: 'center', justifyContent: 'center' },
+  emptyState: { paddingVertical: 32, alignItems: 'center', justifyContent: 'center' },
+  emptyText: { fontSize: 14, color: '#7C89A6', textAlign: 'center', fontWeight: '600' },
 });
 
 export default MyCalendar;

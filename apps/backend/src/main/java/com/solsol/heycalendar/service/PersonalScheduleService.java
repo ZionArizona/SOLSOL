@@ -37,4 +37,10 @@ public class PersonalScheduleService {
     public List<PersonalScheduleResponse> findByUserNm(String userNm) {
         return mapper.findByUserNm(userNm);
     }
+    // 삭제
+    @Transactional
+    public int deleteByUserNmAndScheduleName(String userNm, String scheduleName) {
+        return mapper.deleteByUserNmAndScheduleName(userNm, scheduleName);
+    }
+
 }

@@ -18,8 +18,9 @@ public interface PersonalScheduleMapper {
     );
 
     int insert(CreatePersonalScheduleRequest req);
-
     // 조회
     List<PersonalScheduleResponse> findByUserNm(@Param("userNm") String userNm);
 
+    // 삭제
+    int deleteByUserNmAndScheduleName( @Param("userNm") String userNm, @Param("scheduleName") String scheduleName);
 }

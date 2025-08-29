@@ -1,8 +1,10 @@
 import DateTimePicker, { AndroidNativeProps, IOSNativeProps } from '@react-native-community/datetimepicker';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, ImageBackground, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Modal from 'react-native-modal';
+import { DocumentUploadModal } from '../../components/mydocs/DocumentUploadModal';
 import { apiClient } from '../../services/api';
+import { PersonalFileUploadPanel } from './PersonalFileUploadPanel';
 
 type SavePayload = {
   title: string;
@@ -24,6 +26,10 @@ const PersonalSchedule: React.FC<Props> = ({ isVisible, selectedDate, onClose, o
   // ── 제목
   const [title, setTitle] = useState('');
 
+  // ── 첨부파일 상태
+  const [attachedFiles, setAttachedFiles] = useState<{name: string; uri: string}[]>([]);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+
   // ── 시간 (시간만 선택)
   const nearestHour = useMemo(() => {
     const d = new Date();
@@ -40,6 +46,24 @@ const PersonalSchedule: React.FC<Props> = ({ isVisible, selectedDate, onClose, o
 
   // ── 알림 시점
   const [notifyMinutes, setNotifyMinutes] = useState<number>(10);
+
+  // 모달이 열릴 때마다 상태 초기화
+  useEffect(() => {
+    if (isVisible) {
+      // 모달이 열릴 때 모든 상태 초기화
+      setTitle('');
+      setAttachedFiles([]);
+      
+      // 시간도 기본값으로 리셋
+      const resetHour = new Date();
+      resetHour.setMinutes(0, 0, 0);
+      resetHour.setHours(resetHour.getHours() + 1);
+      
+      setStartTime(resetHour);
+      setEndTime(new Date(resetHour.getTime() + 60 * 60 * 1000));
+      setNotifyMinutes(10);
+    }
+  }, [isVisible]);
 
   const timeLabel = (d: Date) =>
     `${`${d.getHours()}`.padStart(2, '0')}:${`${d.getMinutes()}`.padStart(2, '0')}`;
@@ -135,6 +159,7 @@ const PersonalSchedule: React.FC<Props> = ({ isVisible, selectedDate, onClose, o
   };
 
   return (
+    <>
     <Modal
       isVisible={isVisible}
       onBackdropPress={onClose}
@@ -208,6 +233,17 @@ const PersonalSchedule: React.FC<Props> = ({ isVisible, selectedDate, onClose, o
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* 첨부파일 */}
+          <Text style={[styles.labelBig, { marginTop: 18 }]}>첨부파일</Text>
+          <View style={styles.fileUploadContainer}>
+            <PersonalFileUploadPanel
+              files={attachedFiles}
+              onAdd={(file) => setAttachedFiles(prev => [...prev, file])}
+              onRemove={(index) => setAttachedFiles(prev => prev.filter((_, i) => i !== index))}
+              onUploadPress={() => setShowDocumentModal(true)}
+            />
+          </View>
         </View>
 
         {/* iOS in-sheet pickers */}
@@ -253,7 +289,21 @@ const PersonalSchedule: React.FC<Props> = ({ isVisible, selectedDate, onClose, o
         )}
       </View>
     </Modal>
-  );
+
+    {/* DocumentUploadModal - Modal 밖에 배치 */}
+    <DocumentUploadModal
+      visible={showDocumentModal}
+      onClose={() => setShowDocumentModal(false)}
+      onUpload={(data) => {
+        // 업로드된 파일을 첨부파일 목록에 추가
+        setAttachedFiles(prev => [...prev, {
+          name: data.fileName,
+          uri: data.file.uri || ''
+        }]);
+        setShowDocumentModal(false);
+      }}
+    />
+  </>);
 };
 
 const styles = StyleSheet.create({
@@ -310,6 +360,18 @@ const styles = StyleSheet.create({
 
   iosPicker: {
     backgroundColor: '#fff',
+  },
+
+  // 첨부파일 컨테이너 - 크기 조절 가능
+  fileUploadContainer: {
+    minHeight: 360,        // 최소 높이 (조절 가능)
+    maxHeight: 500,        // 최대 높이 (조절 가능)  
+    width: '100%',         // 넓이 (조절 가능: 예: 300, '80%' 등)
+    backgroundColor: '#f9f9f9',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+    padding: 12,
   },
 });
 
