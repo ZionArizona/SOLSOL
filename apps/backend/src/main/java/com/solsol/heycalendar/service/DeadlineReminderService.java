@@ -31,13 +31,13 @@ public class DeadlineReminderService {
         log.info("마감임박 알림 체크 시작");
         
         LocalDate today = LocalDate.now();
-        LocalDate threeDaysLater = today.plusDays(3);
+        LocalDate tomorrow = today.plusDays(1);
         
         try {
-            // 3일 후 마감되는 장학금 조회
-            List<Scholarship> upcomingDeadlines = scholarshipMapper.findScholarshipsEndingOn(threeDaysLater);
+            // 내일 마감되는 장학금 조회 (1일 전 알림)
+            List<Scholarship> upcomingDeadlines = scholarshipMapper.findScholarshipsEndingOn(tomorrow);
             
-            log.info("3일 후 마감 장학금 수: {}", upcomingDeadlines.size());
+            log.info("내일 마감 장학금 수: {}", upcomingDeadlines.size());
             
             for (Scholarship scholarship : upcomingDeadlines) {
                 // 해당 장학금을 찜한 사용자들에게 알림 전송
@@ -62,12 +62,12 @@ public class DeadlineReminderService {
             log.info("장학금 '{}' - 찜한 사용자 수: {}", scholarship.getScholarshipName(), bookmarks.size());
             
             for (ScholarshipBookmark bookmark : bookmarks) {
-                // 각 사용자에게 마감임박 알림 전송 (3일 전)
+                // 각 사용자에게 마감임박 알림 전송 (1일 전)
                 notificationService.createDeadlineReminderNotification(
                     bookmark.getUserNm(),
                     scholarship.getId(),
                     scholarship.getScholarshipName(),
-                    3
+                    1
                 );
             }
             

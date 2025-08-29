@@ -166,7 +166,8 @@ export default function ScholarshipCreate(){
       
       if (result) {
         alert('장학금이 성공적으로 등록되었습니다.')
-        navigate('/admin/scholarships')
+        // navigate 대신 window.location을 사용하여 강제 리다이렉트
+        window.location.href = '/admin/scholarships'
       }
     } catch (error) {
       console.error('Failed to create scholarship:', error)
