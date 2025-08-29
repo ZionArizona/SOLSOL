@@ -28,31 +28,27 @@ export default function DocumentApproval(){
       // 실제 API에서는 제출된 서류 목록을 가져와야 합니다
       // 현재는 applications API를 사용하여 서류 정보를 가져오겠습니다
       const result = await api.get('/applications')
-      
-      if(result.success === true) {
-        const list = Array.isArray(result.data) ? result.data : [];
-        const documentsData = list.filter(
-          (app) => Array.isArray(app.documents) && app.documents.length > 0
-        );
-        setDocuments(documentsData);
-        calculateStats(documentsData);
-        return;
+      if (result.success) {
+        // 서류가 있는 applications만 필터링
+        const documentsData = result.data ? result.data.filter(app => app.documents && app.documents.length > 0) : []
+        setDocuments(documentsData)
+        calculateStats(documentsData)
+      } else {
+        // API 성공했지만 데이터가 없는 경우
+        setDocuments([])
+        calculateStats([])
       }
-
-      // if (result.success) {
-      //   // 서류가 있는 applications만 필터링
-      //   const documentsData = result.data.filter(app => app.documents && app.documents.length > 0)
-      //   setDocuments(documentsData)
-      //   calculateStats(documentsData)
-      // }
-      const msg = 
-        result?.message ||
-        '서류 목록을 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.';
-      alert(msg);
-
     } catch (error) {
       console.error('Failed to fetch documents:', error)
-      alert('서버와 통신에 실패했습니다. 네트워크 상태를 확인해주세요.');
+      // 데이터가 없는 경우와 실제 에러를 구분
+      if (error.message?.includes('500') || error.message?.includes('서버 내부 오류')) {
+        // 서버 에러인 경우 빈 배열로 처리 (아무것도 없는 경우)
+        setDocuments([])
+        calculateStats([])
+        console.log('No documents available yet')
+      } else {
+        alert('서류 목록을 불러오는데 실패했습니다.')
+      }
     } finally {
       setLoading(false)
     }

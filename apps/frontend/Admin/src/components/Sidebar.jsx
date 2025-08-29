@@ -17,19 +17,19 @@ export default function Sidebar(){
         </Link>
         <Link to="/submissions" style={{textDecoration: 'none'}}>
           <div className={`side-item ${isActive('/submissions') ? 'active' : ''}`}>
-            <span className="side-dot"/> 장학금 신청 관리
+            <span className="side-dot"/> 장학금 신청 승인
           </div>
         </Link>
         <Link to="/document-approval" style={{textDecoration: 'none'}}>
           <div className={`side-item ${isActive('/document-approval') ? 'active' : ''}`}>
-            <span className="side-dot"/> 서류 검토 및 마일리지
+            <span className="side-dot"/> 마일리지 지급
           </div>
         </Link>
-        {/* <Link to="/notices" style={{textDecoration: 'none'}}>
-          <div className={`side-item ${isActive('/notices') ? 'active' : ''}`}>
-            <span className="side-dot"/> 공지사항 관리
+        <Link to="/exchange" style={{textDecoration: 'none'}}>
+          <div className={`side-item ${isActive('/exchange') ? 'active' : ''}`}>
+            <span className="side-dot"/> 마일리지 환전 관리
           </div>
-        </Link> */}
+        </Link>
       </div>
     </aside>
   )

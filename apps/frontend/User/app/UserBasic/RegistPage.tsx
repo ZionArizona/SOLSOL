@@ -51,10 +51,36 @@ export default function RegistPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showUnivDropdown, setShowUnivDropdown] = useState(false);
   const [showDeptDropdown, setShowDeptDropdown] = useState(false);
+  const [emailError, setEmailError] = useState('');
+
+  // 이메일 형식 검증 함수 - 백엔드와 동일한 regex 패턴 사용
+  const isValidEmail = (email: string): boolean => {
+    if (!email || email.trim() === '') {
+      return false;
+    }
+    // 신한은행 API가 요구하는 이메일 형식과 동일한 패턴
+    return /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email);
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    // 실시간 이메일 검증
+    if (text.trim() && !isValidEmail(text)) {
+      setEmailError('유효한 이메일 형식을 입력해주세요');
+    } else {
+      setEmailError('');
+    }
+  };
 
     const handleRegister = async () => {
     if ( !name.trim() || !email.trim() || !pw.trim() || univValue === null || deptValue === null || !studentId.trim() ) {
       Alert.alert('입력 필요', '모두 입력해 주세요.');
+      return;
+    }
+
+    // 이메일 형식 검증
+    if (!isValidEmail(email)) {
+      Alert.alert('이메일 형식 오류', '유효한 이메일 형식을 입력해주세요.\n예: example@domain.com');
       return;
     }
 
@@ -235,15 +261,24 @@ export default function RegistPage() {
                 onChangeText={setName}
               />
 
-              <TextInput
-                style={[styles.inputBox, { marginTop: 12 }]}
-                placeholder="이메일 *"
-                placeholderTextColor="#888"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
+              <View>
+                <TextInput
+                  style={[
+                    styles.inputBox, 
+                    { marginTop: 12 },
+                    emailError ? styles.inputError : {}
+                  ]}
+                  placeholder="이메일 *"
+                  placeholderTextColor="#888"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={handleEmailChange}
+                />
+                {emailError ? (
+                  <Text style={styles.errorText}>{emailError}</Text>
+                ) : null}
+              </View>
 
               <TextInput
                 style={[styles.inputBox, { marginTop: 12 }]}
@@ -498,6 +533,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.9)',
     fontSize: 14,
     color: '#111',
+  },
+  inputError: {
+    borderColor: '#FF6B6B',
+    borderWidth: 2,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 
   /* 동의서 박스 */

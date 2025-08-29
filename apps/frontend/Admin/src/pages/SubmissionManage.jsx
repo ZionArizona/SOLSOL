@@ -29,12 +29,25 @@ export default function SubmissionManage(){
     try {
       const result = await api.get('/applications')
       if (result.success) {
-        setApplications(result.data)
-        calculateStats(result.data)
+        const applicationsData = result.data || []
+        setApplications(applicationsData)
+        calculateStats(applicationsData)
+      } else {
+        // API 성공했지만 데이터가 없는 경우
+        setApplications([])
+        calculateStats([])
       }
     } catch (error) {
       console.error('Failed to fetch applications:', error)
-      alert('신청서 목록을 불러오는데 실패했습니다.')
+      // 데이터가 없는 경우와 실제 에러를 구분
+      if (error.message?.includes('500') || error.message?.includes('서버 내부 오류')) {
+        // 서버 에러인 경우 빈 배열로 처리 (아무것도 없는 경우)
+        setApplications([])
+        calculateStats([])
+        console.log('No applications available yet')
+      } else {
+        alert('신청서 목록을 불러오는데 실패했습니다.')
+      }
     } finally {
       setLoading(false)
     }

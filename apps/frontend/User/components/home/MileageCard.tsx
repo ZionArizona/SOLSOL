@@ -16,9 +16,18 @@ export const MileageCard = ({ label, points, onPressScholar }: Props) => {
     <View style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
-        <TouchableOpacity activeOpacity={0.9} style={styles.smallBtn} onPress={onPressScholar}>
-          <Text style={styles.smallBtnText}>장학금 보러가기</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity activeOpacity={0.9} style={styles.smallBtn} onPress={onPressScholar}>
+            <Text style={styles.smallBtnText}>장학금 보러가기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            style={[styles.smallBtn, styles.accountBtn]} 
+            onPress={() => router.push("/Menu/AccountView")}
+          >
+            <Text style={[styles.smallBtnText, styles.accountBtnText]}>내 계좌 보러가기</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={styles.pointText}>
@@ -63,8 +72,9 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 2,
   },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  label: { color: colors.muted, fontWeight: "700" },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  label: { color: colors.muted, fontWeight: "700", flex: 1 },
+  buttonRow: { flexDirection: "column", gap: 6 },
   pointText: { marginTop: 6, fontSize: 26, fontWeight: "900", color: colors.title },
   smallBtn: {
     backgroundColor: "#EEF3FF",
@@ -72,6 +82,12 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 10,
   },
+  accountBtn: {
+    backgroundColor: "#F0F9FF",
+    borderWidth: 1,
+    borderColor: "#38BDF8",
+  },
   smallBtnText: { color: colors.primary, fontWeight: "800", fontSize: 12 },
+  accountBtnText: { color: "#0284C7" },
   row: { marginTop: 14, flexDirection: "row", justifyContent: "space-between" },
 });
