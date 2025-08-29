@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Department Domain Entity
+ * department Domain Entity
  * 
  * Represents a department within a college and university.
  */
@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Department {
     /**
-     * Department identifier (Primary Key)
+     * department identifier (Primary Key)
      */
     private String deptNm;
     
@@ -31,7 +31,7 @@ public class Department {
     private String univNm;
     
     /**
-     * Department display name
+     * department display name
      */
     private String name;
 }

@@ -1,4 +1,4 @@
-create table Application
+create table application
 (
     userNm        bigint                                   not null,
     scholarshipNm bigint                                   not null,
@@ -8,20 +8,20 @@ create table Application
     primary key (userNm, scholarshipNm)
 );
 
-create table ApplicationDocument
+create table applicationdocument
 (
-    applicationDocumentNm bigint                              not null,
-    userNm                bigint                              not null,
-    scholarshipNm         bigint                              not null,
-    file_url              varchar(500)                        null,
+    applicationDocumentNm bigint auto_increment            not null,
+    userNm                bigint                           not null,
+    scholarshipNm         bigint                           not null,
+    file_url              varchar(500)                     null,
     uploaded_at           timestamp default CURRENT_TIMESTAMP null,
-    original_file_name    varchar(255)                        null,
-    file_size             bigint                              null,
-    content_type          varchar(100)                        null,
+    original_file_name    varchar(255)                     null,
+    file_size             bigint                           null,
+    content_type          varchar(100)                     null,
     primary key (applicationDocumentNm, userNm, scholarshipNm)
 );
 
-create table College
+create table college
 (
     collegeNm bigint       not null,
     univNm    bigint       not null,
@@ -29,7 +29,7 @@ create table College
     primary key (collegeNm, univNm)
 );
 
-create table Department
+create table department
 (
     deptNm    bigint       not null,
     collegeNm bigint       not null,
@@ -40,19 +40,17 @@ create table Department
         foreign key (collegeNm) references college (collegeNm)
 );
 
-create table Document
+create table document
 (
-    DocumentNm    bigint       not null
-        primary key,
+    DocumentNm    bigint       not null primary key,
     scholarshipNm bigint       not null,
     name          varchar(255) null,
     description   text         null
 );
 
-create table Eligibility
+create table eligibility
 (
-    eligibilityNm bigint                            not null
-        primary key,
+    eligibilityNm bigint                            not null primary key,
     scholarshipNm bigint                            not null,
     field         enum ('gpa', 'grade', 'state')    null,
     operator      enum ('>=', '<=', '==', '>', '<') null,
@@ -60,7 +58,7 @@ create table Eligibility
     content       text                              null
 );
 
-create table Exchange
+create table exchange
 (
     exchangeNm   bigint                                   not null,
     userNm       bigint                                   not null,
@@ -71,18 +69,17 @@ create table Exchange
     primary key (exchangeNm, userNm)
 );
 
-create table Mileage
+create table mileage
 (
-    `Key`  bigint not null,
+    `Key`  bigint auto_increment not null,
     userNm bigint not null,
     amount int    null,
     primary key (`Key`, userNm)
 );
 
-create table Mybox
+create table mybox
 (
-    id              bigint auto_increment
-        primary key,
+    id              bigint auto_increment primary key,
     userNm          varchar(20)                        not null,
     object_key_enc  varbinary(512)                     null,
     file_name_enc   varbinary(512)                     null,
@@ -93,10 +90,9 @@ create table Mybox
     updated_at      datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP
 );
 
-create table Mybox_audit
+create table mybox_audit
 (
-    id              bigint auto_increment
-        primary key,
+    id              bigint auto_increment primary key,
     mybox_id        bigint                                           not null,
     actor_userNm    varchar(20)                                      null,
     action          enum ('CREATE', 'DOWNLOAD_URL_ISSUED', 'DELETE') null,
@@ -112,18 +108,16 @@ create table Mybox_audit
     created_at      datetime default CURRENT_TIMESTAMP               null
 );
 
-create table University
+create table university
 (
-    univNm       bigint       not null
-        primary key,
+    univNm       bigint       not null primary key,
     univName     varchar(255) null,
     mileageRatio double       null
 );
 
-create table User
+create table users
 (
-    userNm      varchar(20)                                                    not null
-        primary key,
+    userNm      varchar(20)                                                    not null primary key,
     userMileage int                                                            null,
     accountNm   varchar(100)                                                   null,
     userId      varchar(100)                                                   null,
@@ -145,8 +139,7 @@ create table refresh_token
 (
     userNm      varchar(20)          not null,
     userId      varchar(100)         not null,
-    token       varchar(255)         not null
-        primary key,
+    token       varchar(255)         not null primary key,
     issuedAt    datetime             not null,
     expiresAt   datetime             not null,
     revoked     tinyint(1) default 0 null,
@@ -156,22 +149,14 @@ create table refresh_token
     lastUsedAt  datetime             null
 );
 
-create index idx_expiresAt
-    on refresh_token (expiresAt);
-
-create index idx_revoked
-    on refresh_token (revoked);
-
-create index idx_userId
-    on refresh_token (userId);
-
-create index idx_userNm
-    on refresh_token (userNm);
+create index idx_expiresAt on refresh_token (expiresAt);
+create index idx_revoked on refresh_token (revoked);
+create index idx_userId on refresh_token (userId);
+create index idx_userNm on refresh_token (userNm);
 
 create table scholarship
 (
-    id                       bigint unsigned auto_increment
-        primary key,
+    id                       bigint unsigned auto_increment primary key,
     scholarship_name         varchar(255)                                                             not null,
     description              text                                                                     null,
     type                     enum ('ACADEMIC', 'FINANCIAL_AID', 'ACTIVITY', 'OTHER')                  not null,
@@ -198,22 +183,17 @@ create table scholarship
     consultation_hours       varchar(255)                                                             null,
     created_by               varchar(100)                                                             null,
     created_at               datetime                                       default CURRENT_TIMESTAMP not null,
-    updated_at               datetime                                       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP
+    updated_at               datetime                                       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    required_documents       json                                                                     null comment '필수'
 );
 
-create index idx_scholarship_dates
-    on scholarship (recruitment_start_date, recruitment_end_date);
-
-create index idx_scholarship_status
-    on scholarship (recruitment_status);
-
-create index idx_type_category
-    on scholarship (type, category);
+create index idx_scholarship_dates on scholarship (recruitment_start_date, recruitment_end_date);
+create index idx_scholarship_status on scholarship (recruitment_status);
+create index idx_type_category on scholarship (type, category);
 
 create table scholarship_criteria
 (
-    id             bigint unsigned auto_increment
-        primary key,
+    id             bigint unsigned auto_increment primary key,
     scholarship_id bigint unsigned                    not null,
     name           varchar(255)                       not null,
     std_point      decimal(6, 2)                      null,
@@ -222,16 +202,13 @@ create table scholarship_criteria
     constraint fk_criteria_scholarship
         foreign key (scholarship_id) references scholarship (id)
             on update cascade on delete cascade
-)
-    charset = utf8mb4;
+) charset = utf8mb4;
 
-create index idx_criteria_scholarship
-    on scholarship_criteria (scholarship_id);
+create index idx_criteria_scholarship on scholarship_criteria (scholarship_id);
 
 create table scholarship_notice
 (
-    id             bigint unsigned auto_increment
-        primary key,
+    id             bigint unsigned auto_increment primary key,
     scholarship_id bigint unsigned                    not null,
     title          varchar(255)                       not null,
     content        text                               not null,
@@ -240,72 +217,51 @@ create table scholarship_notice
     constraint fk_notice_scholarship
         foreign key (scholarship_id) references scholarship (id)
             on update cascade on delete cascade
-)
-    charset = utf8mb4;
+) charset = utf8mb4;
 
-create index idx_notice_scholarship
-    on scholarship_notice (scholarship_id);
+create index idx_notice_scholarship on scholarship_notice (scholarship_id);
 
 create table scholarship_tag
 (
-    id             bigint unsigned auto_increment
-        primary key,
+    id             bigint unsigned auto_increment primary key,
     scholarship_id bigint unsigned not null,
     tag            varchar(50)     not null,
-    constraint uniq_scholarship_tag
-        unique (scholarship_id, tag),
+    constraint uniq_scholarship_tag unique (scholarship_id, tag),
     constraint fk_tag_scholarship
         foreign key (scholarship_id) references scholarship (id)
             on update cascade on delete cascade
-)
-    charset = utf8mb4;
+) charset = utf8mb4;
 
-create index idx_tag
-    on scholarship_tag (tag);
+create index idx_tag on scholarship_tag (tag);
 
--- 알림 테이블 생성
-CREATE TABLE notification (
-                              id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                              user_nm VARCHAR(20) NOT NULL,
-                              type ENUM('SCHOLARSHIP_RESULT', 'DEADLINE_REMINDER', 'NEW_SCHOLARSHIP', 'SCHEDULE') NOT NULL,
-                              title VARCHAR(255) NOT NULL,
-                              message TEXT NOT NULL,
-                              related_id BIGINT UNSIGNED NULL, -- scholarship_id 또는 기타 관련 ID
-                              is_read BOOLEAN DEFAULT FALSE,
-                              action_route VARCHAR(255) NULL,
-                              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                              INDEX idx_user_nm (user_nm),
-                              INDEX idx_type (type),
-                              INDEX idx_is_read (is_read),
-                              INDEX idx_created_at (created_at)
-) CHARSET = utf8mb4;
+create table notification
+(
+    id          bigint unsigned auto_increment primary key,
+    user_nm     varchar(20) not null,
+    type        enum('SCHOLARSHIP_RESULT', 'DEADLINE_REMINDER', 'NEW_SCHOLARSHIP', 'SCHEDULE') not null,
+    title       varchar(255) not null,
+    message     text not null,
+    related_id  bigint unsigned null,
+    is_read     boolean default false,
+    action_route varchar(255) null,
+    created_at  datetime default CURRENT_TIMESTAMP,
+    updated_at  datetime default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+    index idx_user_nm (user_nm),
+    index idx_type (type),
+    index idx_is_read (is_read),
+    index idx_created_at (created_at)
+) charset = utf8mb4;
 
--- 장학금 찜하기 테이블 생성
-CREATE TABLE scholarship_bookmark (
-                                      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                                      user_nm VARCHAR(20) NOT NULL,
-                                      scholarship_id BIGINT UNSIGNED NOT NULL,
-                                      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                                      UNIQUE KEY unique_user_scholarship (user_nm, scholarship_id),
-                                      INDEX idx_user_nm (user_nm),
-                                      INDEX idx_scholarship_id (scholarship_id),
-                                      CONSTRAINT fk_bookmark_scholarship
-                                          FOREIGN KEY (scholarship_id) REFERENCES scholarship (id)
-                                              ON UPDATE CASCADE ON DELETE CASCADE
-) CHARSET = utf8mb4;-
-
-ALTER TABLE applicationDocument
-  ADD COLUMN original_file_name varchar(255),
-  ADD COLUMN file_size bigint,
-  ADD COLUMN content_type varchar(100);
-
-ALTER TABLE scholarship
-    ADD COLUMN required_documents JSON NULL COMMENT '필수';
-
-ALTER TABLE applicationDocument
-    MODIFY COLUMN applicationDocumentNm bigint NOT NULL
-    AUTO_INCREMENT;
-
-ALTER TABLE mileage
-    MODIFY COLUMN `Key` bigint NOT NULL AUTO_INCREMENT;
+create table scholarship_bookmark
+(
+    id             bigint unsigned auto_increment primary key,
+    user_nm        varchar(20) not null,
+    scholarship_id bigint unsigned not null,
+    created_at     datetime default CURRENT_TIMESTAMP,
+    unique key unique_user_scholarship (user_nm, scholarship_id),
+    index idx_user_nm (user_nm),
+    index idx_scholarship_id (scholarship_id),
+    constraint fk_bookmark_scholarship
+        foreign key (scholarship_id) references scholarship (id)
+            on update cascade on delete cascade
+) charset = utf8mb4;

@@ -6,20 +6,20 @@
 
     <select id="findUniversityName" parameterType="long" resultType="string">
         SELECT univName
-        FROM University
+        FROM university
         WHERE univNm = #{univNm}
     </select>
 
     <select id="findCollegeName" resultType="string">
         SELECT collegeNm
-        FROM College
+        FROM college
         WHERE collegeNm = #{collegeNm}
         AND univNm = #{univNm}
     </select>
 
     <select id="findDepartmentName" resultType="string">
         SELECT deptNm
-        FROM Department
+        FROM department
         WHERE deptNm = #{deptNm}
         AND collegeNm = #{collegeNm}
         AND univNm = #{univNm}

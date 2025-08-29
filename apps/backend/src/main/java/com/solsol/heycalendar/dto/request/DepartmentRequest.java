@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * Department Request DTO
+ * department Request DTO
  * 
  * Used for creating and updating department information.
  */
@@ -19,11 +19,11 @@ import jakarta.validation.constraints.Size;
 @AllArgsConstructor
 public class DepartmentRequest {
     /**
-     * Department identifier
+     * department identifier
      * Required for creation, used as primary key
      */
-    @NotBlank(message = "Department ID cannot be blank")
-    @Size(max = 50, message = "Department ID cannot exceed 50 characters")
+    @NotBlank(message = "department ID cannot be blank")
+    @Size(max = 50, message = "=department ID cannot exceed 50 characters")
     private String deptNm;
     
     /**
@@ -39,9 +39,9 @@ public class DepartmentRequest {
     private String univNm;
     
     /**
-     * Department display name
+     * department display name
      */
-    @NotBlank(message = "Department name cannot be blank")
-    @Size(max = 200, message = "Department name cannot exceed 200 characters")
+    @NotBlank(message = "department name cannot be blank")
+    @Size(max = 200, message = "department name cannot exceed 200 characters")
     private String name;
 }

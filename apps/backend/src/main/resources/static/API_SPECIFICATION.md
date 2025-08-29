@@ -750,7 +750,7 @@ Authorization: Bearer {access_token}
 ```json
 {
   "success": true,
-  "message": "Document attached successfully.",
+  "message": "document attached successfully.",
   "code": "OK",
   "data": {
     "documentNm": 1,
