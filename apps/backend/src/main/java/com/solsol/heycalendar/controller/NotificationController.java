@@ -28,7 +28,9 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<Notification>>> getNotifications(Authentication authentication) {
         try {
-            String userNm = authentication.getName();
+            com.solsol.heycalendar.security.CustomUserPrincipal principal = 
+                (com.solsol.heycalendar.security.CustomUserPrincipal) authentication.getPrincipal();
+            String userNm = principal.getUserNm();
             List<Notification> notifications = notificationService.getUserNotifications(userNm);
             return ResponseEntity.ok(ApiResponse.success("알림 조회 성공", notifications));
         } catch (Exception e) {
@@ -46,7 +48,9 @@ public class NotificationController {
             @PathVariable NotificationType type,
             Authentication authentication) {
         try {
-            String userNm = authentication.getName();
+            com.solsol.heycalendar.security.CustomUserPrincipal principal = 
+                (com.solsol.heycalendar.security.CustomUserPrincipal) authentication.getPrincipal();
+            String userNm = principal.getUserNm();
             List<Notification> notifications = notificationService.getUserNotificationsByType(userNm, type);
             return ResponseEntity.ok(ApiResponse.success("타입별 알림 조회 성공", notifications));
         } catch (Exception e) {
@@ -62,7 +66,9 @@ public class NotificationController {
     @GetMapping("/unread")
     public ResponseEntity<ApiResponse<List<Notification>>> getUnreadNotifications(Authentication authentication) {
         try {
-            String userNm = authentication.getName();
+            com.solsol.heycalendar.security.CustomUserPrincipal principal = 
+                (com.solsol.heycalendar.security.CustomUserPrincipal) authentication.getPrincipal();
+            String userNm = principal.getUserNm();
             List<Notification> notifications = notificationService.getUnreadNotifications(userNm);
             return ResponseEntity.ok(ApiResponse.success("읽지 않은 알림 조회 성공", notifications));
         } catch (Exception e) {
@@ -78,7 +84,9 @@ public class NotificationController {
     @GetMapping("/unread/count")
     public ResponseEntity<ApiResponse<Integer>> getUnreadCount(Authentication authentication) {
         try {
-            String userNm = authentication.getName();
+            com.solsol.heycalendar.security.CustomUserPrincipal principal = 
+                (com.solsol.heycalendar.security.CustomUserPrincipal) authentication.getPrincipal();
+            String userNm = principal.getUserNm();
             int count = notificationService.getUnreadCount(userNm);
             return ResponseEntity.ok(ApiResponse.success("읽지 않은 알림 개수 조회 성공", count));
         } catch (Exception e) {
@@ -111,7 +119,9 @@ public class NotificationController {
     @PutMapping("/read-all")
     public ResponseEntity<ApiResponse<String>> markAllAsRead(Authentication authentication) {
         try {
-            String userNm = authentication.getName();
+            com.solsol.heycalendar.security.CustomUserPrincipal principal = 
+                (com.solsol.heycalendar.security.CustomUserPrincipal) authentication.getPrincipal();
+            String userNm = principal.getUserNm();
             notificationService.markAllAsRead(userNm);
             return ResponseEntity.ok(ApiResponse.success("모든 알림을 읽음 처리했습니다.", "SUCCESS"));
         } catch (Exception e) {
