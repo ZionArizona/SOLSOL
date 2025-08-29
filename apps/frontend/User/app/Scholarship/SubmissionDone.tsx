@@ -8,6 +8,7 @@ import { ConfirmInfoTable } from "../../components/scholarship/ConfirmInfoTable"
 import { PrimaryButton } from "../../components/scholarship/PrimaryButton";
 import Svg, { Circle, Path } from "react-native-svg";
 import { scholarshipApi, Scholarship } from "../../services/scholarship.api";
+import { responsiveStyles, deviceInfo } from "../../styles/responsive";
 
 export default function SubmissionDone() {
   const { scholarshipId } = useLocalSearchParams<{ scholarshipId?: string }>();
@@ -40,19 +41,19 @@ export default function SubmissionDone() {
 
   if (loading) {
     return (
-      <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+      <ImageBackground source={BG} style={responsiveStyles.backgroundWrapper} resizeMode="cover">
         <StatusBar barStyle="dark-content" />
-        <View style={[{ justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+        <View style={responsiveStyles.centeredWrapper}>
           <ActivityIndicator size="large" color="#6B86FF" />
         </View>
       </ImageBackground>
     );
   }
   return (
-    <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+    <ImageBackground source={BG} style={responsiveStyles.backgroundWrapper} resizeMode="cover">
       <StatusBar barStyle="dark-content" />
-      <ScrollView contentContainerStyle={{ alignItems: "center", paddingBottom: 24 }}>
-        <View style={styles.phone}>
+      <ScrollView contentContainerStyle={responsiveStyles.scrollContainer}>
+        <View style={deviceInfo.isTablet ? responsiveStyles.cardContainer : responsiveStyles.container}>
           <TopBar title="장학금 신청" />
 
           {/* 메인 그라데이션 카드 */}
@@ -64,12 +65,16 @@ export default function SubmissionDone() {
           >
             {/* 체크 아이콘 */}
             <View style={styles.checkWrap}>
-              <Svg width={64} height={64} viewBox="0 0 64 64">
+              <Svg 
+                width={deviceInfo.isTablet ? 80 : 64} 
+                height={deviceInfo.isTablet ? 80 : 64} 
+                viewBox="0 0 64 64"
+              >
                 <Circle cx="32" cy="32" r="32" fill="#2AC680" />
                 <Path
                   d="M20 33.5l7.2 7.2L44 23.9"
                   stroke="#fff"
-                  strokeWidth={5}
+                  strokeWidth={deviceInfo.isTablet ? 6 : 5}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -94,11 +99,7 @@ export default function SubmissionDone() {
             <PrimaryButton
               label="확인"
               onPress={() => {
-                if (scholarshipId) {
-                  router.push(`/Scholarship/ScholarshipDetail?id=${scholarshipId}`);
-                } else {
-                  router.back();
-                }
+                router.push('/MyScholarship/MyScholarship');
               }}
               style={{ marginTop: 16, minWidth: 200, paddingHorizontal: 40 }}
             />
@@ -110,34 +111,45 @@ export default function SubmissionDone() {
 }
 
 const styles = StyleSheet.create({
-  phone: { width: 360, paddingVertical: 8 },
   bigCard: {
-    marginHorizontal: 12,
+    marginHorizontal: deviceInfo.isTablet ? 20 : 12,
     marginTop: 8,
-    borderRadius: 18,
-    paddingVertical: 28,
-    paddingHorizontal: 16,
+    borderRadius: deviceInfo.isTablet ? 24 : 18,
+    paddingVertical: deviceInfo.isTablet ? 40 : 28,
+    paddingHorizontal: deviceInfo.isTablet ? 24 : 16,
     alignItems: "center",
     shadowColor: "#A8B8FF",
     shadowOpacity: 0.25,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: deviceInfo.isTablet ? 18 : 14,
+    shadowOffset: { width: 0, height: deviceInfo.isTablet ? 12 : 8 },
     elevation: 3,
   },
   checkWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
-    marginBottom: 12,
+    width: deviceInfo.isTablet ? 120 : 96,
+    height: deviceInfo.isTablet ? 120 : 96,
+    borderRadius: deviceInfo.isTablet ? 30 : 24,
+    marginBottom: deviceInfo.isTablet ? 16 : 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.8)",
     shadowColor: "#C6D3FF",
     shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: deviceInfo.isTablet ? 16 : 12,
+    shadowOffset: { width: 0, height: deviceInfo.isTablet ? 8 : 6 },
     elevation: 2,
   },
-  bigTitle: { fontSize: 20, fontWeight: "900", color: "#1F2A44", marginTop: 2 },
-  subText: { textAlign: "center", color: "#7A88A6", fontWeight: "700", marginTop: 6, lineHeight: 20 },
+  bigTitle: { 
+    fontSize: deviceInfo.isTablet ? 24 : 20, 
+    fontWeight: "900", 
+    color: "#1F2A44", 
+    marginTop: 2 
+  },
+  subText: { 
+    textAlign: "center", 
+    color: "#7A88A6", 
+    fontWeight: "700", 
+    marginTop: 6, 
+    lineHeight: deviceInfo.isTablet ? 24 : 20,
+    fontSize: deviceInfo.isTablet ? 16 : 14,
+  },
 });

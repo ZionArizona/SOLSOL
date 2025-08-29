@@ -34,10 +34,6 @@ export const ScholarshipProgressCard = ({
         ))}
       </View>
 
-      {/* 상태 메세지 */}
-      {scholarship.status === "합격" && (
-        <Text style={styles.success}>🎉 선발 완료! 장학금은 다음 학기 등록금에서 자동 차감됩니다.</Text>
-      )}
       </LinearGradient>
     </TouchableOpacity>
   );

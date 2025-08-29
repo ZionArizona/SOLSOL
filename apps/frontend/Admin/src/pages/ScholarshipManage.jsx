@@ -22,6 +22,7 @@ export default function ScholarshipManage(){
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('전체')
   const [selectedStatus, setSelectedStatus] = useState('전체')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 사이드바 상태
   const navigate = useNavigate()
 
   const getScholarshipTypeLabel = (type) => {
@@ -216,12 +217,20 @@ export default function ScholarshipManage(){
     }
   }
 
+  // 사이드바 토글 핸들러
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
+  }
+
   if (loading) {
     return (
       <>
         <Navbar/>
         <div className="admin-layout">
-          <Sidebar/>
+          <Sidebar 
+            isCollapsed={sidebarCollapsed}
+            onToggle={handleSidebarToggle}
+          />
           <main className="admin-main">
             <div style={{textAlign: 'center', padding: '50px'}}>
               로딩 중...
@@ -236,7 +245,10 @@ export default function ScholarshipManage(){
     <>
       <Navbar/>
       <div className="admin-layout">
-        <Sidebar/>
+        <Sidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggle={handleSidebarToggle}
+        />
 
         <main className="admin-main">
           {/* 상단 액션 툴바 */}

@@ -11,6 +11,7 @@ import { scholarshipApi } from "../../services/scholarship.api";
 import { applicationApi, Application } from "../../services/application.api";
 import { bookmarkApi } from "../../services/bookmark.api";
 import { mileageApi } from "../../services/mileage.api";
+import { responsiveStyles, deviceInfo } from "../../styles/responsive";
 
 export default function MyScholarshipPage() {
   const [activeTab, setActiveTab] = useState("전체");
@@ -241,9 +242,9 @@ export default function MyScholarshipPage() {
 
   if (loading) {
     return (
-      <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+      <ImageBackground source={BG} style={responsiveStyles.backgroundWrapper} resizeMode="cover">
         <StatusBar barStyle="dark-content" />
-        <View style={[styles.phone, { justifyContent: 'center', alignItems: 'center', flex: 1 }]}>
+        <View style={responsiveStyles.centeredWrapper}>
           <ActivityIndicator size="large" color="#6B86FF" />
         </View>
       </ImageBackground>
@@ -251,15 +252,15 @@ export default function MyScholarshipPage() {
   }
 
   return (
-    <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+    <ImageBackground source={BG} style={responsiveStyles.backgroundWrapper} resizeMode="cover">
       <StatusBar barStyle="dark-content" />
       <ScrollView 
-        contentContainerStyle={{ alignItems: "center", paddingBottom: 24 }}
+        contentContainerStyle={responsiveStyles.scrollContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        <View style={styles.phone}>
+        <View style={deviceInfo.isTablet ? responsiveStyles.cardContainer : responsiveStyles.container}>
           <TopBar title="마이 장학금" />
 
           {/* 마일리지 패널 */}
@@ -308,15 +309,14 @@ export default function MyScholarshipPage() {
 }
 
 const styles = StyleSheet.create({
-  phone: { width: 360, paddingVertical: 8 },
   emptyState: {
-    padding: 40,
+    padding: deviceInfo.isTablet ? 60 : 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: deviceInfo.isTablet ? 16 : 14,
     color: "#7C89A6",
     textAlign: 'center',
     fontWeight: '600',

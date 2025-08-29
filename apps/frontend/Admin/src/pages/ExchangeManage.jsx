@@ -12,26 +12,43 @@ export default function ExchangeManage() {
   const [activeTab, setActiveTab] = useState('mileages'); // mileages, pending, all
   const [processingId, setProcessingId] = useState(null);
   const [convertingUserId, setConvertingUserId] = useState(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // 사이드바 상태
+  const [isInitialized, setIsInitialized] = useState(false); // 초기화 상태 추적
 
   // 사용자 마일리지 목록 조회
   const loadUserMileages = async () => {
     try {
       setMileageLoading(true);
+      console.log('🔍 사용자 마일리지 목록 조회 시작');
+      
       const response = await api.get('/exchange/admin/university-mileages');
+      console.log('📊 마일리지 응답:', response);
       
       if (response.success) {
         // 마일리지 높은 순으로 정렬
         const sortedUsers = response.data.users.sort((a, b) => b.availableMileage - a.availableMileage);
         setUserMileages(sortedUsers);
+        console.log('✅ 마일리지 데이터 로드 성공:', sortedUsers.length);
+      } else {
+        console.log('❌ API 응답 실패:', response);
+        setUserMileages([]);
       }
     } catch (error) {
-      console.error('사용자 마일리지 조회 실패:', error);
-      if (error.message.includes('인증') || error.message.includes('Unauthorized')) {
+      console.error('❌ 사용자 마일리지 조회 실패:', error);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      // 인증 오류 체크 - 한 번만 실행되도록 개선
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.log('🔐 인증 오류 감지 - 로그인 페이지로 리디렉션');
         alert('관리자 로그인이 필요합니다. 로그인 페이지로 이동합니다.');
-        window.location.href = '/login';
+        window.location.href = '/login'; // basename이 /admin이므로 실제 경로는 /admin/login
         return;
       }
-      alert('사용자 마일리지 목록을 불러오는데 실패했습니다.');
+      
+      // 일반 오류는 조용히 처리 (빈 배열로 설정)
+      setUserMileages([]);
+      console.log('⚠️ 마일리지 데이터를 불러올 수 없어 빈 목록으로 설정');
     } finally {
       setMileageLoading(false);
     }
@@ -42,19 +59,34 @@ export default function ExchangeManage() {
     try {
       setLoading(true);
       const endpoint = activeTab === 'pending' ? '/exchange/admin/pending' : '/exchange/admin/all';
+      console.log('🔍 환전 신청 목록 조회:', endpoint);
+      
       const response = await api.get(endpoint);
+      console.log('📊 환전 신청 응답:', response);
       
       if (response.success) {
         setExchangeRequests(response.data);
+        console.log('✅ 환전 신청 데이터 로드 성공:', response.data.length);
+      } else {
+        console.log('❌ 환전 신청 API 응답 실패:', response);
+        setExchangeRequests([]);
       }
     } catch (error) {
-      console.error('환전 신청 조회 실패:', error);
-      if (error.message.includes('인증') || error.message.includes('Unauthorized')) {
+      console.error('❌ 환전 신청 조회 실패:', error);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      // 인증 오류 체크 - 한 번만 실행되도록 개선
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.log('🔐 인증 오류 감지 - 로그인 페이지로 리디렉션');
         alert('관리자 로그인이 필요합니다. 로그인 페이지로 이동합니다.');
-        window.location.href = '/login';
+        window.location.href = '/login'; // basename이 /admin이므로 실제 경로는 /admin/login
         return;
       }
-      alert('환전 신청 목록을 불러오는데 실패했습니다.');
+      
+      // 일반 오류는 조용히 처리 (빈 배열로 설정)
+      setExchangeRequests([]);
+      console.log('⚠️ 환전 신청 데이터를 불러올 수 없어 빈 목록으로 설정');
     } finally {
       setLoading(false);
     }
@@ -170,21 +202,35 @@ export default function ExchangeManage() {
   useEffect(() => {
     if (activeTab === 'mileages') {
       loadUserMileages();
-    } else {
+    } else if (activeTab === 'pending' || activeTab === 'all') {
       loadExchangeRequests();
     }
   }, [activeTab]);
 
-  // 초기 로드
+  // 사이드바 토글 핸들러
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  // 초기 로드 - 단일 API 호출로 변경
   useEffect(() => {
-    loadUserMileages();
-  }, []);
+    if (!isInitialized) {
+      console.log('🚀 페이지 초기 로드 - 기본 탭 데이터 로드');
+      if (activeTab === 'mileages') {
+        loadUserMileages();
+      }
+      setIsInitialized(true);
+    }
+  }, [isInitialized, activeTab]);
 
   return (
     <>
       <Navbar />
       <div className="admin-layout">
-        <Sidebar />
+        <Sidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggle={handleSidebarToggle}
+        />
         <main className="admin-main">
           <div className="exchange-manage-container">
         <div className="page-header">
