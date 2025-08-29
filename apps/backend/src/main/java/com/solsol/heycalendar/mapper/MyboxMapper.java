@@ -9,7 +9,7 @@ import java.util.List;
 public interface MyboxMapper {
 
     @Insert("""
-            INSERT INTO Mybox (userNm, object_key_enc, file_name_enc, content_type, size_bytes, checksum_sha256)
+            INSERT INTO mybox (userNm, object_key_enc, file_name_enc, content_type, size_bytes, checksum_sha256)
             VALUES (#{userNm}, #{objectKeyEnc}, #{fileNameEnc}, #{contentType}, #{sizeBytes}, #{checksumSha256})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -19,7 +19,7 @@ public interface MyboxMapper {
             SELECT id, userNm, object_key_enc as objectKeyEnc, file_name_enc as fileNameEnc, 
                    content_type as contentType, size_bytes as sizeBytes, checksum_sha256 as checksumSha256,
                    created_at as createdAt, updated_at as updatedAt
-            FROM Mybox 
+            FROM mybox 
             WHERE userNm = #{userNm} 
             ORDER BY created_at DESC
             """)
@@ -34,11 +34,11 @@ public interface MyboxMapper {
             """)
     Mybox findByIdAndUserNm(@Param("id") Long id, @Param("userNm") String userNm);
 
-    @Delete("DELETE FROM Mybox WHERE id = #{id}")
+    @Delete("DELETE FROM mybox WHERE id = #{id}")
     void deleteById(Long id);
 
     @Insert("""
-            INSERT INTO Mybox_audit (mybox_id, actor_userNm, action, object_key_enc, file_name_enc)
+            INSERT INTO mybox_audit (mybox_id, actor_userNm, action, object_key_enc, file_name_enc)
             VALUES (#{myboxId}, #{actorUserNm}, #{action}, #{objectKeyEnc}, #{fileNameEnc})
             """)
     void insertAuditLog(@Param("myboxId") Long myboxId, 
