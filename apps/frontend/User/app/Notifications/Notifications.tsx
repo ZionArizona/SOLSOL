@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text } from "react-native";
+import { ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text, ImageBackground } from "react-native";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { NotificationTabs } from "../../components/notifications/NotificationTabs";
 import { NotificationCard, NotificationItem } from "../../components/notifications/NotificationCard";
 import { notificationApi, Notification, NotificationType } from "../../services/notification.api";
 import { useWebSocket } from "../../contexts/WebSocketContext";
-import { responsiveStyles, deviceInfo } from "../../styles/responsive";
-import { ResponsiveBackground } from "../../components/shared/ResponsiveBackground";
+// MainPage와 일치하도록 수정
+import SOLSOLBackground from "../../assets/images/SOLSOLBackground.png";
 
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<string>("전체");
@@ -320,26 +320,28 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <ResponsiveBackground>
+      <ImageBackground source={SOLSOLBackground} style={styles.bg} resizeMode="cover">
         <StatusBar barStyle="dark-content" />
-        <View style={responsiveStyles.centeredWrapper}>
+        <View style={styles.centeredContainer}>
           <ActivityIndicator size="large" color="#6B86FF" />
         </View>
-      </ResponsiveBackground>
+      </ImageBackground>
     );
   }
 
   return (
-    <ResponsiveBackground>
+    <ImageBackground source={SOLSOLBackground} style={styles.bg} resizeMode="cover">
       <StatusBar barStyle="dark-content" />
       <ScrollView 
-        contentContainerStyle={responsiveStyles.scrollContainer}
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         showsVerticalScrollIndicator={false}
       >
-        <View style={deviceInfo.isTablet ? responsiveStyles.cardContainer : responsiveStyles.container}>
+        {/* MainPage와 동일한 고정 너비 컨테이너 */}
+        <View style={styles.phone}>
           <TopBar title="알림함" />
 
           {/* 알림 탭 */}
@@ -373,23 +375,47 @@ export default function NotificationsPage() {
           </View>
         </View>
       </ScrollView>
-    </ResponsiveBackground>
+    </ImageBackground>
   );
 }
 
+// MainPage와 동일한 고정 너비 설정
+const PHONE_WIDTH = 360;
+
 const styles = StyleSheet.create({
+  bg: { 
+    flex: 1, 
+    backgroundColor: "#F5F7FF" 
+  },
+  container: { 
+    flex: 1, 
+    backgroundColor: "transparent" 
+  },
+  contentContainer: {
+    paddingBottom: 24,
+    alignItems: "center", // 가운데 정렬 (웹에서 좌우 여백 방지)
+  },
+  phone: {
+    width: PHONE_WIDTH,
+    paddingBottom: 16,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   notificationList: { 
-    paddingHorizontal: deviceInfo.isTablet ? 16 : 12, 
+    paddingHorizontal: 12, 
     marginTop: 8 
   },
   emptyState: {
-    padding: deviceInfo.isTablet ? 60 : 40,
+    padding: 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
   },
   emptyText: {
-    fontSize: deviceInfo.isTablet ? 16 : 14,
+    fontSize: 14,
     color: "#7C89A6",
     textAlign: 'center',
     fontWeight: '600',

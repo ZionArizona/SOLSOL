@@ -102,29 +102,50 @@
         s.amount,
         s.number_of_recipients,
         s.payment_method,
-        s.recruitment_status
-        <!-- 필요 시 추가 컬럼들 -->
+        s.recruitment_start_date,
+        s.recruitment_end_date,
+        s.recruitment_status,
+        s.category,
+        s.created_at,
+        s.updated_at
         FROM `scholarship` s
         <where>
-            <!-- 상태 필터: status가 null이 아니면 ENUM 문자열로 비교 -->
+            <!-- 상태 필터: status가 null이 아니면 실제 상태(날짜 포함) 확인 -->
             <if test="status != null">
-                s.recruitment_status = #{status}
+                <choose>
+                    <when test="status == 'OPEN'">
+                        <!-- 신청가능: 마감일이 지나지 않은 것 -->
+                        s.recruitment_end_date >= CURDATE()
+                    </when>
+                    <when test="status == 'CLOSED'">
+                        <!-- 모집마감: 마감일이 지난 것 -->
+                        s.recruitment_end_date &lt; CURDATE()
+                    </when>
+                    <otherwise>
+                        s.recruitment_status = #{status}
+                    </otherwise>
+                </choose>
             </if>
 
-            <!-- 카테고리(라벨) 필터: DB에 type_label 컬럼이 없다면 CASE로 매핑 -->
+            <!-- 카테고리(라벨) 필터: 실제 enum 값과 category 컬럼 둘 다 확인 -->
             <if test="category != null">
-                AND
+                <if test="status != null">AND</if>
                 (
-                CASE s.`type`
-                WHEN 'MERIT'   THEN '성적우수'
-                WHEN 'NEED'    THEN '생활지원'
-                WHEN 'SERVICE' THEN '공로/활동'
-                ELSE '기타'
-                END
-                ) = #{category}
+                    <!-- category 컬럼이 있으면 직접 비교 -->
+                    s.category = #{category}
+                    OR
+                    <!-- type enum 기반 라벨 매핑 -->
+                    (CASE s.`type`
+                        WHEN 'ACADEMIC' THEN '성적우수'
+                        WHEN 'FINANCIAL_AID' THEN '생활지원'  
+                        WHEN 'ACTIVITY' THEN '공로/활동'
+                        WHEN 'OTHER' THEN '기타'
+                        ELSE '기타'
+                    END) = #{category}
+                )
             </if>
         </where>
-        ORDER BY s.id DESC
+        ORDER BY s.recruitment_end_date ASC, s.id DESC
     </select>
 
 	<delete id="delete" parameterType="long">
