@@ -11,6 +11,7 @@ import com.solsol.heycalendar.dto.response.MileageResponse;
 import com.solsol.heycalendar.dto.response.UserMileageResponse;
 import com.solsol.heycalendar.mapper.ExchangeMapper;
 import com.solsol.heycalendar.mapper.MileageMapper;
+import com.solsol.heycalendar.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class MileageService {
 
     private final MileageMapper mileageMapper;
     private final ExchangeMapper exchangeMapper;
+    private final UserMapper userMapper;
 
     /**
      * Get user's complete mileage information
@@ -66,15 +68,15 @@ public class MileageService {
      */
     @Transactional
     public MileageResponse addMileage(MileageRequest request) {
+        userMapper.addUserMileage(request.getUserNm(), request.getAmount());
+        log.info("Added {} mileage to user: {}", request.getAmount(), request.getUserNm());
+
         Mileage mileage = Mileage.builder()
                 .userNm(request.getUserNm())
                 .amount(request.getAmount())
                 .description(request.getDescription())
                 .createdAt(LocalDateTime.now())
                 .build();
-
-        mileageMapper.insert(mileage);
-        log.info("Added {} mileage to user: {}", request.getAmount(), request.getUserNm());
 
         return convertMileageToResponse(mileage);
     }

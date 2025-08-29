@@ -129,7 +129,7 @@ export default function ScholarshipManage(){
   }, [searchQuery, selectedCategory, selectedStatus, scholarships])
 
   const handleCreateScholarship = () => {
-    navigate('/admin/scholarships/regist')
+    navigate('/scholarships/regist')
   }
 
   const handleDeleteScholarship = async (id) => {

@@ -18,7 +18,7 @@ export default function Hero(){
   const navigate = useNavigate()
   
   const handleScholarshipClick = () => {
-    navigate('/admin/scholarships')
+    navigate('/scholarships')
   }
 
   return (
