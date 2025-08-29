@@ -28,15 +28,31 @@ export default function DocumentApproval(){
       // 실제 API에서는 제출된 서류 목록을 가져와야 합니다
       // 현재는 applications API를 사용하여 서류 정보를 가져오겠습니다
       const result = await api.get('/applications')
-      if (result.success) {
-        // 서류가 있는 applications만 필터링
-        const documentsData = result.data.filter(app => app.documents && app.documents.length > 0)
-        setDocuments(documentsData)
-        calculateStats(documentsData)
+      
+      if(result.success === true) {
+        const list = Array.isArray(result.data) ? result.data : [];
+        const documentsData = list.filter(
+          (app) => Array.isArray(app.documents) && app.documents.length > 0
+        );
+        setDocuments(documentsData);
+        calculateStats(documentsData);
+        return;
       }
+
+      // if (result.success) {
+      //   // 서류가 있는 applications만 필터링
+      //   const documentsData = result.data.filter(app => app.documents && app.documents.length > 0)
+      //   setDocuments(documentsData)
+      //   calculateStats(documentsData)
+      // }
+      const msg = 
+        result?.message ||
+        '서류 목록을 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.';
+      alert(msg);
+
     } catch (error) {
       console.error('Failed to fetch documents:', error)
-      alert('서류 목록을 불러오는데 실패했습니다.')
+      alert('서버와 통신에 실패했습니다. 네트워크 상태를 확인해주세요.');
     } finally {
       setLoading(false)
     }
