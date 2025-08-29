@@ -116,23 +116,58 @@ export default function MainPage() {
   }, [user]);
 
 
+
+const toNum = (v: unknown): number | null => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+};
+
+const CANDIDATE_KEYS: (keyof any)[] = [
+  // 숫자 ID일 가능성 높은 키
+  'deptId', 'departmentId', 'dept', 'deptNo', 'majorId',
+  // 숫자/문자 섞여 들어오는 키(여기가 포인트!)
+  'deptName', 'deptNm',
+  // 라벨로 올 수 있는 키
+  'departmentName', 'majorName', 'department',
+];
+
+const resolveDeptLabel = (info: any): string => {
+  for (const key of CANDIDATE_KEYS) {
+    const val = info?.[key];
+
+    // 1) 숫자/숫자문자면 -> 매핑
+    const n = toNum(val);
+    if (n && DEPARTMENT_BY_ID[n]) {
+      return DEPARTMENT_BY_ID[n];
+    }
+
+    // 2) 문자열 라벨이면 그대로
+    if (typeof val === 'string') {
+      const s = val.trim();
+      if (s.length > 0 && !/^\d+$/.test(s)) {
+        // 전부 숫자면 라벨이 아니라고 보고 패스, 아니면 라벨로 간주
+        return s;
+      }
+    }
+  }
+  return '학과 정보 없음';
+};
+
+
+
+
 const getDepartmentInfo = () => {
   if (!userInfo && !user) return "정보 없음";
   const info = userInfo || user;
 
-  // ✅ deptId 우선 사용. 없으면 기존 필드(dept, deptNm, deptName 등) 순서대로 보조.
-  let deptName = '';
-  if (info.deptId !== undefined && info.deptId !== null) {
-    deptName = getDepartmentNameById(info.deptId);
-  } else if (info.dept !== undefined && info.dept !== null) {
-    // 일부 백엔드가 dept에 숫자ID를 주는 경우도 있어 동일 헬퍼로 처리
-    deptName = getDepartmentNameById(info.dept);
-  } else {
-    // 최후 보루: 이미 문자열 학과명이 들어온 경우
-    deptName = info.deptName || info.deptNm || '학과 정보 없음';
-  }
+  const deptName = resolveDeptLabel(info);
+  const grade = info?.grade ? `재학 ${info.grade}학년` : '';
 
-  const grade = info.grade ? `재학 ${info.grade}학년` : '';
   return grade ? `${deptName}, ${grade}` : deptName;
 };
 
