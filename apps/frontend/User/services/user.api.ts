@@ -6,12 +6,17 @@ export interface UserInfo {
   userId: string;
   userName: string;
   accountNm?: string;
+  userMileage?: number; // 스키마에 있는 userMileage 필드 추가
   grade: number;
   gpa?: number;
   role: string;
   deptNm: number;
   collegeNm: number;
   univNm: number;
+  // 추가 정보 (JOIN으로 가져올 수 있는)
+  deptName?: string;
+  collegeName?: string;
+  univName?: string;
 }
 
 export interface UserInfoUpdateRequest {

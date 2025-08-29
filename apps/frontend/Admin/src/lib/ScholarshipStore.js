@@ -334,7 +334,7 @@ export const scholarshipUtils = {
       description: formData.desc || formData.description || '',
       type: getTypeEnum(formData.type),
       amount: parseInt(typeof formData.amount === 'string' ? formData.amount.replace(/[^0-9]/g, '') : formData.amount) || 1,
-      numberOfRecipients: parseInt(typeof formData.picks === 'string' ? formData.picks.replace(/[^0-9]/g, '') : formData.picks) || 1,
+      numberOfRecipients: parseInt(typeof formData.numberOfRecipients === 'string' ? formData.numberOfRecipients.replace(/[^0-9]/g, '') : (formData.numberOfRecipients || formData.picks)) || 1,
       paymentMethod: getPaymentMethodEnum(formData.payMethod || formData.paymentMethod),
       
       // 날짜 처리 - judge 객체에서 가져오기
@@ -358,7 +358,7 @@ export const scholarshipUtils = {
       
       // 문의처
       contactPersonName: formData.contact?.manager || formData.contactPersonName || '',
-      contactPhone: formData.contact?.phone || formData.contactPhone || '',
+      contactPhone: formData.contact?.phone || formData.contactPhone || '010-0000-0000',
       contactEmail: formData.contact?.email || formData.contactEmail || '',
       officeLocation: formData.contact?.office || formData.officeLocation || null,
       consultationHours: formData.contact?.hours || formData.consultationHours || null,
@@ -368,8 +368,17 @@ export const scholarshipUtils = {
       noticeContent: formData.notice?.content || formData.noticeContent || null,
       noticeImageUrl: formData.notice?.imageUrl || formData.noticeImageUrl || null,
       
-      // 평가 기준 및 제출서류
-      criteria: formData.criteria || [],
+      // 평가 기준 및 제출서류 (criteria에 weight 0으로 고정)
+      criteria: (formData.criteria || []).map(criterion => {
+        console.log('🔍 Processing criterion:', criterion);
+        const result = {
+          name: criterion.name,
+          weight: 0, // 가중치는 0으로 고정 (백엔드 필드명에 맞춤)
+          std: criterion.std || null // std_point 대신 std 사용
+        };
+        console.log('✅ Processed criterion result:', result);
+        return result;
+      }),
       requiredDocuments: formData.requiredDocuments || []
     };
     
