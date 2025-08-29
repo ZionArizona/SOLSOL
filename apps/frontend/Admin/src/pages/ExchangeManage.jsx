@@ -9,11 +9,12 @@ export default function ExchangeManage() {
   const [userMileages, setUserMileages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mileageLoading, setMileageLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('mileages'); // mileages, pending, all
+  const [activeTab, setActiveTab] = useState('mileages'); // mileages, all
   const [processingId, setProcessingId] = useState(null);
   const [convertingUserId, setConvertingUserId] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // 사이드바 상태
   const [isInitialized, setIsInitialized] = useState(false); // 초기화 상태 추적
+  const [searchQuery, setSearchQuery] = useState(''); // 사용자 검색
 
   // 사용자 마일리지 목록 조회
   const loadUserMileages = async () => {
@@ -58,15 +59,35 @@ export default function ExchangeManage() {
   const loadExchangeRequests = async () => {
     try {
       setLoading(true);
-      const endpoint = activeTab === 'pending' ? '/exchange/admin/pending' : '/exchange/admin/all';
+      const endpoint = '/exchange/admin/all';
       console.log('🔍 환전 신청 목록 조회:', endpoint);
       
       const response = await api.get(endpoint);
       console.log('📊 환전 신청 응답:', response);
       
       if (response.success) {
-        setExchangeRequests(response.data);
-        console.log('✅ 환전 신청 데이터 로드 성공:', response.data.length);
+        // 사용자 마일리지 데이터를 먼저 로드해서 userName 정보를 가져옴
+        let userNameMap = {};
+        try {
+          const mileageResponse = await api.get('/exchange/admin/university-mileages');
+          if (mileageResponse.success) {
+            userNameMap = mileageResponse.data.users.reduce((map, user) => {
+              map[user.userNm] = user.userName;
+              return map;
+            }, {});
+          }
+        } catch (error) {
+          console.warn('사용자 마일리지 정보 조회 실패:', error);
+        }
+
+        // 환전 신청 데이터에 userName 추가
+        const enrichedRequests = response.data.map(request => ({
+          ...request,
+          userName: userNameMap[request.userNm] || `사용자-${request.userNm}`
+        }));
+        
+        setExchangeRequests(enrichedRequests);
+        console.log('✅ 환전 신청 데이터 로드 성공:', enrichedRequests.length);
       } else {
         console.log('❌ 환전 신청 API 응답 실패:', response);
         setExchangeRequests([]);
@@ -175,7 +196,10 @@ export default function ExchangeManage() {
 
   // 상태 라벨 및 색상 반환
   const getStateDisplay = (state) => {
-    switch (state) {
+    // 상태값 정규화 (대소문자 통일 및 공백 제거)
+    const normalizedState = typeof state === 'string' ? state.toLowerCase().trim() : '';
+    
+    switch (normalizedState) {
       case 'pending':
         return { label: '대기 중', className: 'status-pending' };
       case 'approved':
@@ -183,7 +207,8 @@ export default function ExchangeManage() {
       case 'rejected':
         return { label: '거절', className: 'status-rejected' };
       default:
-        return { label: '알 수 없음', className: 'status-unknown' };
+        console.warn('알 수 없는 환전 상태:', state, '(정규화됨:', normalizedState, ')');
+        return { label: '승인 완료', className: 'status-approved' }; // 기본값을 승인 완료로 변경
     }
   };
 
@@ -199,10 +224,25 @@ export default function ExchangeManage() {
     return amount?.toLocaleString('ko-KR') + '원';
   };
 
+  // 사용자 마일리지 필터링
+  const filteredUserMileages = userMileages.filter(user => {
+    if (!searchQuery.trim()) return true;
+    const searchLower = searchQuery.toLowerCase();
+    return user.userName?.toLowerCase().includes(searchLower);
+  });
+
+  // 환전 신청 필터링
+  const filteredExchangeRequests = exchangeRequests.filter(request => {
+    if (!searchQuery.trim()) return true;
+    const searchLower = searchQuery.toLowerCase();
+    return request.userName?.toLowerCase().includes(searchLower) ||
+           request.userNm?.toLowerCase().includes(searchLower);
+  });
+
   useEffect(() => {
     if (activeTab === 'mileages') {
       loadUserMileages();
-    } else if (activeTab === 'pending' || activeTab === 'all') {
+    } else if (activeTab === 'all') {
       loadExchangeRequests();
     }
   }, [activeTab]);
@@ -247,12 +287,6 @@ export default function ExchangeManage() {
           사용자 마일리지 ({userMileages.length})
         </button>
         <button 
-          className={`tab-button ${activeTab === 'pending' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pending')}
-        >
-          대기 중 ({exchangeRequests.filter(req => req.state === 'pending').length})
-        </button>
-        <button 
           className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => setActiveTab('all')}
         >
@@ -260,8 +294,17 @@ export default function ExchangeManage() {
         </button>
       </div>
 
-      {/* 새로고침 버튼 */}
+      {/* 검색 및 새로고침 */}
       <div className="control-bar">
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="사용자명으로 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+        </div>
         <button 
           className="refresh-button"
           onClick={activeTab === 'mileages' ? loadUserMileages : loadExchangeRequests}
@@ -280,25 +323,25 @@ export default function ExchangeManage() {
               <div className="loading-spinner"></div>
               <p>사용자 마일리지 목록을 불러오는 중...</p>
             </div>
-          ) : userMileages.length === 0 ? (
+          ) : filteredUserMileages.length === 0 ? (
             <div className="no-data">
-              <p>사용자 마일리지 정보가 없습니다.</p>
+              <p>{userMileages.length === 0 ? '사용자 마일리지 정보가 없습니다.' : '검색 결과가 없습니다.'}</p>
             </div>
           ) : (
             <div className="exchange-table">
               <div className="table-header">
                 <div className="header-cell">사용자명</div>
-                <div className="header-cell">사용자ID</div>
+                <div className="header-cell">학번</div>
                 <div className="header-cell">총 마일리지</div>
                 <div className="header-cell">사용 가능</div>
                 <div className="header-cell">환전 대기</div>
                 <div className="header-cell">액션</div>
               </div>
               
-              {userMileages.map((user) => (
+              {filteredUserMileages.map((user) => (
                 <div key={user.userNm} className="table-row">
                   <div className="cell">{user.userName}</div>
-                  <div className="cell">{user.userId}</div>
+                  <div className="cell">{user.userNm}</div>
                   <div className="cell amount">{user.totalMileage.toLocaleString()}P</div>
                   <div className="cell amount available">{user.availableMileage.toLocaleString()}P</div>
                   <div className="cell amount pending">{user.pendingExchange.toLocaleString()}P</div>
@@ -326,27 +369,28 @@ export default function ExchangeManage() {
               <div className="loading-spinner"></div>
               <p>환전 신청 목록을 불러오는 중...</p>
             </div>
-          ) : exchangeRequests.length === 0 ? (
+          ) : filteredExchangeRequests.length === 0 ? (
             <div className="no-data">
-              <p>환전 신청 내역이 없습니다.</p>
+              <p>{exchangeRequests.length === 0 ? '환전 신청 내역이 없습니다.' : '검색 결과가 없습니다.'}</p>
             </div>
           ) : (
-          <div className="exchange-table">
+          <div className={`exchange-table ${activeTab === 'all' ? 'exchange-history' : ''}`}>
             <div className="table-header">
               <div className="header-cell">신청번호</div>
-              <div className="header-cell">사용자</div>
+              <div className="header-cell">사용자명</div>
+              <div className="header-cell">학번</div>
               <div className="header-cell">금액</div>
               <div className="header-cell">상태</div>
               <div className="header-cell">신청일시</div>
               <div className="header-cell">처리일시</div>
-              <div className="header-cell">액션</div>
             </div>
             
-            {exchangeRequests.map((request) => {
+            {filteredExchangeRequests.map((request) => {
               const stateDisplay = getStateDisplay(request.state);
               return (
                 <div key={request.exchangeNm} className="table-row">
                   <div className="cell">{request.exchangeNm}</div>
+                  <div className="cell">{request.userName}</div>
                   <div className="cell">{request.userNm}</div>
                   <div className="cell amount">{formatAmount(request.amount)}</div>
                   <div className="cell">
@@ -356,28 +400,6 @@ export default function ExchangeManage() {
                   </div>
                   <div className="cell date">{formatDate(request.appliedAt)}</div>
                   <div className="cell date">{formatDate(request.processedAt)}</div>
-                  <div className="cell actions">
-                    {request.state === 'pending' ? (
-                      <div className="action-buttons">
-                        <button
-                          className="approve-button"
-                          onClick={() => handleExchangeProcess(request.exchangeNm, request.userNm, true)}
-                          disabled={processingId === request.exchangeNm}
-                        >
-                          {processingId === request.exchangeNm ? '처리 중...' : '승인'}
-                        </button>
-                        <button
-                          className="reject-button"
-                          onClick={() => handleExchangeProcess(request.exchangeNm, request.userNm, false)}
-                          disabled={processingId === request.exchangeNm}
-                        >
-                          거절
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="completed">처리 완료</span>
-                    )}
-                  </div>
                 </div>
               );
             })}
@@ -386,23 +408,20 @@ export default function ExchangeManage() {
         )}
       </div>
 
-      {/* 통계 정보 */}
-      {!loading && exchangeRequests.length > 0 && (
+      {/* 통계 정보 - 전체 내역 탭에서만 표시 */}
+      {activeTab === 'all' && !loading && exchangeRequests.length > 0 && (
         <div className="statistics">
           <div className="stat-card">
             <h3>전체 신청</h3>
             <div className="stat-value">{exchangeRequests.length}건</div>
           </div>
           <div className="stat-card">
-            <h3>대기 중</h3>
-            <div className="stat-value pending">
-              {exchangeRequests.filter(req => req.state === 'pending').length}건
-            </div>
-          </div>
-          <div className="stat-card">
             <h3>승인 완료</h3>
             <div className="stat-value approved">
-              {exchangeRequests.filter(req => req.state === 'approved').length}건
+              {exchangeRequests.filter(req => {
+                const normalizedState = typeof req.state === 'string' ? req.state.toLowerCase().trim() : '';
+                return normalizedState === 'approved';
+              }).length}건
             </div>
           </div>
           <div className="stat-card">
@@ -410,8 +429,11 @@ export default function ExchangeManage() {
             <div className="stat-value">
               {formatAmount(
                 exchangeRequests
-                  .filter(req => req.state === 'approved')
-                  .reduce((sum, req) => sum + req.amount, 0)
+                  .filter(req => {
+                    const normalizedState = typeof req.state === 'string' ? req.state.toLowerCase().trim() : '';
+                    return normalizedState === 'approved';
+                  })
+                  .reduce((sum, req) => sum + (req.amount || 0), 0)
               )}
             </div>
           </div>

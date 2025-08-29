@@ -19,6 +19,8 @@ public class Mileage {
     private Long key;
     private String userNm;
     private Integer amount;
+    private Long scholarshipNm;
     private LocalDateTime createdAt;
+    private String reason;
     private String description;
 }

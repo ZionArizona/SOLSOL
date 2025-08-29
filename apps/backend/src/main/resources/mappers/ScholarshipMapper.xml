@@ -93,7 +93,7 @@
 	</update>
 
     <!-- 상태/카테고리(라벨) 동적 필터 -->
-    <select id="findByFilters" resultMap="ScholarshipResultMap">
+    <select id="findByFilters" resultMap="ScholarshipMap">
         SELECT
         s.id,
         s.scholarship_name,

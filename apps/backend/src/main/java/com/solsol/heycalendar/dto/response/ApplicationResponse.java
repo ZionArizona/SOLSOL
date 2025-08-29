@@ -29,6 +29,15 @@ public class ApplicationResponse {
     @Schema(description = "장학금명", example = "성적우수장학금")
     private String scholarshipName;
     
+    @Schema(description = "장학금 금액", example = "1000000")
+    private Integer scholarshipAmount;
+    
+    @Schema(description = "장학금 종류", example = "ACADEMIC")
+    private String scholarshipType;
+    
+    @Schema(description = "장학금 설명", example = "성적이 우수한 학생에게 지급")
+    private String scholarshipDescription;
+    
     @Schema(description = "신청 상태", example = "PENDING")
     private ApplicationState state;
     
@@ -59,4 +68,7 @@ public class ApplicationResponse {
 
     @Schema(description = "제출서류 목록")
     private List<ApplicationDocumentResponse> documents;
+    
+    @Schema(description = "마일리지 지급 여부", example = "false")
+    private Boolean mileagePaid;
 }

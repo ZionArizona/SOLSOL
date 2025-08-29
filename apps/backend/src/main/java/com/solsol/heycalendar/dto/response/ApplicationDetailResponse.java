@@ -36,6 +36,12 @@ public class ApplicationDetailResponse {
     
     // Scholarship information
     private String scholarshipName;
+    private Integer scholarshipAmount;
+    private String scholarshipType;
+    private String scholarshipDescription;
+    
+    // Mileage payment status
+    private Boolean mileagePaid;
     
     // Associated documents
     private List<ApplicationDocumentResponse> documents;
