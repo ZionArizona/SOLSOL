@@ -2,8 +2,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet } from "react-native";
-import { BellIcon, CalendarIcon, FileBoxIcon, HomeIcon, ScholarshipIcon, UserCircleIcon } from "../shared/icons";
 import Svg, { Path } from "react-native-svg";
+import { BellIcon, CalendarIcon, FileBoxIcon, HomeIcon, ScholarshipIcon, UserCircleIcon } from "../shared/icons";
 import { MenuItem } from "./MenuItem";
 
 // 계좌 아이콘 컴포넌트
@@ -74,8 +74,8 @@ export const MenuList = () => {
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 12, marginTop: 8,
-    borderRadius: 16, paddingVertical: 6,
-    shadowColor: "#B8C2D6", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width:0, height:6 }, elevation: 2,
+    marginTop: 8,
+    borderRadius: 16,
+    shadowColor: "#FFFFFF", shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width:0, height:6 }, elevation: 2,
   },
 });

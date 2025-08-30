@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
+import { Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 export type DocItem = {
@@ -120,10 +120,7 @@ export const DocCard = ({
                     }} 
                     style={styles.deleteBtn}
                   >
-                    <Svg width={16} height={16} viewBox="0 0 24 24">
-                      <Path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#E36464" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
-                      <Path d="M10 11v6M14 11v6" stroke="#E36464" strokeWidth={1.5} strokeLinecap="round"/>
-                    </Svg>
+                    <Text style={styles.deleteText}>삭제</Text>
                   </TouchableOpacity>
                 );
               })()
@@ -192,12 +189,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   deleteBtn: {
-    width: 32,
-    height: 32,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: "#FCE9E9",
+    backgroundColor: "#007AFF",
     alignItems: "center",
     justifyContent: "center",
+  },
+  deleteText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 12,
   },
   checkbox: {
     width: 20,
