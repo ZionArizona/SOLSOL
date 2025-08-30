@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text, ImageBackground } from "react-native";
+import { ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, RefreshControl, Text, ImageBackground, TouchableOpacity } from "react-native";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { NotificationTabs } from "../../components/notifications/NotificationTabs";
 import { NotificationCard, NotificationItem } from "../../components/notifications/NotificationCard";
@@ -213,55 +213,45 @@ export default function NotificationsPage() {
     }
   };
 
-  // 읽지 않은 모든 알림을 읽음 처리하는 함수
+  // 알림 페이지 진입 시 모든 알림을 읽음 처리하여 뱃지 제거
   const markAllUnreadAsRead = async () => {
     try {
-      console.log('📖 Marking all unread notifications as read on page entry');
+      console.log('📖 [Notifications Page] Marking all notifications as read to clear badge');
+      console.log('📊 Current unread count:', unreadCount);
+      console.log('📋 API notifications:', notifications.length);
+      console.log('📋 WebSocket notifications:', realtimeNotifications.length);
       
-      // 현재 로드된 알림에서 읽지 않은 것들 찾기
-      const unreadNotifications = notifications.filter(n => !n.isRead);
-      console.log(`📖 Found ${unreadNotifications.length} unread notifications to mark as read`);
+      // 1단계: 모든 WebSocket 알림을 읽음 처리 (뱃지 클리어)
+      console.log('🔄 Step 1: Clearing WebSocket notifications for badge');
+      realtimeNotifications.forEach(notification => {
+        if (notification.id) {
+          markRealtimeAsRead(notification.id);
+          console.log(`✅ Marked WebSocket notification ${notification.id} as read`);
+        }
+      });
       
-      // WebSocket 실시간 알림에서 읽지 않은 것들도 찾기
-      const unreadRealtimeNotifications = realtimeNotifications.filter(n => !n.isRead);
-      console.log(`📖 Found ${unreadRealtimeNotifications.length} unread realtime notifications to mark as read`);
+      // 2단계: API 알림들도 읽음 처리 (백엔드 동기화)
+      console.log('🔄 Step 2: Marking API notifications as read');
+      const apiUnreadNotifications = notifications.filter(n => !n.isRead);
       
-      // 각각의 읽지 않은 알림을 읽음 처리 (API 알림)
-      for (const notification of unreadNotifications) {
+      for (const notification of apiUnreadNotifications) {
         try {
           await notificationApi.markAsRead(notification.id);
-          markRealtimeAsRead(notification.id);
-          console.log(`✅ Marked notification ${notification.id} as read on page entry`);
+          console.log(`✅ API: Marked notification ${notification.id} as read`);
         } catch (error) {
-          console.warn(`⚠️ Failed to mark notification ${notification.id} as read:`, error);
+          console.warn(`⚠️ Failed to mark API notification ${notification.id} as read:`, error);
         }
       }
       
-      // WebSocket 실시간 알림들도 읽음 처리
-      for (const notification of unreadRealtimeNotifications) {
-        try {
-          markRealtimeAsRead(notification.id!);
-          console.log(`✅ Marked realtime notification ${notification.id} as read on page entry`);
-        } catch (error) {
-          console.warn(`⚠️ Failed to mark realtime notification ${notification.id} as read:`, error);
-        }
-      }
+      // 3단계: 로컬 상태 업데이트
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, isRead: true }))
+      );
       
-      // 로컬 상태 업데이트
-      if (unreadNotifications.length > 0 || unreadRealtimeNotifications.length > 0) {
-        setNotifications(prev => 
-          prev.map(notification => ({ ...notification, isRead: true }))
-        );
-        
-        // 읽음 처리 후 즉시 데이터 새로고침 (WebSocket 상태도 반영되도록)
-        setTimeout(() => {
-          loadNotifications();
-        }, 100);
-      }
+      console.log('✅ All notifications marked as read - badge should be cleared');
       
-      console.log(`📊 After marking as read - WebSocket unread count should be: 0`);
     } catch (error) {
-      console.error('❌ Failed to mark unread notifications as read:', error);
+      console.error('❌ Failed to mark notifications as read:', error);
     }
   };
 
@@ -270,45 +260,33 @@ export default function NotificationsPage() {
     loadNotifications();
   }, []);
 
-  // 알림 데이터가 로드된 후 모든 읽지 않은 알림을 읽음 처리
+  // 페이지 진입 시 자동으로 모든 알림 읽음 처리
   useEffect(() => {
-    if (!loading && notifications.length > 0) {
-      markAllUnreadAsRead();
-    }
-  }, [loading, notifications]);
+    const timer = setTimeout(() => {
+      if (!loading) {
+        console.log('🚀 Auto-triggering mark all as read after page load');
+        markAllUnreadAsRead();
+      }
+    }, 500); // 0.5초 후 자동 실행
 
-  // 실시간 알림이 업데이트될 때마다 기존 알림과 병합
-  const mergedNotifications = useMemo(() => {
-    // WebSocket 실시간 알림을 백엔드 형식으로 변환
-    const convertedRealtimeNotifications = realtimeNotifications.map(wsNotification => ({
-      id: wsNotification.id || Math.floor(Math.random() * 1000000), // 임시 ID
-      userNm: wsNotification.userNm,
-      type: wsNotification.type as NotificationType,
-      title: wsNotification.title,
-      message: wsNotification.message,
-      relatedId: wsNotification.relatedId || null,
-      isRead: wsNotification.isRead,
-      actionRoute: wsNotification.actionRoute || null,
-      createdAt: wsNotification.createdAt,
-      updatedAt: wsNotification.updatedAt
-    }));
+    return () => clearTimeout(timer);
+  }, [loading]);
 
-    // 기존 API 알림과 실시간 알림 병합 (중복 제거, API 알림 우선)
-    const allNotifications = [...notifications, ...convertedRealtimeNotifications];
-    const uniqueNotifications = allNotifications.filter((notification, index, self) => 
-      index === self.findIndex(n => n.id === notification.id)
-    );
-
-    // 생성일 기준으로 내림차순 정렬
-    return uniqueNotifications.sort((a, b) => 
+  // WebSocket은 뱃지 업데이트용으로만 사용, 화면에는 API 알림만 표시
+  const displayNotifications = useMemo(() => {
+    console.log('📋 Displaying API notifications only:', notifications.length);
+    console.log('📊 WebSocket notifications (for badge only):', realtimeNotifications.length);
+    
+    // API 알림만 표시하여 중복 방지
+    return notifications.sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [notifications, realtimeNotifications]);
+  }, [notifications, realtimeNotifications.length]);
 
-  // 병합된 데이터를 프론트엔드 형태로 변환
+  // API 데이터를 프론트엔드 형태로 변환
   const convertedNotifications = useMemo<NotificationItem[]>(() => {
-    const result = mergedNotifications && Array.isArray(mergedNotifications) ? mergedNotifications.map(convertToNotificationItem) : [];
-    console.log('🔄 Converting merged notifications:', mergedNotifications?.length || 0, 'items');
+    const result = displayNotifications && Array.isArray(displayNotifications) ? displayNotifications.map(convertToNotificationItem) : [];
+    console.log('🔄 Converting API notifications:', displayNotifications?.length || 0, 'items');
     console.log('🔄 Converted result:', result.length, 'items');
     console.log('🔌 WebSocket connected:', isConnected, 'State:', connectionState);
     console.log('📊 Unread count:', unreadCount);
@@ -317,7 +295,7 @@ export default function NotificationsPage() {
       console.log('🔄 Read states:', result.map(item => ({ id: item.id, isRead: item.isRead, type: item.type })));
     }
     return result;
-  }, [mergedNotifications, isConnected, connectionState, unreadCount]);
+  }, [displayNotifications, isConnected, connectionState, unreadCount]);
 
   // 탭별 필터링된 알림 데이터
   const filteredNotifications = useMemo(() => {
@@ -363,6 +341,7 @@ export default function NotificationsPage() {
         {/* MainPage와 동일한 고정 너비 컨테이너 */}
         <View style={styles.phone}>
           <TopBar title="알림함" />
+
 
           {/* 알림 탭 */}
           <NotificationTabs
@@ -424,6 +403,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  markAllReadContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  markAllReadBtn: {
+    backgroundColor: "#6B86FF",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  markAllReadText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: '700',
   },
   notificationList: { 
     paddingHorizontal: 12, 
