@@ -58,6 +58,13 @@ public class DocumentController {
         
         try {
             String userNm = userDetails.getUsername();
+            log.info("🔍 DocumentController - userDetails.getUsername(): {}", userNm);
+            log.info("🔍 DocumentController - userDetails class: {}", userDetails.getClass().getName());
+            if (userDetails instanceof com.solsol.heycalendar.security.CustomUserPrincipal) {
+                com.solsol.heycalendar.security.CustomUserPrincipal principal = 
+                    (com.solsol.heycalendar.security.CustomUserPrincipal) userDetails;
+                log.info("🔍 CustomUserPrincipal - userNm: {}", principal.getUserNm());
+            }
             String objectKey = (String) request.get("objectKey");
             String checksum = (String) request.get("checksum");
             

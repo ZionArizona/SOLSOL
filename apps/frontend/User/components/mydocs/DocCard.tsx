@@ -6,7 +6,7 @@ import Svg, { Path } from "react-native-svg";
 export type DocItem = {
   id: string;
   fileName: string;
-  category: "성적증명" | "자격증" | "어학" | "기타";
+  // category: "성적증명" | "자격증" | "어학" | "기타";
   size: string;
   uploadedAt: string;
   metaTags: string[];  // 아래 작은 칩들
@@ -130,8 +130,8 @@ export const DocCard = ({
 
       {/* 상단 라벨 줄 */}
       <View style={styles.metaRow}>
-        <Text style={[styles.badge, { backgroundColor: "#E7ECFF", color: "#6B86FF" }]}>{item.category}</Text>
-        <Text style={styles.dim}>· {item.size} · {item.uploadedAt}</Text>
+        {/* <Text style={[styles.badge, { backgroundColor: "#E7ECFF", color: "#6B86FF" }]}>{item.category}</Text> */}
+        <Text style={styles.dim}> {item.size} · {item.uploadedAt}</Text>
         <View style={[styles.usagePill]}>
           <Text style={styles.usageText}>{item.usageCount}회 사용</Text>
         </View>

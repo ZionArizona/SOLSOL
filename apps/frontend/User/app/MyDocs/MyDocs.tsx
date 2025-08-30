@@ -155,9 +155,9 @@ export default function MyDocs() {
             expiring={documentStats.expiring}
           />
 
-          {/* 탭 + 업로드/일괄관리 버튼 */}
+          {/* 업로드/일괄관리 버튼 */}
           <ActionTabs
-            tabs={["전체", "성적증명", "자격증", "어학", "기타"]}
+            tabs={[]}
             active={activeTab}
             onChange={setActiveTab}
             onUploadPress={() => setUploadModalVisible(true)}

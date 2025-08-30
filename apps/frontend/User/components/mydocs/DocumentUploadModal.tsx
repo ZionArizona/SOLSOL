@@ -240,6 +240,7 @@ export const DocumentUploadModal = ({
                   />
                 </View>
               </LinearGradient>
+              <Text style={styles.tagHelpText}>예: 성적증명서_김헤영</Text>
 
               {/* Category */}
               <View style={styles.sectionHeader}>

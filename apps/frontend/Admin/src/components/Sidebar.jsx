@@ -42,7 +42,7 @@ export default function Sidebar({ isCollapsed, onToggle }){
           </button>
           
           {!isCollapsed && (
-            <div className="side-title">서류 관리 시스템</div>
+            <div className="side-title">장학금 관리 시스템</div>
           )}
         </div>
 
@@ -52,7 +52,7 @@ export default function Sidebar({ isCollapsed, onToggle }){
               className={`side-item ${isActive('/scholarships') || isActive('/scholarships/regist') ? 'active' : ''}`}
               title={isCollapsed ? '장학금 등록 관리' : ''}
             >
-              <span className="side-icon">📋</span>
+              <span className="side-icon"></span>
               {!isCollapsed && <span className="side-text">장학금 등록 관리</span>}
             </div>
           </Link>
@@ -62,7 +62,7 @@ export default function Sidebar({ isCollapsed, onToggle }){
               className={`side-item ${isActive('/submissions') ? 'active' : ''}`}
               title={isCollapsed ? '장학금 신청 승인' : ''}
             >
-              <span className="side-icon">✅</span>
+              <span className="side-icon"></span>
               {!isCollapsed && <span className="side-text">장학금 신청 승인</span>}
             </div>
           </Link>
@@ -72,7 +72,7 @@ export default function Sidebar({ isCollapsed, onToggle }){
               className={`side-item ${isActive('/document-approval') ? 'active' : ''}`}
               title={isCollapsed ? '마일리지 지급' : ''}
             >
-              <span className="side-icon">💰</span>
+              <span className="side-icon"></span>
               {!isCollapsed && <span className="side-text">마일리지 지급</span>}
             </div>
           </Link>
@@ -82,7 +82,7 @@ export default function Sidebar({ isCollapsed, onToggle }){
               className={`side-item ${isActive('/exchange') ? 'active' : ''}`}
               title={isCollapsed ? '마일리지 환전 관리' : ''}
             >
-              <span className="side-icon">🔄</span>
+              <span className="side-icon"></span>
               {!isCollapsed && <span className="side-text">마일리지 환전 관리</span>}
             </div>
           </Link>

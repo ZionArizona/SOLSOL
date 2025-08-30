@@ -43,7 +43,7 @@ export const MileageCard = ({ label, points, onPressScholar }: Props) => {
           onPress={() => router.push("/Schedule/MyCalendar")}
         />
         <Shortcut 
-          title="마이 서류 박스" 
+          title="마이 서류" 
           Icon={FileBoxIcon} 
           onPress={() => router.push("/MyDocs/MyDocs")}
         />

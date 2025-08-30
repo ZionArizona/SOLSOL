@@ -536,6 +536,49 @@ export const uploadDocument = async (file: File, fileName: string, category: str
   }
 };
 
+// MyBox 파일을 ApplicationDocument로 복사 (암호화된 데이터 그대로)
+export const copyMyBoxFileToApplicationDocument = async (
+  scholarshipNm: string,
+  myboxDocumentId: number
+): Promise<string> => {
+  try {
+    const userNm = await getUserNameFromToken();
+    if (!userNm) {
+      throw new Error('사용자 인증 정보를 찾을 수 없습니다.');
+    }
+
+    console.log('📂 MyBox 파일을 ApplicationDocument로 복사:', { userNm, scholarshipNm, myboxDocumentId });
+
+    const response = await fetch(`${BASE_URL.replace('/api', '')}/api/applications/student/documents/copy-from-mybox`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'user-nm': userNm,
+      },
+      body: JSON.stringify({
+        scholarshipNm: scholarshipNm,
+        myboxDocumentId: myboxDocumentId
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ MyBox 파일 복사 실패:', response.status, errorText);
+      throw new Error(`MyBox 파일 복사 실패 (${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ MyBox 파일 복사 성공:', result);
+    
+    // 생성된 document 이름 반환
+    return result.data?.documentNm || `doc_${Date.now()}`;
+
+  } catch (error) {
+    console.error('❌ copyMyBoxFileToApplicationDocument 오류:', error);
+    throw error;
+  }
+};
+
 // DocumentItem을 DocCard용 DocItem으로 변환
 export const convertToDocItem = (doc: DocumentItem, index: number): any => {
   return {

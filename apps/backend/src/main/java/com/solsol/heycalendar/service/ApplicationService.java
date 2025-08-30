@@ -119,7 +119,7 @@ public class ApplicationService {
      */
     @Transactional
     public void deleteApplication(String userNm, String scholarshipNm) {
-        log.info("Deleting application for user: {} and scholarship: {}", userNm, scholarshipNm);
+        log.info("🗑️ 장학금 신청 취소 시작 - userNm: {}, scholarshipNm: {}", userNm, scholarshipNm);
         
         Application existingApplication = applicationMapper.findApplicationByUserAndScholarship(userNm, scholarshipNm);
         if (existingApplication == null) {
@@ -130,8 +130,9 @@ public class ApplicationService {
             throw new IllegalStateException("심사가 완료된 신청은 취소할 수 없습니다.");
         }
 
+        // FK CASCADE 제약조건으로 인해 ApplicationDocument도 자동으로 삭제됨
         applicationMapper.deleteApplication(userNm, scholarshipNm);
-        log.info("Application deleted successfully for user: {} and scholarship: {}", userNm, scholarshipNm);
+        log.info("✅ 장학금 신청 취소 완료 - userNm: {}, scholarshipNm: {} (관련 서류도 CASCADE로 자동 삭제)", userNm, scholarshipNm);
     }
 
     /**
