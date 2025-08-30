@@ -9,6 +9,7 @@ import com.solsol.heycalendar.domain.Scholarship;
 import com.solsol.heycalendar.domain.ScholarshipCriteria;
 import com.solsol.heycalendar.domain.ScholarshipNotice;
 import com.solsol.heycalendar.domain.ScholarshipTag;
+import com.solsol.heycalendar.dto.response.ScholarshipWithStateResponse;
 
 @Mapper
 public interface ScholarshipMapper {
@@ -57,4 +58,14 @@ public interface ScholarshipMapper {
 
 	// --- filter ---
 	List<String> findDistinctCategories();
+
+	long countFiltered(@Param("category") String category,
+		@Param("status") String status,
+		@Param("userNm") String userNm);
+
+	List<ScholarshipWithStateResponse> findFiltered(@Param("category") String category,
+		@Param("status") String status,
+		@Param("userNm") String userNm,
+		@Param("limit") int limit,
+		@Param("offset") int offset);
 }

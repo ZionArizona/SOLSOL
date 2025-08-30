@@ -8,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.solsol.heycalendar.common.ApiResponse;
+import com.solsol.heycalendar.common.PageResponse;
 import com.solsol.heycalendar.dto.request.ScholarshipRequest;
 import com.solsol.heycalendar.dto.response.ScholarshipResponse;
 import com.solsol.heycalendar.security.CustomUserPrincipal;
@@ -38,18 +39,17 @@ public class ScholarshipController {
 
 	@Operation(summary = "사용자 맞춤 장학금 목록 (자동 필터링)")
 	@GetMapping("/filtered")
-	public ResponseEntity<ApiResponse<List<ScholarshipWithStateResponse>>> getFilteredScholarships(
-			@RequestParam(required = false) String category,
-			@RequestParam(required = false) String status,
-			@AuthenticationPrincipal CustomUserPrincipal principal) {
-		try {
-			String userNm = principal.getUserNm();
-			List<ScholarshipWithStateResponse> scholarships = service.getFilteredScholarshipsForUser(userNm, category, status);
-			return ResponseEntity.ok(new ApiResponse<>(true, "사용자 맞춤 장학금 조회 성공", "OK", scholarships));
-		} catch (Exception e) {
-			return ResponseEntity.internalServerError()
-				.body(new ApiResponse<>(false, "장학금 조회 실패", "ERROR", null));
-		}
+	public ResponseEntity<ApiResponse<PageResponse<ScholarshipWithStateResponse>>> getFilteredScholarships(
+		@RequestParam(required = false) String category,
+		@RequestParam(required = false) String status,
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "5") int size,
+		@AuthenticationPrincipal CustomUserPrincipal principal
+	) {
+		String userNm = principal.getUserNm();
+		PageResponse<ScholarshipWithStateResponse> data =
+			service.getFilteredScholarshipsForUserPaged(userNm, category, status, page, size);
+		return ResponseEntity.ok(new ApiResponse<>(true, "사용자 맞춤 장학금 조회 성공", "OK", data));
 	}
 
 	@Operation(summary = "장학금 상세")

@@ -38,6 +38,14 @@ export interface Scholarship {
 
 export type ApplicationState = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
+export interface PageResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface ScholarshipWithStateResponse {
   scholarship: Scholarship;
   state: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -106,21 +114,10 @@ export const scholarshipApi = {
       if (params?.status) queryParams.append('status', params.status);
 
       const endpoint = `/scholarships${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-      console.log('🎓 Fetching scholarships from:', endpoint);
       const response = await apiClient.get<ScholarshipListResponse>(endpoint);
-      
-      console.log('🎓 Scholarship API Response:', response);
-      console.log('🎓 Response data:', response.data);
-      console.log('🎓 Response success:', response.success);
-      console.log('🎓 Response keys:', Object.keys(response || {}));
-      
+
       if (response.success && response.data) {
-        console.log('✅ Using success response structure');
-        // response.data가 배열인지 확인
         if (Array.isArray(response.data)) {
-          console.log('✅ Data is array, converting to ScholarshipListResponse');
-          console.log('📋 First scholarship structure:', response.data[0]);
-          console.log('📋 First scholarship keys:', Object.keys(response.data[0] || {}));
           return {
             scholarships: response.data,
             totalElements: response.data.length,
@@ -129,12 +126,9 @@ export const scholarshipApi = {
             pageSize: response.data.length
           };
         } else {
-          console.log('✅ Data is already ScholarshipListResponse');
           return response.data;
         }
       } else if (Array.isArray(response.data)) {
-        console.log('✅ Using direct array response');
-        // 직접 배열인 경우 ScholarshipListResponse 형태로 변환
         return {
           scholarships: response.data,
           totalElements: response.data.length,
@@ -143,11 +137,8 @@ export const scholarshipApi = {
           pageSize: response.data.length
         };
       } else if (response.data) {
-        console.log('✅ Using response.data directly');
         return response.data;
       }
-      
-      console.log('❌ No valid response structure found');
       return null;
     } catch (error) {
       handleApiError(error, '장학금 목록을 불러오는데 실패했습니다.');
@@ -159,10 +150,7 @@ export const scholarshipApi = {
   async getScholarship(scholarshipId: number): Promise<Scholarship | null> {
     try {
       const response = await apiClient.get<Scholarship>(`/scholarships/${scholarshipId}`);
-      
-      if (response.success) {
-        return response.data;
-      }
+      if (response.success) return response.data;
       return null;
     } catch (error) {
       handleApiError(error, '장학금 정보를 불러오는데 실패했습니다.');
@@ -174,11 +162,7 @@ export const scholarshipApi = {
   async applyScholarship(applicationData: ApplicationRequest): Promise<boolean> {
     try {
       const response = await apiClient.post('/applications', applicationData);
-      
-      if (response.success) {
-        return true;
-      }
-      return false;
+      return !!response.success;
     } catch (error) {
       handleApiError(error, '장학금 신청에 실패했습니다.');
       return false;
@@ -199,10 +183,7 @@ export const scholarshipApi = {
 
       const endpoint = `/applications/my${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       const response = await apiClient.get<{ applications: Application[], totalElements: number }>(endpoint);
-      
-      if (response.success) {
-        return response.data;
-      }
+      if (response.success) return response.data;
       return null;
     } catch (error) {
       handleApiError(error, '신청 내역을 불러오는데 실패했습니다.');
@@ -214,11 +195,7 @@ export const scholarshipApi = {
   async cancelApplication(applicationId: number): Promise<boolean> {
     try {
       const response = await apiClient.delete(`/applications/${applicationId}`);
-      
-      if (response.success) {
-        return true;
-      }
-      return false;
+      return !!response.success;
     } catch (error) {
       handleApiError(error, '신청 취소에 실패했습니다.');
       return false;
@@ -229,10 +206,7 @@ export const scholarshipApi = {
   async getApplicationDetail(applicationId: number): Promise<any | null> {
     try {
       const response = await apiClient.get(`/applications/${applicationId}`);
-      
-      if (response.success) {
-        return response.data;
-      }
+      if (response.success) return response.data;
       return null;
     } catch (error) {
       handleApiError(error, '신청서 정보를 불러오는데 실패했습니다.');
@@ -240,82 +214,31 @@ export const scholarshipApi = {
     }
   },
 
-  // 사용자 맞춤 필터링된 장학금 목록 조회
-  // async getFilteredScholarships(params?: FilterParams): Promise<ScholarshipListResponse | null> {
-  //   try {
-  //     const queryParams = new URLSearchParams();
-  //     if (params?.category) queryParams.append('category', params.category);
-  //     if (params?.status) queryParams.append('status', params.status);
-  //     if (params?.page !== undefined) queryParams.append('page', params.page.toString());
-  //     if (params?.size !== undefined) queryParams.append('size', params.size.toString());
+  // 필터링된 장학금 목록(배열 또는 PageResponse 그대로 반환)
+  async getFilteredScholarships(
+    params?: FilterParams
+  ): Promise<PageResponse<ScholarshipWithStateResponse> | ScholarshipWithStateResponse[] | null> {
+    try {
+      const qs = new URLSearchParams();
+      if (params?.category) qs.append('category', params.category);
+      if (params?.status)   qs.append('status', params.status);
+      if (params?.page !== undefined) qs.append('page', String(params.page));
+      if (params?.size !== undefined) qs.append('size', String(params.size));
 
-  //     const endpoint = `/scholarships/filtered${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  //     console.log('🎯 Fetching filtered scholarships from:', endpoint);
-  //     const response = await apiClient.get<ScholarshipListResponse>(endpoint);
-      
-  //     console.log('🎯 Filtered Scholarship API Response:', response);
-      
-  //     if (response.success && response.data) {
-  //       if (Array.isArray(response.data)) {
-  //         return {
-  //           scholarships: response.data,
-  //           totalElements: response.data.length,
-  //           totalPages: 1,
-  //           currentPage: 0,
-  //           pageSize: response.data.length
-  //         };
-  //       } else {
-  //         return response.data;
-  //       }
-  //     } else if (Array.isArray(response.data)) {
-  //       return {
-  //         scholarships: response.data,
-  //         totalElements: response.data.length,
-  //         totalPages: 1,
-  //         currentPage: 0,
-  //         pageSize: response.data.length
-  //       };
-  //     } else if (response.data) {
-  //       return response.data;
-  //     }
-      
-  //     return null;
-  //   } catch (error) {
-  //     handleApiError(error, '필터링된 장학금 목록을 불러오는데 실패했습니다.');
-  //     return null;
-  //   }
-  // },
-
-async getFilteredScholarships(params?: FilterParams): Promise<ScholarshipWithStateResponse[] | null> {
-  try {
-    const queryParams = new URLSearchParams();
-    if (params?.category) queryParams.append('category', params.category);
-    if (params?.status)   queryParams.append('status', params.status);
-    if (params?.page !== undefined) queryParams.append('page', String(params.page));
-    if (params?.size !== undefined) queryParams.append('size', String(params.size));
-
-    const endpoint = `/scholarships/filtered${queryParams.toString() ? `?${queryParams}` : ''}`;
-    const res = await apiClient.get<ScholarshipWithStateResponse[]>(endpoint);
-
-    if (res.success && Array.isArray(res.data)) return res.data;
-    if (Array.isArray((res as any)?.data)) return (res as any).data;
-    if (Array.isArray(res as any)) return res as any;
-
-    return null;
-  } catch (e) {
-    handleApiError(e, '필터링된 장학금 목록을 불러오는데 실패했습니다.');
-    return null;
-  }
-},
+      const endpoint = `/scholarships/filtered${qs.toString() ? `?${qs.toString()}` : ''}`;
+      const res = await apiClient.get<any>(endpoint);
+      return res?.data ?? null; // 배열이든 PageResponse든 그대로 반환
+    } catch (e) {
+      handleApiError(e, '필터링된 장학금 목록을 불러오는데 실패했습니다.');
+      return null;
+    }
+  },
 
   // 장학금 카테고리 목록 조회
   async getCategories(): Promise<string[] | null> {
     try {
       const response = await apiClient.get<string[]>('/scholarships/categories');
-      
-      if (response.success && response.data) {
-        return response.data;
-      }
+      if (response.success && response.data) return response.data;
       return null;
     } catch (error) {
       handleApiError(error, '카테고리 목록을 불러오는데 실패했습니다.');
