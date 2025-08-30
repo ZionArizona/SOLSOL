@@ -149,12 +149,13 @@ npm run build
    ```
 
 **개발 서버 실행**
+1. 사용자는 애뮬레이터에서 실행해야 합니다. 아래의 명령어를 통해 서버를 실행해 주세요.
+- 애뮬레이터실행시 디바이스는 Medium Phone API 36.0을 사용해 주세요.
 ```bash
-npm start 
-# 또는
-expo start
+npx expo start
 ```
-실행 후 나타나는 QR 코드를 Expo Go 앱으로 스캔하여 모바일 기기에서 확인하거나, 웹/Android/iOS 에뮬레이터에서 실행할 수 있습니다.
+2. 애뮬레이터 실행 후 expo go에 입장 후 exp:/x.x.x.x:8081 입력해주세요. url은 npx expo start를 통해 확인하실 수 있습니다.
+3. 1,2번 성공 시 개발한 서비스를 사용할 수 있습니다.
 
 ---
 
