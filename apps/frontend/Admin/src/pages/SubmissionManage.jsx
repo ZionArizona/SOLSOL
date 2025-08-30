@@ -292,6 +292,11 @@ export default function SubmissionManage(){
           onToggle={handleSidebarToggle}
         />
         <main className="admin-main">
+          <div className="page-header">
+            <h1 className="page-title">신청 관리</h1>
+            <p className="page-description">장학금 신청서를 검토하고 승인 처리할 수 있습니다.</p>
+          </div>
+
           {/* 상단 우측 검색 및 필터 */}
           <div className="topbar">
             <input 

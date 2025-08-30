@@ -144,11 +144,11 @@ export const DocCard = ({
       </View>
 
       {/* 태그들 */}
-      <View style={styles.tags}>
+      {/* <View style={styles.tags}>
         {item.metaTags.map((t, idx) => (
           <Text key={idx} style={[styles.tag, { borderColor: color, color }]}>{t}</Text>
         ))}
-      </View>
+      </View> */}
       </LinearGradient>
     </TouchableOpacity>
   );

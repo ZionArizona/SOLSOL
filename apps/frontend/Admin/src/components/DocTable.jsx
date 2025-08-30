@@ -15,7 +15,12 @@ function Files({list=[]}){
 function Row({r, onViewDetails}){
   return (
     <div className="trow" onClick={() => onViewDetails(r)} style={{cursor: 'pointer'}}>
-      <div className="cell-title">
+      <div>
+        <div className="cell-app">{r.applicant}</div>
+        <div className="sub">{r.studentId}</div>
+      </div>
+
+      <div className="cell-title scholarship-wide">
         <div className="icon">📄</div>
         <div>
           <div className="title">{r.scholarship}</div>
@@ -24,11 +29,6 @@ function Row({r, onViewDetails}){
       </div>
 
       <Files list={r.files}/>
-
-      <div>
-        <div className="cell-app">{r.applicant}</div>
-        <div className="sub">{r.studentId}</div>
-      </div>
 
       <div className="cell-time">
         <div>{r.time.split(' ')[0]}</div>
@@ -52,9 +52,9 @@ export default function DocTable({rows=[], onViewDetails}){
   return (
     <section className="table">
       <div className="thead">
-        <div>장학금</div>
+        <div>사용자</div>
+        <div className="scholarship-header">장학금</div>
         <div>제출 서류</div>
-        <div>신청자</div>
         <div>제출 시간</div>
         <div style={{textAlign:'right'}}>상태</div>
       </div>

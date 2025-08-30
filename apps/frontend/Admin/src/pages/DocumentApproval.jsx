@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
+import StatCards from '../components/StatCards'
+import FilterTabs from '../components/FilterTabs'
+import DocTable from '../components/DocTable'
 import { api } from '../utils/api'
 import './submission.css'
 
@@ -201,6 +204,42 @@ export default function DocumentApproval(){
     }
   }
 
+  // DocTable을 위한 데이터 변환
+  const transformDocumentData = (doc) => {
+    // 서류 목록 처리
+    const files = doc.documents && doc.documents.length > 0 
+      ? doc.documents.slice(0, 3).map(d => d.originalFileName || '서류')
+      : ['서류 없음'];
+    
+    if (doc.documents && doc.documents.length > 3) {
+      files.push(`외 ${doc.documents.length - 3}개`);
+    }
+
+    // 상태 결정 - 서버 데이터 기준으로 판단
+    let status = '검토 대기';
+    if (doc.mileagePaid || paymentStatus[doc.userNm]) {
+      status = '완료';
+    }
+
+    return {
+      id: `${doc.userNm}-${doc.scholarshipNm}`,
+      applicant: doc.userName || doc.userNm,
+      studentId: doc.studentId || '학번 정보 없음',
+      scholarship: doc.scholarshipName,
+      unit: '', // 빈 값
+      files: files,
+      time: doc.appliedAt ? new Date(doc.appliedAt).toLocaleDateString('ko-KR') + ' ' + new Date(doc.appliedAt).toLocaleTimeString('ko-KR', {hour: '2-digit', minute:'2-digit'}) : '정보 없음',
+      status: status,
+      // 원본 문서 정보 유지
+      userNm: doc.userNm,
+      scholarshipNm: doc.scholarshipNm,
+      onApprove: () => {
+        handleViewDetails(doc);
+      },
+      onReject: () => alert('반려 기능은 현재 지원되지 않습니다.')
+    }
+  }
+
   const handleApproveDocument = async () => {
     if (isProcessing) {
       console.log('🚫 Approval blocked - already processing')
@@ -237,6 +276,12 @@ export default function DocumentApproval(){
       
       if (response.success) {
         alert(`서류가 승인되었으며 ${mileage} 마일리지가 지급되었습니다.`)
+        
+        // 로컬 상태도 업데이트
+        setPaymentStatus(prev => ({
+          ...prev,
+          [selectedDocument.userNm]: true
+        }))
         
         setShowDetailModal(false)
         setMileageInput('')
@@ -348,6 +393,11 @@ export default function DocumentApproval(){
           onToggle={handleSidebarToggle}
         />
         <main className="admin-main">
+          <div className="page-header">
+            <h1 className="page-title">마일리지 지급 관리</h1>
+            <p className="page-description">승인된 장학금 신청에 대해 마일리지를 지급할 수 있습니다.</p>
+          </div>
+
           {/* 검색바 및 필터 */}
           <div className="topbar">
             <input
@@ -404,71 +454,10 @@ export default function DocumentApproval(){
           </div>
 
           {/* 테이블 */}
-          <div className="table">
-            <div className="thead">
-              <div>사용자</div>
-              <div>제출 서류</div>
-              <div>장학금</div>
-              <div>제출 시간</div>
-              <div>액션</div>
-            </div>
-            
-            {filteredDocuments.map((doc, index) => (
-              <div key={`${doc.userNm}-${doc.scholarshipNm}-${index}`} className="trow">
-                <div className="cell-title">
-                  <div className="icon">👤</div>
-                  <div>
-                    <div className="title">{doc.userName || doc.userNm}</div>
-                    <div className="sub">{doc.studentId || '학번 정보 없음'}</div>
-                  </div>
-                </div>
-
-                <div className="files">
-                  {doc.documents && doc.documents.length > 0 ? (
-                    <>
-                      {doc.documents.slice(0, 3).map((document, idx) => (
-                        <div key={idx} className="file">
-                          <div className="dot"></div>
-                          {document.originalFileName || `서류 ${idx + 1}`}
-                        </div>
-                      ))}
-                      {doc.documents.length > 3 && (
-                        <div className="file">
-                          <div className="dot"></div>
-                          외 {doc.documents.length - 3}개
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="file" style={{color: '#9ca3af'}}>
-                      <div className="dot" style={{backgroundColor: '#d1d5db'}}></div>
-                      서류 없음
-                    </div>
-                  )}
-                </div>
-
-                <div className="cell-app">{doc.scholarshipName}</div>
-                <div className="cell-time">
-                  {doc.appliedAt ? new Date(doc.appliedAt).toLocaleDateString('ko-KR') : '정보 없음'}
-                </div>
-
-                <div className="act">
-                  <button
-                    className="view-btn"
-                    onClick={() => handleViewDetails(doc)}
-                  >
-                    상세보기
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {filteredDocuments.length === 0 && (
-              <div style={{textAlign: 'center', padding: '50px', color: '#666'}}>
-                조건에 맞는 서류가 없습니다.
-              </div>
-            )}
-          </div>
+          <DocTable 
+            rows={filteredDocuments.map(transformDocumentData)}
+            onViewDetails={handleViewDetails}
+          />
         </main>
       </div>
 

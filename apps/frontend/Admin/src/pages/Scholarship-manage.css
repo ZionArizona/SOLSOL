@@ -24,6 +24,29 @@
   transition: margin-left 0.3s ease;
 }
 
+/* 페이지 헤더 */
+.page-header {
+  background: var(--panel);
+  color: var(--text);
+  padding: 2rem;
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.page-description {
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin: 0;
+}
+
 /* 툴바 */
 .toolbar{ display:flex; gap:8px; margin:6px 0 12px; }
 .tool-btn{

@@ -115,8 +115,6 @@ export const ScholarshipItemCard = ({
         end={{ x: 1, y: 1 }}
         style={styles.card}
       >
-        <CategoryIcon category={category} />
-
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={styles.title} numberOfLines={1}>{title}</Text>
@@ -146,28 +144,14 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: 12,
     borderRadius: 16,
-    padding: 12,
+    padding: 16,
     flexDirection: "row",
-    gap: 12,
     alignItems: "center",
     shadowColor: "#AFC2FF",
     shadowOpacity: 0.25,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   stateBadge: {

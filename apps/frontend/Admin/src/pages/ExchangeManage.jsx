@@ -15,6 +15,11 @@ export default function ExchangeManage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // 사이드바 상태
   const [isInitialized, setIsInitialized] = useState(false); // 초기화 상태 추적
   const [searchQuery, setSearchQuery] = useState(''); // 사용자 검색
+  
+  // 환전 모달 상태
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [convertAmount, setConvertAmount] = useState('');
 
   // 사용자 마일리지 목록 조회
   const loadUserMileages = async () => {
@@ -113,39 +118,44 @@ export default function ExchangeManage() {
     }
   };
 
-  // 마일리지 환전 처리 (관리자 직접 환전)
-  const handleMileageConvert = async (userNm, availableMileage) => {
-    if (availableMileage <= 0) {
+  // 환전 모달 열기
+  const handleMileageConvert = (user) => {
+    if (user.availableMileage <= 0) {
       alert('환전할 마일리지가 없습니다.');
       return;
     }
+    setSelectedUser(user);
+    setConvertAmount(user.availableMileage.toString());
+    setShowConvertModal(true);
+  };
 
-    const amount = prompt(`${userNm}의 마일리지를 환전합니다.\n현재 사용 가능 마일리지: ${availableMileage.toLocaleString()}P\n\n환전할 마일리지를 입력하세요 (1P = 1원):`, availableMileage);
-    
-    if (!amount || isNaN(amount) || parseInt(amount) <= 0) {
+  // 환전 모달 확인
+  const handleConfirmConvert = async () => {
+    if (!selectedUser || !convertAmount) {
       alert('올바른 마일리지를 입력해주세요.');
       return;
     }
 
-    const mileageAmount = parseInt(amount);
-    if (mileageAmount > availableMileage) {
+    const mileageAmount = parseInt(convertAmount);
+    if (isNaN(mileageAmount) || mileageAmount <= 0) {
+      alert('올바른 마일리지를 입력해주세요.');
+      return;
+    }
+
+    if (mileageAmount > selectedUser.availableMileage) {
       alert('사용 가능한 마일리지보다 많이 입력할 수 없습니다.');
       return;
     }
 
-    if (!confirm(`${userNm}의 마일리지 ${mileageAmount.toLocaleString()}P를 ${mileageAmount.toLocaleString()}원으로 환전하시겠습니까?`)) {
-      return;
-    }
-
     try {
-      setConvertingUserId(userNm);
+      setConvertingUserId(selectedUser.userNm);
       
       console.log('=== 마일리지 환전 요청 ===');
-      console.log('userNm:', userNm);
+      console.log('userNm:', selectedUser.userNm);
       console.log('mileageAmount:', mileageAmount);
       
       const response = await api.post('/exchange/admin/convert-mileage', {
-        userNm,
+        userNm: selectedUser.userNm,
         mileageAmount
       });
 
@@ -153,7 +163,10 @@ export default function ExchangeManage() {
       console.log('response:', response);
 
       if (response.success) {
-        alert(response.message);
+        alert(`${selectedUser.userName}의 마일리지 ${mileageAmount.toLocaleString()}P가 ${mileageAmount.toLocaleString()}원으로 환전되었습니다.`);
+        setShowConvertModal(false);
+        setSelectedUser(null);
+        setConvertAmount('');
         loadUserMileages(); // 목록 새로고침
       }
     } catch (error) {
@@ -165,6 +178,13 @@ export default function ExchangeManage() {
     } finally {
       setConvertingUserId(null);
     }
+  };
+
+  // 환전 모달 취소
+  const handleCancelConvert = () => {
+    setShowConvertModal(false);
+    setSelectedUser(null);
+    setConvertAmount('');
   };
 
   // 환전 처리 (승인/거절)
@@ -349,7 +369,7 @@ export default function ExchangeManage() {
                     {user.availableMileage > 0 ? (
                       <button
                         className="convert-button"
-                        onClick={() => handleMileageConvert(user.userNm, user.availableMileage)}
+                        onClick={() => handleMileageConvert(user)}
                         disabled={convertingUserId === user.userNm}
                       >
                         {convertingUserId === user.userNm ? '환전 중...' : '환전하기'}
@@ -442,6 +462,79 @@ export default function ExchangeManage() {
           </div>
         </main>
       </div>
+
+      {/* 환전 모달 */}
+      {showConvertModal && selectedUser && (
+        <div className="modal-overlay" onClick={handleCancelConvert}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>마일리지 환전</h3>
+              <button className="close-btn" onClick={handleCancelConvert}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="convert-section">
+                <h4>사용자 정보</h4>
+                <div className="user-info">
+                  <p><strong>이름:</strong> {selectedUser.userName}</p>
+                  <p><strong>학번:</strong> {selectedUser.userNm}</p>
+                  <p><strong>보유 마일리지:</strong> <span className="mileage-amount">{selectedUser.availableMileage.toLocaleString()}P</span></p>
+                </div>
+              </div>
+
+              <div className="convert-section">
+                <h4>환전 정보</h4>
+                <div className="convert-info">
+                  <div className="amount-input-group">
+                    <label htmlFor="convertAmount">환전할 마일리지:</label>
+                    <div className="input-with-unit">
+                      <input
+                        id="convertAmount"
+                        type="number"
+                        value={convertAmount}
+                        onChange={(e) => setConvertAmount(e.target.value)}
+                        placeholder="환전할 마일리지를 입력하세요"
+                        min="1"
+                        max={selectedUser.availableMileage}
+                        style={{
+                          padding: '10px 12px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          width: '200px',
+                          textAlign: 'right'
+                        }}
+                      />
+                      <span className="unit">P</span>
+                    </div>
+                  </div>
+                  <div className="conversion-display">
+                    {convertAmount && !isNaN(parseInt(convertAmount)) && (
+                      <p className="conversion-result">
+                        → <strong>{parseInt(convertAmount).toLocaleString()}원</strong>으로 환전됩니다
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="cancel-btn-modal" 
+                onClick={handleCancelConvert}
+              >
+                취소
+              </button>
+              <button 
+                className="confirm-btn-modal" 
+                onClick={handleConfirmConvert}
+                disabled={convertingUserId === selectedUser.userNm}
+              >
+                {convertingUserId === selectedUser.userNm ? '환전 중...' : '환전 확인'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

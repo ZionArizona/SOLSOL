@@ -1,9 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeftIcon, HomeIcon, MenuIcon } from "../shared/icons";
-import { NotificationBell } from "../shared/NotificationBell";
-import { deviceInfo } from "../../styles/responsive";
 
 export const TopBar = ({ title, onBackPress }: { title: string; onBackPress?: () => void }) => {
   const handleBackPress = () => {
@@ -20,40 +17,83 @@ export const TopBar = ({ title, onBackPress }: { title: string; onBackPress?: ()
   };
 
   return (
-    <View style={styles.wrap}>
-      <TouchableOpacity activeOpacity={0.8} onPress={handleBackPress}>
-        <ChevronLeftIcon size={deviceInfo.isTablet ? 26 : 22} />
-      </TouchableOpacity>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.actions}>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/")}>
-          <HomeIcon size={deviceInfo.isTablet ? 24 : 20} />
+    <View style={styles.header}>
+      <View style={styles.leftWrap}>
+        <TouchableOpacity
+          onPress={handleBackPress}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.backText}>← 뒤로</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/Menu/Menu")}>
-          <MenuIcon size={deviceInfo.isTablet ? 24 : 20} />
+      </View>
+
+      <Text style={styles.headerTitle}>{title}</Text>
+
+      <View style={styles.rightWrap}>
+        <TouchableOpacity 
+          onPress={() => { router.push('/Notifications/Notifications'); }} 
+          style={styles.iconBtn}
+        >
+          <Image source={require('../../assets/images/BellIcon.png')} style={styles.icon} />
         </TouchableOpacity>
-        <NotificationBell size={deviceInfo.isTablet ? 24 : 20} />
+        <TouchableOpacity 
+          onPress={() => { router.push('/'); }} 
+          style={styles.iconBtn}
+        >
+          <Image source={require('../../assets/images/HomeIcon.png')} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => { router.push('/Menu/Menu'); }} 
+          style={styles.iconBtn}
+        >
+          <Image source={require('../../assets/images/HamburgerButton.png')} style={styles.icon} />
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  wrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: deviceInfo.isTablet ? 20 : 14,
-    paddingVertical: deviceInfo.isTablet ? 14 : 10,
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingVertical: 14, 
+    paddingHorizontal: 16
   },
-  title: { 
+  leftWrap: { 
+    width: 96, 
+    justifyContent: 'center'
+  },
+  rightWrap: { 
+    width: 96, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'flex-end'
+  },
+  backButton: { 
+    padding: 8
+  },
+  backText: { 
+    fontSize: 16, 
+    color: '#8FA1FF', 
+    fontWeight: '600'
+  },
+  headerTitle: { 
     flex: 1, 
-    textAlign: "center", 
-    fontWeight: "800", 
-    fontSize: deviceInfo.isTablet ? 20 : 16, 
-    color: "#23324D" 
+    textAlign: 'center', 
+    fontSize: 18, 
+    fontWeight: '700', 
+    color: '#333'
   },
-  actions: { 
-    flexDirection: "row", 
-    gap: deviceInfo.isTablet ? 14 : 10 
+  iconBtn: { 
+    padding: 4, 
+    marginLeft: 8
+  },
+  icon: { 
+    width: 20, 
+    height: 20, 
+    resizeMode: 'contain'
   },
 });

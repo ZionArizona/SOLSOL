@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from 'react';
 import { ImageBackground, Platform, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
-import HeaderBar from './UserBasic/HeaderBar';
 import LoginPage from './UserBasic/LoginPage';
 import MainPage from './UserBasic/MainPage';
 import MyCalendar from './Schedule/MyCalendar';
