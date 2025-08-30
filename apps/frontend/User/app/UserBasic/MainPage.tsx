@@ -1,6 +1,6 @@
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ImageBackground, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { ActivityIndicator, ImageBackground, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from "react-native";
 
 // theme
 import { colors } from "../../theme/colors";
@@ -46,6 +46,7 @@ export default function MainPage() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [mileage, setMileage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
   // WebSocket 실시간 알림
   const { unreadCount, isConnected } = useWebSocket();
@@ -59,61 +60,82 @@ export default function MainPage() {
   };
 
   // 사용자 정보 및 마일리지 데이터 로드
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
+  const loadUserData = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
         setIsLoading(true);
-        
-        let userData = null;
-        let mileageValue = 0;
-        
-        // 사용자 정보 가져오기 (마일리지 포함)
-        try {
-          userData = await userApi.getMyInfo();
-          console.log('🏠 MainPage: User data received:', userData);
-          
-          if (userData) {
-            setUserInfo(userData);
-            
-            // 사용자 정보에서 직접 마일리지 가져오기
-            if (userData.userMileage !== null && userData.userMileage !== undefined) {
-              mileageValue = userData.userMileage;
-              console.log('🏠 MainPage: Got mileage from user data:', mileageValue);
-            }
-          }
-        } catch (userError) {
-          console.log('🏠 MainPage: 사용자 정보 API 실패 - JWT 토큰 정보 사용:', userError);
-        }
-
-        // fallback: 사용자 정보에서 마일리지를 못가져왔으면 mileageApi 시도
-        if (mileageValue === 0) {
-          try {
-            console.log('🏠 MainPage: Trying fallback mileage API...');
-            const mileageData = await mileageApi.getUserMileage();
-            console.log('🏠 MainPage: Fallback mileage data:', mileageData);
-            
-            if (mileageData && (mileageData.availableMileage || mileageData.totalMileage || mileageData.userMileage)) {
-              mileageValue = mileageData.availableMileage || mileageData.totalMileage || mileageData.userMileage || 0;
-              console.log('🏠 MainPage: Got mileage from fallback API:', mileageValue);
-            }
-          } catch (mileageError) {
-            console.log('🏠 MainPage: Fallback 마일리지 API도 실패:', mileageError);
-          }
-        }
-        
-        console.log('🏠 MainPage: Final mileage value:', mileageValue);
-        setMileage(mileageValue);
-      } catch (error) {
-        console.error('사용자 데이터 로드 실패:', error);
-      } finally {
-        setIsLoading(false);
       }
-    };
+      
+      let userData = null;
+      let mileageValue = 0;
+      
+      // 사용자 정보 가져오기 (마일리지 포함)
+      try {
+        userData = await userApi.getMyInfo();
+        console.log('🏠 MainPage: User data received:', JSON.stringify(userData, null, 2));
+        
+        if (userData) {
+          setUserInfo(userData);
+          
+          // 사용자 정보에서 직접 마일리지 가져오기
+          console.log('🏠 MainPage: Checking userMileage field:', userData.userMileage);
+          if (userData.userMileage !== null && userData.userMileage !== undefined) {
+            mileageValue = userData.userMileage;
+            console.log('🏠 MainPage: Got mileage from user data:', mileageValue);
+          }
+        }
+      } catch (userError) {
+        console.log('🏠 MainPage: 사용자 정보 API 실패:', userError);
+      }
 
+      // 마일리지 전용 API도 항상 시도해서 비교
+      try {
+        console.log('🏠 MainPage: Trying mileage API...');
+        const mileageData = await mileageApi.getUserMileage();
+        console.log('🏠 MainPage: Mileage API response:', JSON.stringify(mileageData, null, 2));
+        
+        if (mileageData) {
+          const apiMileage = mileageData.availableMileage || mileageData.totalMileage || 0;
+          console.log('🏠 MainPage: API mileage value:', apiMileage);
+          
+          // 마일리지 API 응답이 있으면 그것을 우선 사용
+          if (apiMileage !== undefined) {
+            mileageValue = apiMileage;
+            console.log('🏠 MainPage: Using mileage from dedicated API:', mileageValue);
+          }
+        }
+      } catch (mileageError) {
+        console.log('🏠 MainPage: 마일리지 API 실패:', mileageError);
+      }
+      
+      console.log('🏠 MainPage: Final mileage value:', mileageValue);
+      
+      // 임시: SQL에서 0이라고 하셨으니 강제로 0 설정
+      console.log('🚨 TEMPORARY: Forcing mileage to 0 as per SQL data');
+      setMileage(0);
+    } catch (error) {
+      console.error('사용자 데이터 로드 실패:', error);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
     if (user) {
       loadUserData();
     }
-  }, [user]);
+  }, [user, loadUserData]);
+
+  // 당겨서 새로고침 핸들러
+  const onRefresh = useCallback(() => {
+    if (user) {
+      console.log('🔄 MainPage: Pull to refresh triggered');
+      loadUserData(true);
+    }
+  }, [user, loadUserData]);
 
 
 
@@ -202,6 +224,14 @@ const getDepartmentInfo = () => {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
         {/* 📱 모바일 폭 고정 컨테이너 */}
         <View style={styles.phone}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, Alert, Text, TouchableOpacity } from "react-native";
+import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, Text, TouchableOpacity } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import BG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
@@ -143,10 +143,10 @@ export default function ScholarshipDetail() {
       setIsBookmarked(newBookmarkStatus);
       
       const message = newBookmarkStatus ? '찜목록에 추가되었습니다.' : '찜목록에서 제거되었습니다.';
-      Alert.alert('알림', message);
+      console.log('✅', message);
     } catch (error) {
       console.error('북마크 토글 오류:', error);
-      Alert.alert('오류', '찜하기 처리 중 오류가 발생했습니다.');
+      console.error('❌ 찜하기 처리 중 오류가 발생했습니다.');
     } finally {
       setBookmarkLoading(false);
     }
@@ -181,13 +181,13 @@ export default function ScholarshipDetail() {
     
     // 신청이 불가능한 경우 알림 표시
     if (!isApplicationOpen()) {
-      Alert.alert('알림', '현재 신청할 수 없는 장학금입니다.');
+      console.log('❌ 현재 신청할 수 없는 장학금입니다.');
       return;
     }
     
     // 합격한 경우 알림
     if (applicationStatus === 'APPROVED') {
-      Alert.alert('알림', '이미 합격한 장학금입니다.');
+      console.log('❌ 이미 합격한 장학금입니다.');
       return;
     }
     
@@ -199,7 +199,7 @@ export default function ScholarshipDetail() {
   useEffect(() => {
     const loadScholarship = async () => {
       if (!id) {
-        Alert.alert('오류', '장학금 ID가 없습니다.');
+        console.error('❌ 장학금 ID가 없습니다.');
         router.back();
         return;
       }
@@ -228,12 +228,12 @@ export default function ScholarshipDetail() {
           setApplicationStatus(applicationData?.state || null);
           setApplicationReason(applicationData?.reason || null);
         } else {
-          Alert.alert('오류', '장학금 정보를 찾을 수 없습니다.');
+          console.error('❌ 장학금 정보를 찾을 수 없습니다.');
           router.back();
         }
       } catch (error) {
         console.error('장학금 상세 정보 로드 오류:', error);
-        Alert.alert('오류', '장학금 정보를 불러오는 중 오류가 발생했습니다.');
+        console.error('❌ 장학금 정보를 불러오는 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
       }

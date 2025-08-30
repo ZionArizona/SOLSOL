@@ -7,7 +7,6 @@ import {
   Modal, 
   TextInput,
   ScrollView,
-  Alert,
   Platform 
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -93,17 +92,17 @@ export const DocumentUploadModal = ({
         }
       }
     } catch (error) {
-      Alert.alert("오류", "파일 선택 중 오류가 발생했습니다.");
+      console.error("❌ 파일 선택 중 오류가 발생했습니다:", error);
     }
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      Alert.alert("알림", "파일을 선택해주세요.");
+      console.log("❌ 파일을 선택해주세요.");
       return;
     }
     if (!fileName.trim()) {
-      Alert.alert("알림", "파일명을 입력해주세요.");
+      console.log("❌ 파일명을 입력해주세요.");
       return;
     }
 
@@ -122,22 +121,22 @@ export const DocumentUploadModal = ({
             webFile: actualWebFile // 웹용 실제 File 객체 전달
           }
         });
-        Alert.alert("성공", "서류가 추가되었습니다.");
+        console.log("✅ 서류가 추가되었습니다.");
       } else {
         // MyBox 모드: 기존대로 MyBox에 저장
         if (Platform.OS === 'web') {
           // 웹 환경에서는 저장된 실제 File 객체 사용
           if (!actualWebFile) {
-            Alert.alert("오류", "파일이 제대로 선택되지 않았습니다.");
+            console.error("❌ 파일이 제대로 선택되지 않았습니다.");
             return;
           }
           
           await uploadDocument(actualWebFile, fileName.trim(), category);
-          Alert.alert("성공", "서류가 MyBox에 업로드되었습니다.");
+          console.log("✅ 서류가 MyBox에 업로드되었습니다.");
         } else {
           // 모바일 환경에서는 React Native 업로드 함수 사용
           if (!selectedFile.uri || !selectedFile.size || !selectedFile.type) {
-            Alert.alert("오류", "파일 정보가 불완전합니다.");
+            console.error("❌ 파일 정보가 불완전합니다.");
             return;
           }
 
@@ -148,7 +147,7 @@ export const DocumentUploadModal = ({
             selectedFile.size,
             category
           );
-          Alert.alert("성공", "서류가 MyBox에 업로드되었습니다.");
+          console.log("✅ 서류가 MyBox에 업로드되었습니다.");
         }
 
         // 성공 시 콜백 호출
@@ -170,8 +169,7 @@ export const DocumentUploadModal = ({
       onClose();
       
     } catch (error) {
-      console.error('업로드 실패:', error);
-      Alert.alert("오류", error instanceof Error ? error.message : "업로드에 실패했습니다.");
+      console.error('❌ 업로드 실패:', error instanceof Error ? error.message : "업로드에 실패했습니다.");
     } finally {
       setUploading(false);
     }

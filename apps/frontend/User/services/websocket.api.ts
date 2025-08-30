@@ -24,6 +24,7 @@ class WebSocketService {
   private connectionListeners: ((connected: boolean) => void)[] = [];
   private userNm: string | null = null;
   private stompSessionId: string | null = null;
+  private recentMessages: Set<string> = new Set(); // 최근 메시지 추적
 
   connect(userNm: string): void {
     this.userNm = userNm;
@@ -127,6 +128,27 @@ class WebSocketService {
         if (messageBody.trim()) {
           const notification: NotificationMessage = JSON.parse(messageBody);
           console.log('📬 Parsed notification:', notification);
+          
+          // 중복 메시지 방지: 메시지 해시 생성
+          const messageHash = `${notification.title}-${notification.message}-${notification.createdAt}`;
+          
+          if (this.recentMessages.has(messageHash)) {
+            console.log('🔄 WebSocketService: Duplicate message detected, skipping:', messageHash);
+            return;
+          }
+          
+          // 최근 메시지 목록에 추가 (최대 100개 유지)
+          this.recentMessages.add(messageHash);
+          if (this.recentMessages.size > 100) {
+            const firstMessage = this.recentMessages.values().next().value;
+            this.recentMessages.delete(firstMessage);
+          }
+          
+          // 3분 후 자동 제거
+          setTimeout(() => {
+            this.recentMessages.delete(messageHash);
+          }, 3 * 60 * 1000);
+          
           this.notifyMessageListeners(notification);
         }
       }
@@ -205,6 +227,7 @@ class WebSocketService {
     this.userNm = null;
     this.stompSessionId = null;
     this.reconnectAttempts = 0;
+    this.recentMessages.clear(); // 최근 메시지 캐시도 클리어
   }
 
   addMessageListener(listener: (message: NotificationMessage) => void): void {

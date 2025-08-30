@@ -80,8 +80,10 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   // 사용자 변경 시 재연결
   useEffect(() => {
     if (user?.userNm) {
+      console.log('🔄 User changed, reconnecting WebSocket:', user.userNm);
       connect();
     } else {
+      console.log('🔄 No user, disconnecting WebSocket');
       disconnect();
     }
   }, [user?.userNm]);
@@ -109,19 +111,44 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         console.log(`🆔 WebSocket: Generated ID ${notification.id} for notification`);
       }
       
-      // 중복 알림 방지 - ID뿐만 아니라 title과 message로도 체크
-      const exists = prev.some(n => 
-        (n.id === notification.id && n.id !== null) ||
-        (n.title === notification.title && n.message === notification.message && 
-         Math.abs(new Date(n.createdAt).getTime() - new Date(notification.createdAt).getTime()) < 5000)
-      );
+      // 더 강력한 중복 알림 방지 로직
+      const exists = prev.some(n => {
+        // 1. 같은 ID인 경우
+        if (n.id === notification.id && n.id !== null && n.id !== undefined) {
+          console.log(`🔄 WebSocket: Duplicate by ID ${notification.id}`);
+          return true;
+        }
+        
+        // 2. 같은 제목과 메시지, 5초 이내인 경우
+        if (n.title === notification.title && n.message === notification.message) {
+          const timeDiff = Math.abs(new Date(n.createdAt).getTime() - new Date(notification.createdAt).getTime());
+          if (timeDiff < 5000) {
+            console.log(`🔄 WebSocket: Duplicate by content and time (${timeDiff}ms)`);
+            return true;
+          }
+        }
+        
+        // 3. 같은 relatedId, type, title인 경우 (장학금 관련 알림)
+        if (n.relatedId && notification.relatedId && 
+            n.relatedId === notification.relatedId && 
+            n.type === notification.type && 
+            n.title === notification.title) {
+          const timeDiff = Math.abs(new Date(n.createdAt).getTime() - new Date(notification.createdAt).getTime());
+          if (timeDiff < 10000) { // 10초 이내
+            console.log(`🔄 WebSocket: Duplicate by relatedId ${notification.relatedId} and type ${notification.type}`);
+            return true;
+          }
+        }
+        
+        return false;
+      });
       
       if (exists) {
         console.log(`🔄 WebSocket: Duplicate notification detected, skipping: ${notification.title}`);
         return prev;
       }
       
-      console.log(`➕ WebSocket: Adding notification ${notification.id} - ${notification.title}`);
+      console.log(`➕ WebSocket: Adding notification ${notification.id} - ${notification.title} (type: ${notification.type})`);
       // 최신 알림을 상단에 추가
       const updated = [notification, ...prev];
       console.log(`📊 WebSocket: Total notifications after add: ${updated.length}`);

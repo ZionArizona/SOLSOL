@@ -1,4 +1,4 @@
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import tokenManager from '../utils/tokenManager';
 
 // API Base URL
@@ -110,7 +110,7 @@ class ApiClient {
       }
 
       // 사용자에게 알림 표시
-      Alert.alert('오류', errorMessage);
+      console.error('❌ API 오류:', errorMessage);
       throw new Error(errorMessage);
     }
 
@@ -118,7 +118,7 @@ class ApiClient {
       return await response.json();
     } catch (error) {
       const message = '서버 응답을 처리하는 중 오류가 발생했습니다.';
-      Alert.alert('오류', message);
+      console.error('❌ 서버 응답 처리 오류:', message);
       throw new Error(message);
     }
   }
@@ -190,15 +190,7 @@ class ApiClient {
           return await this.handleResponse<T>(retryResponse);
         } else {
           // 토큰 갱신 실패 - 로그인 페이지로 이동
-          Alert.alert('알림', '로그인이 필요합니다.', [
-            { 
-              text: '확인', 
-              onPress: () => {
-                // TODO: 로그인 페이지로 네비게이션
-                console.log('로그인 페이지로 이동 필요');
-              }
-            }
-          ]);
+          console.log('❌ 로그인이 필요합니다');
           throw new Error('Authentication required');
         }
       }
@@ -226,7 +218,7 @@ class ApiClient {
       } else {
         // 비-Error 객체인 경우 방어적 처리
         console.error('❌ HTTP 요청 실패(비-Error):', err);
-        Alert.alert('연결 오류', '네트워크 연결을 확인해주세요.');
+        console.error('❌ 연결 오류: 네트워크 연결을 확인해주세요.');
         throw new Error('네트워크 연결을 확인해주세요.');
       }
 
@@ -271,6 +263,5 @@ export const apiClient = new ApiClient(BASE_URL);
 // 에러 처리 유틸리티
 export const handleApiError = (error: any, defaultMessage = '오류가 발생했습니다.') => {
   const message = error?.message || defaultMessage;
-  Alert.alert('오류', message);
-  console.error('API Error:', error);
+  console.error('❌ API Error:', message, error);
 };

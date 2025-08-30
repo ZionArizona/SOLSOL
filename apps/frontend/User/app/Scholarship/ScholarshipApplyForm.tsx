@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, Alert, ActivityIndicator, Text, TouchableOpacity, Modal } from "react-native";
+import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, ActivityIndicator, Text, TouchableOpacity, Modal } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import BG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
@@ -37,7 +37,7 @@ export default function ScholarshipApplyForm() {
   useEffect(() => {
     const loadScholarship = async () => {
       if (!scholarshipId) {
-        Alert.alert('오류', '장학금 ID가 없습니다.');
+        console.error('❌ 장학금 ID가 없습니다.');
         router.back();
         return;
       }
@@ -58,17 +58,17 @@ export default function ScholarshipApplyForm() {
               setExistingApplication(applicationData);
               setReason(applicationData.reason || "");
             } else {
-              Alert.alert('오류', '기존 신청 정보를 찾을 수 없습니다.');
+              console.error('❌ 기존 신청 정보를 찾을 수 없습니다.');
               setIsEditMode(false);
             }
           }
         } else {
-          Alert.alert('오류', '장학금 정보를 찾을 수 없습니다.');
+          console.error('❌ 장학금 정보를 찾을 수 없습니다.');
           router.back();
         }
       } catch (error) {
         console.error('장학금 정보 로드 오류:', error);
-        Alert.alert('오류', '장학금 정보를 불러오는 중 오류가 발생했습니다.');
+        console.error('❌ 장학금 정보를 불러오는 중 오류가 발생했습니다.');
         router.back();
       } finally {
         setLoading(false);
@@ -87,7 +87,7 @@ export default function ScholarshipApplyForm() {
       setMyDocuments(docs);
     } catch (error) {
       console.error('❌ MyBox 서류 목록 로드 실패:', error);
-      Alert.alert('오류', 'MyBox 서류 목록을 불러올 수 없습니다.');
+      console.error('❌ MyBox 서류 목록을 불러올 수 없습니다.');
     }
   };
 
@@ -109,7 +109,7 @@ export default function ScholarshipApplyForm() {
     setFiles(prev => [...prev, ...selectedDocs]);
     setSelectedDocuments(new Set());
     setShowMyBoxModal(false);
-    Alert.alert('성공', `${selectedDocs.length}개 서류가 추가되었습니다.`);
+    console.log(`✅ ${selectedDocs.length}개 서류가 추가되었습니다.`);
   };
 
   // 파일 업로드 후 MyBox에 저장
@@ -142,7 +142,7 @@ export default function ScholarshipApplyForm() {
       
       if (isEditMode) {
         success = await applicationApi.updateApplication(parseInt(scholarshipId), submitReason);
-        Alert.alert('성공', '장학금 신청이 수정되었습니다.');
+        console.log('✅ 장학금 신청이 수정되었습니다.');
       } else {
         // 1. 먼저 장학금 신청만 제출 (서류 없이)
         success = await applicationApi.submitApplication({
@@ -182,7 +182,7 @@ export default function ScholarshipApplyForm() {
                   console.log(`✅ MyBox 파일 복사 완료: ${file.name}, documentNm: ${documentNm}`);
                 } catch (error) {
                   console.error(`❌ MyBox 파일 복사 실패: ${file.name}`, error);
-                  Alert.alert('오류', `MyBox 파일 "${file.name}" 복사에 실패했습니다.`);
+                  console.error(`❌ MyBox 파일 "${file.name}" 복사에 실패했습니다.`);
                   continue;
                 }
               } else {
@@ -219,11 +219,11 @@ export default function ScholarshipApplyForm() {
               }
             } catch (error) {
               console.error(`❌ 파일 ${i + 1} 업로드 실패:`, file.name, error);
-              Alert.alert('오류', `파일 "${file.name}" 업로드에 실패했습니다.`);
+              console.error(`❌ 파일 "${file.name}" 업로드에 실패했습니다.`);
             }
           }
           
-          Alert.alert('성공', '장학금 신청 및 서류 업로드가 완료되었습니다.');
+          console.log('✅ 장학금 신청 및 서류 업로드가 완료되었습니다.');
         }
       }
       
@@ -236,12 +236,12 @@ export default function ScholarshipApplyForm() {
         }
       } else {
         const actionText = isEditMode ? '수정' : '신청';
-        Alert.alert('실패', `장학금 ${actionText}에 실패했습니다.`);
+        console.error(`❌ 장학금 ${actionText}에 실패했습니다.`);
       }
     } catch (error) {
       const actionText = isEditMode ? '수정' : '신청';
       console.error(`장학금 ${actionText} 오류:`, error);
-      Alert.alert('오류', `장학금 ${actionText} 중 오류가 발생했습니다.`);
+      console.error(`❌ 장학금 ${actionText} 중 오류가 발생했습니다.`);
     } finally {
       setSubmitting(false);
     }
@@ -270,11 +270,11 @@ export default function ScholarshipApplyForm() {
         console.log('🔥 취소 성공, 상세페이지로 이동');
         router.push(`/Scholarship/ScholarshipDetail?id=${scholarshipId}`);
       } else {
-        Alert.alert('실패', '신청 취소에 실패했습니다.');
+        console.error('❌ 신청 취소에 실패했습니다.');
       }
     } catch (error) {
       console.error('🔥 지원취소 오류:', error);
-      Alert.alert('오류', '신청 취소 중 오류가 발생했습니다.');
+      console.error('❌ 신청 취소 중 오류가 발생했습니다.');
     } finally {
       setCanceling(false);
     }
