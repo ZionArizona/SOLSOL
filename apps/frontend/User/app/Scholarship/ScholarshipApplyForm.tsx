@@ -376,29 +376,25 @@ export default function ScholarshipApplyForm() {
           <Checklist title="제출 서류 체크리스트" items={checklistItems} />
 
           {isEditMode ? (
-            // 수정 모드: 수정하기 + 지원취소 버튼
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, marginHorizontal: 12 }}>
-              <TouchableOpacity
-                style={[styles.cancelButton, { opacity: canceling ? 0.6 : 1 }]}
-                onPress={() => {
-                  console.log('🔥 지원취소 TouchableOpacity 클릭됨');
-                  console.log('🔥 canceling:', canceling, 'submitting:', submitting);
-                  handleCancel();
-                }}
-                disabled={canceling || submitting}
-              >
-                <Text style={styles.cancelButtonText}>
-                  {canceling ? '취소중...' : '지원취소'}
-                </Text>
-              </TouchableOpacity>
-              
-              <PrimaryButton
-                label={submitting ? "수정중..." : "수정하기"}
-                disabled={!canSubmit || submitting || canceling}
-                onPress={handleSubmit}
-                style={{ flex: 1 }}
-              />
-            </View>
+            // 수정 모드: 지원취소 버튼만
+            <TouchableOpacity
+              style={[styles.cancelButton, { 
+                opacity: canceling ? 0.6 : 1,
+                marginTop: 12, 
+                marginHorizontal: 12,
+                backgroundColor: '#8B95A1' // 회색 계열로 변경
+              }]}
+              onPress={() => {
+                console.log('🔥 지원취소 TouchableOpacity 클릭됨');
+                console.log('🔥 canceling:', canceling, 'submitting:', submitting);
+                handleCancel();
+              }}
+              disabled={canceling || submitting}
+            >
+              <Text style={styles.cancelButtonText}>
+                {canceling ? '취소중...' : '지원취소'}
+              </Text>
+            </TouchableOpacity>
           ) : (
             // 신규 신청 모드: 신청하기 버튼만
             <PrimaryButton
