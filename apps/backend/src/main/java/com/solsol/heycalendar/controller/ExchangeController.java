@@ -19,7 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/exchange")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:8081", "http://localhost:5173"}, allowCredentials = "true")
+// @CrossOrigin(origins = {"http://localhost:8081", "http://localhost:5173"}, allowCredentials = "true")
 public class ExchangeController {
     
     private final ExchangeService exchangeService;

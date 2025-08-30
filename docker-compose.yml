@@ -17,6 +17,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://${RDS_HOST}:${RDS_PORT}/${RDS_DB}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=utf8
       SPRING_DATASOURCE_USERNAME: ${RDS_USER}
       SPRING_DATASOURCE_PASSWORD: ${RDS_PASSWORD}
+
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     expose: ["8080"]
     networks: [solsol-net]
 
@@ -25,6 +31,11 @@ services:
     build:
       context: ./apps/frontend/User
       dockerfile: Dockerfile
+    environment:
+      TZ: Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     expose: ["80"]
     networks: [solsol-net]
 
@@ -33,6 +44,11 @@ services:
     build:
       context: ./apps/frontend/Admin
       dockerfile: Dockerfile
+    environment:
+      TZ: Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     expose: ["80"]
     networks: [solsol-net]
 
@@ -47,6 +63,10 @@ services:
       - /letsencrypt:/etc/letsencrypt    
       - /certbot:/var/www/certbot          
       - /logs:/var/log/nginx 
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      TZ: Asia/Seoul
     networks: [solsol-net]
 
 networks:
