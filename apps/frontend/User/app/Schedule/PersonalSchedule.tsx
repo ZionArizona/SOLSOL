@@ -1,6 +1,6 @@
 import DateTimePicker, { AndroidNativeProps, IOSNativeProps } from '@react-native-community/datetimepicker';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, ImageBackground, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ImageBackground, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Modal from 'react-native-modal';
 import { DocumentUploadModal } from '../../components/mydocs/DocumentUploadModal';
 import { apiClient } from '../../services/api';
@@ -76,11 +76,11 @@ const PersonalSchedule: React.FC<Props> = ({ isVisible, selectedDate, onClose, o
 
   const handleSave = async () => {
     if (!selectedDate) {
-      Alert.alert('알림', '선택된 날짜가 없습니다.');
+      console.log('❌ 선택된 날짜가 없습니다.');
       return;
     }
     if (!title.trim()) {
-      Alert.alert('알림', '일정 제목을 입력해주세요.');
+      console.log('❌ 일정 제목을 입력해주세요.');
       return;
     }
 
@@ -131,28 +131,12 @@ const PersonalSchedule: React.FC<Props> = ({ isVisible, selectedDate, onClose, o
       // 부모 컴포넌트에 저장된 일정 데이터 전달
       onSave({ title: title.trim(), start, end, notifyMinutes });
       
-      // 플랫폼별 처리
-      if (Platform.OS === 'web') {
-        // 웹에서는 Alert 후 바로 모달 닫기
-        alert('일정이 저장되었습니다.');
-        onClose();
-      } else {
-        // 네이티브에서는 기존 방식 유지
-        Alert.alert('성공', '일정이 저장되었습니다.', [
-          { text: '확인', onPress: onClose }
-        ]);
-      }
+      // 저장 완료 후 모달 닫기
+      console.log('✅ 일정이 저장되었습니다.');
+      onClose();
 
     } catch (error: any) {
-      console.error('❌ 일정 저장 실패:', error);
-      Alert.alert(
-        '저장 실패', 
-        error?.message || '일정 저장에 실패했습니다. 다시 시도해주세요.',
-        [
-          { text: '닫기', style: 'cancel' },
-          { text: '다시 시도', onPress: handleSave }
-        ]
-      );
+      console.error('❌ 일정 저장 실패:', error?.message || '일정 저장에 실패했습니다.');
     }
   };
 

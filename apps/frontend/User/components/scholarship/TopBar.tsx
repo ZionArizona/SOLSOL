@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { router } from "expo-router";
+import { NotificationBell } from "../shared/NotificationBell";
 
 export const TopBar = ({ title, onBackPress }: { title: string; onBackPress?: () => void }) => {
   const handleBackPress = () => {
@@ -31,12 +32,7 @@ export const TopBar = ({ title, onBackPress }: { title: string; onBackPress?: ()
       <Text style={styles.headerTitle}>{title}</Text>
 
       <View style={styles.rightWrap}>
-        <TouchableOpacity 
-          onPress={() => { router.push('/Notifications/Notifications'); }} 
-          style={styles.iconBtn}
-        >
-          <Image source={require('../../assets/images/BellIcon.png')} style={styles.icon} />
-        </TouchableOpacity>
+        <NotificationBell size={20} />
         <TouchableOpacity 
           onPress={() => { router.push('/'); }} 
           style={styles.iconBtn}
