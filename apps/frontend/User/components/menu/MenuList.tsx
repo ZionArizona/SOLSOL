@@ -5,6 +5,7 @@ import { StyleSheet } from "react-native";
 import { BellIcon, CalendarIcon, FileBoxIcon, HomeIcon, ScholarshipIcon, UserCircleIcon } from "../shared/icons";
 import Svg, { Path } from "react-native-svg";
 import { MenuItem } from "./MenuItem";
+import { logoutCore } from "../../utils/logout"
 
 // 계좌 아이콘 컴포넌트
 const AccountIcon = ({ size = 24 }) => (
@@ -66,7 +67,14 @@ export const MenuList = () => {
         icon={<UserCircleIcon size={24} />}
         title="로그아웃"
         desc="계정 전환 및 보안"
-        onPress={() => router.push("/UserBasic/LoginPage")}
+        onPress={async () => {
+          try {
+            await logoutCore();                    // ✅ 토큰 삭제 + 로컬 정리 + 디버그 로그
+            router.replace('/UserBasic/LoginPage');  // ✅ 뒤로가기로 돌아가지 않도록 replace
+          } catch (e) {
+            console.error('❌ 로그아웃 처리 실패:', e);
+          }
+        }}
       />
     </LinearGradient>
   );

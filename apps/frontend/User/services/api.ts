@@ -204,21 +204,35 @@ class ApiClient {
       }
 
       return await this.handleResponse<T>(response);
-    } catch (error) {
-      console.error('❌ HTTP 요청 실패:', error);
-      console.error('🔍 에러 상세:', {
-        name: error?.name,
-        message: error?.message,
-        stack: error?.stack?.substring(0, 200)
-      });
+    } catch (err: unknown) {
+      // console.error('❌ HTTP 요청 실패:', error);
+      // console.error('🔍 에러 상세:', {
+      //   name: error?.name,
+      //   message: error?.message,
+      //   stack: error?.stack?.substring(0, 200)
+      // });
       
-      if (error instanceof Error) {
-        throw error;
+      // if (error instanceof Error) {
+      //   throw error;
+      // }
+      if (err instanceof Error) {
+        console.error('❌ HTTP 요청 실패:', err);
+        console.error('🔍 에러 상세:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack?.substring(0, 200),
+        });
+        throw err; // Error 그대로 재던짐
+      } else {
+        // 비-Error 객체인 경우 방어적 처리
+        console.error('❌ HTTP 요청 실패(비-Error):', err);
+        Alert.alert('연결 오류', '네트워크 연결을 확인해주세요.');
+        throw new Error('네트워크 연결을 확인해주세요.');
       }
-      
-      const message = '네트워크 연결을 확인해주세요.';
-      Alert.alert('연결 오류', message);
-      throw new Error(message);
+
+      // const message = '네트워크 연결을 확인해주세요.';
+      // Alert.alert('연결 오류', message);
+      // throw new Error(message);
     }
   }
 
