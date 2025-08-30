@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 export type DocItem = {
@@ -72,22 +72,9 @@ export const DocCard = ({
     return;
   }
 
-  // ✅ 네이티브: 반드시 함수로 감싸 전달
-  Alert.alert(
-    '서류 삭제',
-    `'${item.fileName}' 파일을 삭제하시겠습니까?`,
-    [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: () => {
-          console.log('🗑️ (native) 삭제 확인 버튼 누름:', id);
-          onDelete(id);
-        },
-      },
-    ],
-  );
+  // ✅ 네이티브: 직접 삭제 실행
+  console.log('🗑️ (native) 파일 삭제:', id);
+  onDelete(id);
 };
 
   return (

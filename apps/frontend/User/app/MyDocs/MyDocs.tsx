@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { ImageBackground, ScrollView, StatusBar, StyleSheet, View, Alert } from "react-native";
+import { ImageBackground, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import BG from "../../assets/images/SOLSOLBackground.png";
 import { TopBar } from "../../components/scholarship/TopBar";
 import { StoragePanel } from "../../components/mydocs/StoragePanel";
@@ -44,7 +44,7 @@ export default function MyDocs() {
         console.error('오류 스택:', error.stack);
       }
       
-      Alert.alert('오류', `서류 목록을 불러오는데 실패했습니다.\n${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      console.error('❌ 서류 목록을 불러오는데 실패했습니다:', error instanceof Error ? error.message : '알 수 없는 오류');
       
       // 실패 시에는 빈 배열로 설정 (샘플 데이터 제거)
       setDocuments([]);
@@ -101,10 +101,10 @@ export default function MyDocs() {
       await loadDocuments();
       setSelectedDocs([]);
       setBulkMode(false);
-      Alert.alert('성공', '선택한 서류가 삭제되었습니다.');
+      console.log('✅ 선택한 서류가 삭제되었습니다.');
     } catch (error) {
       console.error('일괄 삭제 실패:', error);
-      Alert.alert('오류', '서류 삭제에 실패했습니다.');
+      console.error('❌ 서류 삭제에 실패했습니다.');
     }
   };
 
@@ -128,13 +128,13 @@ export default function MyDocs() {
       console.log('✅ 서류 삭제 성공:', docId);
       
       await loadDocuments();
-      Alert.alert('성공', '서류가 삭제되었습니다.');
+      console.log('✅ 서류가 삭제되었습니다.');
     } catch (error) {
       console.error('❌ 단일 삭제 실패:', error);
       if (error instanceof Error) {
         console.error('오류 메시지:', error.message);
       }
-      Alert.alert('오류', `서류 삭제에 실패했습니다.\n${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      console.error('❌ 서류 삭제에 실패했습니다:', error instanceof Error ? error.message : '알 수 없는 오류');
     }
   };
 
