@@ -161,8 +161,9 @@ npx expo start
 
 ## 🐳 Docker를 이용한 전체 프로젝트 실행 <a id="docker"></a>
 
-| **Infra** | ![Docker](https://img.shields.io/badge/Container-Docker-2496ED) ![Nginx](https://img.shields.io/badge/Proxy-Nginx-009639) ![AWS](https://img.shields.io/badge/Cloud-AWS-FF9900) |
+| **Infra** | ![Docker](https://img.shields.io/badge/Container-Docker-2496ED) ![Nginx](https://img.shields.io/badge/Proxy-Nginx-009639) ![AWS EC2](https://img.shields.io/badge/AWS-EC2-FF9900?logo=amazon-aws&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS-RDS-527FFF?logo=amazon-aws&logoColor=white) ![AWS S3](https://img.shields.io/badge/AWS-S3-569A31?logo=amazon-aws&logoColor=white) |
 |:-|:-|
+
 
 **전제 조건**
 - Docker
