@@ -50,7 +50,7 @@
 
 | 사용자 페이지 | 관리자 페이지 |
 |:--:|:--:|
-| ![]() | ![]() |
+| ![](https://github.com/ZionArizona/SOLSOL/blob/main/%EC%82%AC%EC%9A%A9%EC%9E%90%20%ED%8E%98%EC%9D%B4%EC%A7%80.png) | ![](https://github.com/ZionArizona/SOLSOL/blob/main/%EA%B4%80%EB%A6%AC%EC%9E%90%20%ED%8E%98%EC%9D%B4%EC%A7%80.png) |
 
 - **사용자 앱 (모바일)**  
   - 학생: 장학금 검색, 신청, 문서 업로드  
