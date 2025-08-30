@@ -23,43 +23,37 @@ export default function ScholarshipDetail() {
   const [applicationLoading, setApplicationLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+  const [applicationReason, setApplicationReason] = useState<string | null>(null);
   
   const { markAsRead, deleteNotificationsByScholarship } = useWebSocket();
 
-  // 특정 장학금과 관련된 알림들을 삭제하는 함수
-  const deleteNotificationsForScholarship = async (scholarshipId: number) => {
+  // 특정 장학금과 관련된 알림들을 읽음 처리하는 함수
+  const markNotificationsAsReadForScholarship = async (scholarshipId: number) => {
     try {
-      console.log(`🗑️ Deleting notifications for scholarship: ${scholarshipId}`);
+      console.log(`📖 Marking notifications as read for scholarship: ${scholarshipId}`);
       
       // 모든 알림을 가져와서 이 장학금과 관련된 것들을 찾음
       const notifications = await notificationApi.getUserNotifications();
       
-      // 이 장학금 ID와 관련된 알림들 필터링
-      const relatedNotifications = notifications.filter(notification => 
-        notification.relatedId === scholarshipId
+      // 이 장학금 ID와 관련된 읽지 않은 알림들 필터링
+      const unreadRelatedNotifications = notifications.filter(notification => 
+        notification.relatedId === scholarshipId && !notification.isRead
       );
       
-      console.log(`🗑️ Found ${relatedNotifications.length} notifications for scholarship ${scholarshipId}`);
+      console.log(`📖 Found ${unreadRelatedNotifications.length} unread notifications for scholarship ${scholarshipId}`);
       
-      // 각각의 알림을 삭제
-      for (const notification of relatedNotifications) {
+      // 각각의 알림을 읽음 처리
+      for (const notification of unreadRelatedNotifications) {
         try {
-          // 읽지 않은 알림이면 먼저 읽음 처리 (unreadCount 감소)
-          if (!notification.isRead) {
-            await notificationApi.markAsRead(notification.id);
-            markAsRead(notification.id);
-            console.log(`✅ Marked notification ${notification.id} as read`);
-          }
-          
-          // 알림 삭제
-          await notificationApi.deleteNotification(notification.id);
-          console.log(`🗑️ Deleted notification ${notification.id}`);
+          await notificationApi.markAsRead(notification.id);
+          markAsRead(notification.id);
+          console.log(`✅ Marked notification ${notification.id} as read`);
         } catch (error) {
-          console.warn(`⚠️ Failed to delete notification ${notification.id}:`, error);
+          console.warn(`⚠️ Failed to mark notification ${notification.id} as read:`, error);
         }
       }
     } catch (error) {
-      console.error('❌ Failed to delete scholarship notifications:', error);
+      console.error('❌ Failed to mark scholarship notifications as read:', error);
     }
   };
 
@@ -224,17 +218,15 @@ export default function ScholarshipDetail() {
         console.log('🔖 Bookmark status:', bookmarkStatus);
         console.log('📋 Application data:', applicationData);
         
-        // 이 장학금과 관련된 알림을 자동으로 삭제
-        await deleteNotificationsForScholarship(parseInt(id));
-        
-        // WebSocket 컨텍스트에서도 해당 장학금 관련 알림들 삭제
-        deleteNotificationsByScholarship(parseInt(id));
+        // 이 장학금과 관련된 알림을 읽음 처리 (삭제하지 않음)
+        await markNotificationsAsReadForScholarship(parseInt(id));
         
         if (scholarshipData) {
           setScholarship(scholarshipData);
           setIsBookmarked(bookmarkStatus);
           setHasApplied(!!applicationData);
           setApplicationStatus(applicationData?.state || null);
+          setApplicationReason(applicationData?.reason || null);
         } else {
           Alert.alert('오류', '장학금 정보를 찾을 수 없습니다.');
           router.back();
@@ -371,11 +363,29 @@ export default function ScholarshipDetail() {
                   {getApplicationStatusMessage()}
                 </InfoPanel.P>
                 {hasApplied && applicationStatus && (
-                  <InfoPanel.P muted>
-                    {applicationStatus === 'PENDING' && '심사 진행중입니다'}
-                    {applicationStatus === 'APPROVED' && '축하합니다! 선발되었습니다'}
-                    {applicationStatus === 'REJECTED' && '아쉽게도 탈락하였지만 재신청이 가능합니다'}
-                  </InfoPanel.P>
+                  <>
+                    <InfoPanel.P muted>
+                      {applicationStatus === 'PENDING' && '심사 진행중입니다'}
+                      {applicationStatus === 'APPROVED' && '축하합니다! 선발되었습니다'}
+                      {applicationStatus === 'REJECTED' && '아쉽게도 탈락하였지만 재신청이 가능합니다'}
+                    </InfoPanel.P>
+                    {applicationStatus === 'REJECTED' && applicationReason && (
+                      <InfoPanel.P style={{ 
+                        backgroundColor: '#FFF3CD', 
+                        padding: '12px', 
+                        borderRadius: '6px', 
+                        marginTop: '8px',
+                        borderLeft: '4px solid #FFC107'
+                      }}>
+                        <Text style={{ fontWeight: '600', color: '#856404', marginBottom: '4px' }}>
+                          관리자 메시지:
+                        </Text>
+                        <Text style={{ color: '#856404', lineHeight: 20 }}>
+                          {applicationReason}
+                        </Text>
+                      </InfoPanel.P>
+                    )}
+                  </>
                 )}
               </>
             }

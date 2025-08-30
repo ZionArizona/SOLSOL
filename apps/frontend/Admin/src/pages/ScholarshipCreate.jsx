@@ -9,6 +9,7 @@ export default function ScholarshipCreate(){
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [categories, setCategories] = useState([])
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 사이드바 상태
   
   // 필수 필드들에 대한 ref 생성
   const scholarshipNameRef = useRef()
@@ -165,7 +166,8 @@ export default function ScholarshipCreate(){
       
       if (result) {
         alert('장학금이 성공적으로 등록되었습니다.')
-        navigate('/admin/scholarships')
+        // navigate 대신 window.location을 사용하여 강제 리다이렉트
+        window.location.href = '/admin/scholarships'
       }
     } catch (error) {
       console.error('Failed to create scholarship:', error)
@@ -175,11 +177,18 @@ export default function ScholarshipCreate(){
     }
   }
 
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
+  }
+
   return (
     <>
       <Navbar/>
       <div className="admin-layout">
-        <Sidebar/>
+        <Sidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggle={handleSidebarToggle}
+        />
 
         <main className="admin-main">
           <form className="form-panel" onSubmit={onSubmit}>

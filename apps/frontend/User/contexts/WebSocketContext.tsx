@@ -30,6 +30,12 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
   // 읽지 않은 알림 개수 계산
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  
+  // 디버깅: 알림 개수 로깅
+  React.useEffect(() => {
+    console.log(`🔢 WebSocket notifications count: ${notifications.length}, unread: ${unreadCount}`);
+    console.log('🔢 All notifications:', notifications.map(n => ({ id: n.id, title: n.title, isRead: n.isRead })));
+  }, [notifications, unreadCount]);
 
   useEffect(() => {
     // 연결 상태 감지 리스너
@@ -97,12 +103,24 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
   const addNotification = (notification: NotificationMessage) => {
     setNotifications(prev => {
-      // 중복 알림 방지
-      const exists = prev.some(n => n.id === notification.id);
-      if (exists) return prev;
+      // id가 null인 경우 임시 ID 생성
+      if (!notification.id) {
+        notification.id = Date.now() + Math.floor(Math.random() * 1000);
+        console.log(`🆔 WebSocket: Generated ID ${notification.id} for notification`);
+      }
       
+      // 중복 알림 방지 (ID가 있는 경우만)
+      const exists = prev.some(n => n.id === notification.id && n.id !== null);
+      if (exists) {
+        console.log(`🔄 WebSocket: Notification ${notification.id} already exists, skipping`);
+        return prev;
+      }
+      
+      console.log(`➕ WebSocket: Adding notification ${notification.id} - ${notification.title}`);
       // 최신 알림을 상단에 추가
-      return [notification, ...prev];
+      const updated = [notification, ...prev];
+      console.log(`📊 WebSocket: Total notifications after add: ${updated.length}`);
+      return updated;
     });
   };
 

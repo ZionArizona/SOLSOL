@@ -216,6 +216,10 @@ public class ShinhanBankService {
 
     public void createMemberAndAccount(String userId, String userNm) {
         log.info("===== Shinhan Bank 통합 시작: userId={} =====", userId);
+        log.info("🔧 환경설정 확인 - API Key: {}, Account Type: {}", 
+            apiKey != null ? "설정됨" : "❌ 미설정", 
+            accountTypeUniqueNo != null ? "설정됨" : "❌ 미설정");
+        
         String userKey = null;
         String accountNo = null;
 
@@ -260,6 +264,7 @@ public class ShinhanBankService {
         HttpEntity<MemberCreationRequest> entity = new HttpEntity<>(request, headers);
 
         try {
+            log.info("📡 Member API 호출 시도: URL={}", MEMBER_API_URL);
             log.debug("Member API 호출: URL={}, request={}", MEMBER_API_URL, objectMapper.writeValueAsString(request));
             ResponseEntity<MemberCreationResponse> response = restTemplate.postForEntity(MEMBER_API_URL, entity, MemberCreationResponse.class);
             MemberCreationResponse body = response.getBody();
@@ -286,7 +291,7 @@ public class ShinhanBankService {
     }
 
     private String createAccount(String userKey) {
-        String currentDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));
         String txnNo = generateInstitutionTransactionUniqueNo();
 
@@ -312,6 +317,7 @@ public class ShinhanBankService {
         HttpEntity<AccountCreationRequest> entity = new HttpEntity<>(request, headers);
 
         try {
+            log.info("📡 Account API 호출 시도: URL={}", ACCOUNT_API_URL);
             log.debug("Account API 호출: URL={}, request={}", ACCOUNT_API_URL, objectMapper.writeValueAsString(request));
             ResponseEntity<AccountCreationResponse> response = restTemplate.postForEntity(ACCOUNT_API_URL, entity, AccountCreationResponse.class);
             AccountCreationResponse body = response.getBody();

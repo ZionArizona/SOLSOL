@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar'
 import StatCards from '../components/StatCards'
 import Toolbar from '../components/Toolbar'
 import FilterBar from '../components/FilterBar'
-import ScholarshipCard from '../components/ScholarshipCard'
+import ScholarshipCard from '../components/ScholarShipCard'
 import { api } from '../utils/api'
 import './Scholarship-manage.css'
 
@@ -65,7 +65,7 @@ export default function ScholarshipManage(){
     }
   }
 
-  const fetchApplicationCounts = async (scholarshipList) => {
+  const fetchApplicationCounts = async () => {
     try {
       // 모든 신청서 데이터를 가져와서 장학금별로 집계
       const applicationsResult = await api.get('/applications')

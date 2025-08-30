@@ -125,33 +125,52 @@ export default function NotificationsPage() {
     loadNotifications();
   };
 
-  // 알림 읽음 처리 함수 (읽음 상태만 변경, 삭제하지 않음)
+  // 알림 읽음 처리 함수 (모든 알림 읽으면 자동 삭제)
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       const id = parseInt(notificationId);
-      console.log(`📖 Starting to mark notification as read: ${id}`);
+      const notification = notifications.find(n => n.id === id);
       
-      // 백엔드에 읽음 처리 요청
-      await notificationApi.markAsRead(id);
-      console.log(`✅ Backend markAsRead successful for: ${id}`);
+      if (!notification) return;
       
-      // WebSocket 컨텍스트에서도 읽음 처리
-      markRealtimeAsRead(id);
-      console.log(`✅ WebSocket markAsRead successful for: ${id}`);
+      console.log(`📖 Starting to mark notification as read and delete: ${id}, type: ${notification.type}`);
       
-      // 로컬 상태 업데이트 - 읽음 상태만 변경 (삭제하지 않음)
-      setNotifications(prev => {
-        const updated = prev.map(notification => 
-          notification.id === id
-            ? { ...notification, isRead: true }
-            : notification
-        );
-        console.log(`📝 Local state updated for: ${id}`, 
-          updated.find(n => n.id === id)?.isRead ? 'READ' : 'UNREAD');
-        return updated;
-      });
+      // 모든 알림을 읽으면 자동 삭제
+      console.log(`🗑️ Auto-deleting notification: ${id}`);
+      
+      // 백엔드에서 알림 삭제
+      await notificationApi.deleteNotification(id);
+      
+      // WebSocket 컨텍스트에서도 삭제
+      deleteRealtimeNotification(id);
+      
+      // 로컬 상태에서 제거
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      
+      console.log(`✅ Auto-deleted notification after reading: ${id}`);
     } catch (error) {
       console.error('알림 읽음 처리 실패:', error);
+    }
+  };
+
+  // 스와이프로 알림 삭제하는 함수
+  const handleSwipeDelete = async (notificationId: string) => {
+    try {
+      const id = parseInt(notificationId);
+      console.log(`🗑️ Swiping to delete notification: ${id}`);
+      
+      // 백엔드에서 알림 삭제
+      await notificationApi.deleteNotification(id);
+      
+      // WebSocket 컨텍스트에서도 삭제
+      deleteRealtimeNotification(id);
+      
+      // 로컬 상태에서 제거
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      
+      console.log(`✅ Swipe deleted notification: ${id}`);
+    } catch (error) {
+      console.error('스와이프 삭제 실패:', error);
     }
   };
 
@@ -246,15 +265,9 @@ export default function NotificationsPage() {
     }
   };
 
-  // 컴포넌트 마운트 시 데이터 로드 및 읽지 않은 알림 읽음 처리
+  // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
-    const initializePage = async () => {
-      await loadNotifications();
-      // 알림 데이터를 로드한 후 읽지 않은 알림들을 읽음 처리
-      await markAllUnreadAsRead();
-    };
-    
-    initializePage();
+    loadNotifications();
   }, []);
 
   // 실시간 알림이 업데이트될 때마다 기존 알림과 병합
@@ -359,6 +372,7 @@ export default function NotificationsPage() {
                   key={notification.id} 
                   notification={notification} 
                   onMarkAsRead={handleMarkAsRead}
+                  onSwipeDelete={handleSwipeDelete}
                   onDeleteForAction={handleDeleteNotificationForAction}
                 />
               ))
