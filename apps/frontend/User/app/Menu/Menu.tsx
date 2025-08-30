@@ -1,12 +1,12 @@
 import React from "react";
 import { ImageBackground, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import BG from "../../assets/images/SOLSOLBackground.png";
-import { TopBar } from "../../components/scholarship/TopBar";
 import { MenuList } from "../../components/menu/MenuList";
+import { TopBar } from "../../components/scholarship/TopBar";
 
 export default function MenuPage() {
   return (
-    <ImageBackground source={BG} style={{ flex: 1 }} resizeMode="cover">
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={{ alignItems: "center", paddingBottom: 24 }}>
         <View style={styles.phone}>
@@ -14,7 +14,7 @@ export default function MenuPage() {
           <MenuList />
         </View>
       </ScrollView>
-    </ImageBackground>
+    </View>
   );
 }
-const styles = StyleSheet.create({ phone: { width: 360, paddingVertical: 8 } });
+const styles = StyleSheet.create({ phone: { width: "100%", paddingVertical: 8 } });
