@@ -265,10 +265,17 @@ export default function NotificationsPage() {
     }
   };
 
-  // 컴포넌트 마운트 시 데이터 로드
+  // 컴포넌트 마운트 시 데이터 로드 및 모든 알림 읽음 처리
   useEffect(() => {
     loadNotifications();
   }, []);
+
+  // 알림 데이터가 로드된 후 모든 읽지 않은 알림을 읽음 처리
+  useEffect(() => {
+    if (!loading && notifications.length > 0) {
+      markAllUnreadAsRead();
+    }
+  }, [loading, notifications]);
 
   // 실시간 알림이 업데이트될 때마다 기존 알림과 병합
   const mergedNotifications = useMemo(() => {

@@ -103,16 +103,21 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
   const addNotification = (notification: NotificationMessage) => {
     setNotifications(prev => {
-      // id가 null인 경우 임시 ID 생성
+      // id가 null인 경우 임시 ID 생성 (더 유니크하게)
       if (!notification.id) {
-        notification.id = Date.now() + Math.floor(Math.random() * 1000);
+        notification.id = Date.now() * 1000 + Math.floor(Math.random() * 1000);
         console.log(`🆔 WebSocket: Generated ID ${notification.id} for notification`);
       }
       
-      // 중복 알림 방지 (ID가 있는 경우만)
-      const exists = prev.some(n => n.id === notification.id && n.id !== null);
+      // 중복 알림 방지 - ID뿐만 아니라 title과 message로도 체크
+      const exists = prev.some(n => 
+        (n.id === notification.id && n.id !== null) ||
+        (n.title === notification.title && n.message === notification.message && 
+         Math.abs(new Date(n.createdAt).getTime() - new Date(notification.createdAt).getTime()) < 5000)
+      );
+      
       if (exists) {
-        console.log(`🔄 WebSocket: Notification ${notification.id} already exists, skipping`);
+        console.log(`🔄 WebSocket: Duplicate notification detected, skipping: ${notification.title}`);
         return prev;
       }
       

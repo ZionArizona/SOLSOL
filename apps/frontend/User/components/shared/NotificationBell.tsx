@@ -10,7 +10,9 @@ interface NotificationBellProps {
 }
 
 export const NotificationBell = ({ size = 20, color }: NotificationBellProps) => {
-  const { unreadCount } = useWebSocket();
+  const { unreadCount, isConnected } = useWebSocket();
+  
+  console.log(`🔔 NotificationBell: unreadCount=${unreadCount}, isConnected=${isConnected}`);
 
   const handlePress = () => {
     router.push("/Notifications/Notifications");

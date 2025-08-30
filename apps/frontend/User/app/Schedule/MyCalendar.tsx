@@ -213,8 +213,8 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
       notifyMinutes, // [ADD]
     };
     setEvents(prev => [...prev, newEvent]);
-    // 필요하면 서버 재조회
-    // setTimeout(() => loadPersonalSchedules(), 600);
+    // 서버에서 최신 데이터 다시 로드
+    setTimeout(() => loadPersonalSchedules(), 500);
   };
   
   // 등록 모달 닫기

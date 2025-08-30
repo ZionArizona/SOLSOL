@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Modal from 'react-native-modal';
 import { DocumentUploadModal } from '../../components/mydocs/DocumentUploadModal';
 import { apiClient } from '../../services/api';
@@ -68,85 +68,67 @@ const PersonalDetailSchedule: React.FC<Props> = ({ isVisible, event, onClose, on
   const handleDelete = async () => {
     if (!hasEvent || !event) return;
 
-    Alert.alert(
-      '일정 삭제',
-      '정말로 이 일정을 삭제하시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        { 
-          text: '삭제', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // 토큰에서 userNm 추출
-              const token = await require('../../utils/tokenManager').default.getAccessToken();
-              let userNm = null;
-              if (token) {
-                try {
-                  const payload = require('../../utils/tokenManager').default.decodeAccessToken(token);
-                  userNm = payload?.userNm || payload?.sub || payload?.userId;
-                } catch (error) {
-                  console.warn('토큰에서 userNm 추출 실패:', error);
-                }
-              }
-
-              const deleteData = {
-                userNm: userNm,
-                scheduleName: event.title.trim()
-              };
-
-              console.log('🗑️ 일정 삭제 API 호출 시작');
-              console.log('📤 전송할 데이터:', JSON.stringify(deleteData, null, 2));
-              console.log('🌐 전체 API URL:', `${apiClient.baseURL}/calendar/delete`);
-
-              // 토큰 헤더 생성
-              const headers: any = {
-                'Content-Type': 'application/json',
-              };
-              if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-              }
-
-              // fetch를 직접 사용하여 text 응답 처리
-              const response = await fetch(`${apiClient.baseURL}/calendar/delete`, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(deleteData),
-              });
-
-              console.log('✅ 일정 삭제 API 호출 완료!');
-              console.log('📊 응답 상태:', response.status);
-
-              if (response.ok) {
-                // 응답을 text로 읽기
-                const responseText = await response.text();
-                console.log('📥 응답 텍스트:', responseText);
-
-                if (responseText === "ok") {
-                  console.log('🎉 삭제 성공으로 판정!');
-                  // 삭제 성공 시 모달 닫고 부모 컴포넌트에 삭제된 일정 ID 전달
-                  onClose();
-                  if (onDelete) onDelete(event.id);
-                } else {
-                  console.log('❌ 예상치 못한 응답:', responseText);
-                  Alert.alert('삭제 실패', '일정 삭제에 실패했습니다.');
-                }
-              } else {
-                console.log('❌ HTTP 오류:', response.status, response.statusText);
-                Alert.alert('삭제 실패', `서버 오류가 발생했습니다. (${response.status})`);
-              }
-
-            } catch (error: any) {
-              console.error('❌ 일정 삭제 실패:', error);
-              Alert.alert(
-                '삭제 실패', 
-                error?.message || '일정 삭제에 실패했습니다. 다시 시도해주세요.'
-              );
-            }
-          }
+    console.log('🗑️ 일정 삭제를 진행합니다...');
+    try {
+      // 토큰에서 userNm 추출
+      const token = await require('../../utils/tokenManager').default.getAccessToken();
+      let userNm = null;
+      if (token) {
+        try {
+          const payload = require('../../utils/tokenManager').default.decodeAccessToken(token);
+          userNm = payload?.userNm || payload?.sub || payload?.userId;
+        } catch (error) {
+          console.warn('토큰에서 userNm 추출 실패:', error);
         }
-      ]
-    );
+      }
+
+      const deleteData = {
+        userNm: userNm,
+        scheduleName: event.title.trim()
+      };
+
+      console.log('🗑️ 일정 삭제 API 호출 시작');
+      console.log('📤 전송할 데이터:', JSON.stringify(deleteData, null, 2));
+      console.log('🌐 전체 API URL:', `${apiClient.baseURL}/calendar/delete`);
+
+      // 토큰 헤더 생성
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // fetch를 직접 사용하여 text 응답 처리
+      const response = await fetch(`${apiClient.baseURL}/calendar/delete`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(deleteData),
+      });
+
+      console.log('✅ 일정 삭제 API 호출 완료!');
+      console.log('📊 응답 상태:', response.status);
+
+      if (response.ok) {
+        // 응답을 text로 읽기
+        const responseText = await response.text();
+        console.log('📥 응답 텍스트:', responseText);
+
+        if (responseText === "ok") {
+          console.log('🎉 삭제 성공으로 판정!');
+          // 삭제 성공 시 모달 닫고 부모 컴포넌트에 삭제된 일정 ID 전달
+          onClose();
+          if (onDelete) onDelete(event.id);
+        } else {
+          console.log('❌ 예상치 못한 응답:', responseText);
+        }
+      } else {
+        console.log('❌ HTTP 오류:', response.status, response.statusText);
+      }
+
+    } catch (error: any) {
+      console.error('❌ 일정 삭제 실패:', error?.message || '일정 삭제에 실패했습니다.');
+    }
   };
 
   return (
