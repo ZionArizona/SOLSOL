@@ -12,7 +12,7 @@ import { HeaderSection } from "../../components/home/HeaderSection";
 import { MileageCard } from "../../components/home/MileageCard";
 import { PromoBanner } from "../../components/home/PromoBanner";
 import { StudentCard } from "../../components/home/StudentCard";
-import { ThisWeekList } from "../../components/home/ThisWeekList";
+import { UrgentScholarshipList } from "../../components/home/UrgentScholarshipList";
 import { MenuIcon, UserCircleIcon } from "../../components/shared/icons";
 import { NotificationBell } from "../../components/shared/NotificationBell";
 import { useAuth } from "../../contexts/AuthContext";
@@ -261,7 +261,7 @@ const getDepartmentInfo = () => {
           </View>
 
           <View style={[styles.block, { marginBottom: 20 }]}>
-            <ThisWeekList items={[]} />
+            <UrgentScholarshipList />
           </View>
         </View>
       </ScrollView>

@@ -96,8 +96,8 @@ const styles = StyleSheet.create({
   },
   accountBtn: {
     backgroundColor: "#F0F9FF",
-    borderWidth: 1,
-    borderColor: "#38BDF8",
+    // borderWidth: 1,
+    // borderColor: "#38BDF8",
   },
   smallBtnText: { color: colors.primary, fontWeight: "800", fontSize: 12 },
   accountBtnText: { color: "#0284C7" },

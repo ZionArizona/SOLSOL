@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../config/env'
 
 const navStyle={
   wrap:{
-    position:'sticky',top:0,zIndex:10,background:'rgba(255,255,255,.85)',
+    position:'sticky',top:0,zIndex:150,background:'rgba(255,255,255,.85)',
     backdropFilter:'saturate(1.2) blur(8px)', borderBottom:'1px solid rgba(0,0,0,.06)'
   },
   inner:{

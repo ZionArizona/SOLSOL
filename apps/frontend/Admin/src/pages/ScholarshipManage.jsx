@@ -283,6 +283,11 @@ export default function ScholarshipManage(){
         />
 
         <main className="admin-main">
+          <div className="page-header">
+            <h1 className="page-title">장학금 관리</h1>
+            <p className="page-description">장학금을 등록하고 관리할 수 있습니다.</p>
+          </div>
+
           {/* 상단 액션 툴바 */}
           <Toolbar
             buttons={[

@@ -4,6 +4,7 @@ import { ActivityIndicator, Image, ImageBackground, Platform, ScrollView, Status
 import { Calendar } from 'react-native-big-calendar';
 import { ScholarshipItemCard } from '../../components/scholarship/ScholarshipItemCard';
 import { SectionBox } from '../../components/scholarship/SectionBox';
+import { TopBar } from '../../components/scholarship/TopBar';
 import { useAuth } from '../../contexts/AuthContext';
 import { scholarshipApi } from '../../services/scholarship.api';
 import PersonalDetailSchedule from './PersonalDetailSchedule'; // [ADD]
@@ -274,41 +275,7 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
         style={styles.background}
         resizeMode="cover"
       >
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <View style={styles.leftWrap}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.backButton}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.backText}>← 뒤로</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.headerTitle}>나의 일정 관리</Text>
-
-          <View style={styles.rightWrap}>
-            <TouchableOpacity 
-              onPress={() => { router.push('/Notifications/Notifications'); }} 
-              style={styles.iconBtn}
-            >
-              <Image source={require('../../assets/images/BellIcon.png')} style={styles.icon} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => { router.push('/'); }} 
-              style={styles.iconBtn}
-            >
-              <Image source={require('../../assets/images/HomeIcon.png')} style={styles.icon} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => { router.push('/Menu/Menu'); }} 
-              style={styles.iconBtn}
-            >
-              <Image source={require('../../assets/images/HamburgerButton.png')} style={styles.icon} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <TopBar title="나의 일정 관리" onBackPress={handleBack} />
 
         {/* 상단 년월 네비게이션 */}
         <View style={styles.yearMonthContainer}>
@@ -424,15 +391,6 @@ const MyCalendar: React.FC<MyCalendarProps> = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0},
   background: { flex: 1},
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16},
-  leftWrap: { width: 96, justifyContent: 'center'},
-  rightWrap: { width: 96, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end'},
-  backButton: { padding: 8},
-  backText: { fontSize: 16, color: '#8FA1FF', fontWeight: '600'},
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#333'},
-  iconBtn: { padding: 4, marginLeft: 8},
-  icon: { width: 20, height: 20, resizeMode: 'contain'},
-
   yearMonthContainer: { flexDirection: 'row', marginHorizontal: 12, marginTop: 6, marginBottom: 8, alignItems: 'center', justifyContent: 'center'},
   yearMonthText: { fontSize: 20, fontWeight: '700', color: '#333',marginHorizontal: 20},
   navButton: {
